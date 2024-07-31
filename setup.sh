@@ -645,20 +645,19 @@ finalTweaks ()
     xdg-mime default thunar.desktop inode/directory
     ;;
     *hyprland*|*Hyprland*)
-    caution "Getting hyprland.conf"
-    wget https://github.com/MiguelCarino/Carino-Systems/archive/refs/heads/main.zip
-    unzip main.zip
-    if [ -d "/home/$(whoami)/.config/profiles/wofi" ]; then
-        echo "Not installing custom config files for hyprland"
-    else
-        rm -rf ~/.config/hypr/
-        rm -rf ~/.config/wofi/
-        rm -rf ~/.config/waybar/
-        mv Carino-Systems-main/profiles/wofi /home/$(whoami)/.config/
-        mv Carino-Systems-main/profiles/hypr /home/$(whoami)/.config/
-        mv Carino-Systems-main/profiles/waybar /home/$(whoami)/.config/
-        rm -rf main.zip Carino-Systems-main main.zip
-    fi
+    #caution "Getting hyprland.conf"
+    #unzip main.zip
+    #if [ -d "/home/$(whoami)/.config/profiles/wofi" ]; then
+    #    echo "Not installing custom config files for hyprland"
+    #else
+    #    rm -rf ~/.config/hypr/
+    #    rm -rf ~/.config/wofi/
+    #    rm -rf ~/.config/waybar/
+    #    mv Carino-Systems-main/profiles/wofi /home/$(whoami)/.config/
+    #    mv Carino-Systems-main/profiles/hypr /home/$(whoami)/.config/
+    #    mv Carino-Systems-main/profiles/waybar /home/$(whoami)/.config/
+    #    rm -rf main.zip Carino-Systems-main main.zip
+    #fi
     caution "Other things"
     gsettings set org.gnome.desktop.interface color-scheme prefer-dark
     xdg-mime default thunar.desktop inode/directory
