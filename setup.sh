@@ -634,8 +634,8 @@ finalTweaks ()
   #    echo 'hostname was not changed'
   #fi
   # Aesthetic Tweaks
-  sudo $pkgm $argInstall $preFlags plymouth plymouth-theme-spinfinity $postFlags
-  sudo plymouth-set-default-theme spinfinity -R
+  #sudo $pkgm $argInstall $preFlags plymouth plymouth-theme-spinfinity $postFlags
+  #sudo plymouth-set-default-theme spinfinity -R
   # Desktop Environment tweaks
   case $XDG_SESSION_DESKTOP in
     *gnome*|*xfce*)
