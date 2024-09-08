@@ -25,19 +25,11 @@ purpose_setup_ko_KR="디스트리뷰션의 목적을 선택해 주세요:\n1. �
 purpose_setup_he_IL="בחרו את המטרה עבור ההפצה שלכם:\n1. בסיסי\n2. משחקים\n3. תאגידי\n4. פיתוח\n5. אסטרונומיה\n6. נוירו-מחשב\n7. עיצוב\n8. ג'אם\n9. מעבדת אבטחה\n10. רובוטיקה\n11. מדעי\n12. לא מקוון"
 
 # Declaring Global Functions
-
-info (){
-  echo -e "${BLUE}$1${ENDCOLOR}"
-}
-error (){
-  echo -e "${RED}$1${ENDCOLOR}"
-}
-caution (){
-  echo -e "${YELLOW}$1${ENDCOLOR}"
-}
-success (){
-  echo -e "${GREEN}$1${ENDCOLOR}"
-}
+# Message Functions
+info() { echo -e "${BLUE}$1${ENDCOLOR}"; }
+error() { echo -e "${RED}$1${ENDCOLOR}"; }
+caution() { echo -e "${YELLOW}$1${ENDCOLOR}"; }
+success() { echo -e "${GREEN}$1${ENDCOLOR}"; }
 # Declaring Specific Functions
 identifyDistro ()
 {
@@ -64,7 +56,7 @@ if [[ -f /etc/os-release ]]; then
     argInstall=install
     argUpdate=update
     preFlags=""
-    postFlags="--allowerasing --skip-broken -y && sudo dnf install ffmpeg --allowerasing -y"
+    postFlags="--allowerasing --skip-broken -y"
     essentialPackages="$essentialPackages $essentialPackagesRPM"
     amdPackages="$amdPackages $amdPackagesRPM"
     nvidiaPackages="$nvidiaPackages $nvidiaPackagesRPM"
@@ -293,30 +285,60 @@ desktopenvironmentMenu ()
 }
 graphicDrivers ()
 {
-info "Installing GPU drivers"
-  if lspci | grep 'NVIDIA' > /dev/null;
-  then
-    if nvidia-smi
-    then
-        success "NVIDIA drivers are installed already."
-    else
-        caution "Nvidia card detected. Would you like to install NVIDIA packages?"
-        read option
-        if [ $option == y ]
-        then
-          info "Installing \e[32mNVIDIA\e[0m drivers"
-          sudo $pkgm $argInstall $nvidiaPackages $amdPackages $postFlags
+    info "Installing GPU drivers"
+
+    if lspci | grep 'NVIDIA' > /dev/null; then
+        if nvidia-smi > /dev/null 2>&1; then
+            success "NVIDIA drivers are installed already."
         else
-          caution "Nvidia packages will not be installed. Installing Radeon packages instead"
-          sudo $pkgm $argInstall $amdPackages $postFlags
+            caution "NVIDIA card detected. Would you like to install NVIDIA packages? (y/n)"
+            read -r option
+            if [ "$option" == "y" ]; then
+                info "Installing NVIDIA drivers and CUDA support"
+                sudo $pkgm $argInstall $nvidiaPackages $cudaPackages $postFlags
+            else
+                caution "NVIDIA packages will not be installed."
+            fi
         fi
+    elif lspci | grep -E 'Radeon|AMD' > /dev/null; then
+        if lsmod | grep amdgpu > /dev/null 2>&1; then
+            success "AMD drivers are installed already."
+        else
+            caution "AMD GPU detected. Would you like to install ROCm/HIP packages? (y/n)"
+            read -r option
+            if [ "$option" == "y" ]; then
+                info "Installing AMD drivers and ROCm/HIP support"
+                sudo $pkgm $argInstall $amdPackages $postFlags
+            else
+                caution "AMD drivers without ROCm will be installed."
+                sudo $pkgm $argInstall $amdPackages $postFlags
+            fi
+        fi
+    elif lspci | grep -E 'Intel' > /dev/null; then
+        caution "Intel GPU detected. Would you like to install oneAPI packages? (y/n)"
+        read -r option
+        if [ "$option" == "y" ]; then
+            info "Installing Intel drivers and oneAPI support"
+            sudo $pkgm $argInstall $intelPackages $postFlags
+        else
+            caution "Installing basic Intel GPU drivers."
+            sudo $pkgm $argInstall $intelPackages $postFlags
+        fi
+    #elif lspci | grep -E 'ASPEED' > /dev/null; then
+    #    caution "ASPEED GPU detected. Installing ASPEED drivers."
+    #    sudo $pkgm $argInstall xserver-xorg-video-ast ipmitool $postFlags
+    #    sudo modprobe ast
+    #    fi
+    #else lspci | grep -E 'Matrox' > /dev/null; then
+    #    caution "Matrox GPU detected. Installing Matrox drivers."
+    #    sudo $pkgm $argInstall xserver-xorg-video-mga $postFlags
+    #    sudo modprobe mgag200
+    #    fi
+    else
+        caution "No dedicated GPU found or unrecognized GPU. Moving on."
     fi
-  else
-    info "NVIDIA gpu not found, installing AMD packages instead"
-    sudo $pkgm $argInstall $amdPackages -y
-  fi
-  info "For Intel Arc drivers, please refer to https://www.intel.com/content/www/us/en/download/747008/intel-arc-graphics-driver-ubuntu.html"
 }
+
 flathubEnable ()
 {
     info "Enabling Flathub repository for Flatpak"
@@ -349,6 +371,7 @@ installSVP ()
           echo "SVP is already installed"
         else
             wget https://www.svp-team.com/files/svp4-linux.4.6.263.tar.bz2
+            bunzip2 svp4-linux.4.5.210-2.tar.bz2
             tar -xf svp4-linux.4.5.210-2.tar.bz2
             sudo chmod +x svp4-linux-64.run
             sudo -u $(whoami) ./svp4-linux-64.run && rm svp4-latest* svp4-linux-64.run 
@@ -738,4 +761,42 @@ ciscoPackages="https://binaries.webex.com/WebexDesktop-CentOS-Official-Package/W
 # CustomPackages
 languagePackages="fcitx5 fcitx5-mozc"
 carinoPackages="lpf-spotify-client telegram-desktop texlive-scheme-full"
-identifyDistro
+detectArgument() {
+    case "$1" in
+        nvidia)
+            graphicDrivers
+            ;;
+        amd)
+            graphicDrivers
+            ;;
+        intel)
+            graphicDrivers
+            ;;
+        aspeed)
+            graphicDrivers
+            ;;
+        matrox)
+            graphicDrivers
+            ;;
+        svp)
+            installSVP
+            ;;
+        protonge)
+            installproton
+            ;;
+        server)
+            techSetup
+            serverSetup
+            ;;
+        distrobox)
+            distroboxContainers
+            ;;
+        desktop)
+            desktopenvironmentMenu
+            ;;
+        *)
+            identifyDistro
+            ;;
+    esac
+}
+detectArgument "$1"
