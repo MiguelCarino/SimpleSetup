@@ -62,6 +62,8 @@ if [[ -f /etc/os-release ]]; then
     nvidiaPackages="$nvidiaPackages $nvidiaPackagesRPM"
     virtconPackages="$virtconPackages $virtconPackagesRPM"
     desktopOption=2
+    grubPath="/etc/default/grub"
+    grubUpdate="grub2-mkconfig -o /boot/grub2/grub.cfg"
     ;;
     *Red*)
     caution "RHEL"
@@ -76,6 +78,9 @@ if [[ -f /etc/os-release ]]; then
     nvidiaPackages="$nvidiaPackages $nvidiaPackagesRPM"
     virtconPackages="$virtconPackages $virtconPackagesRPM"
     desktopOption="3,4"
+    grubPath="/etc/default/grub"
+    grubUpdate="grub2-mkconfig -o /boot/grub2/grub.cfg"
+
     ;;
     *CentOS*)
     caution "CentOS"
@@ -90,6 +95,9 @@ if [[ -f /etc/os-release ]]; then
     nvidiaPackages="$nvidiaPackages $nvidiaPackagesRPM"
     virtconPackages="$virtconPackages $virtconPackagesRPM"
     desktopOption=2
+    grubPath="/etc/default/grub"
+    grubUpdate="grub2-mkconfig -o /boot/grub2/grub.cfg"
+
     ;;
     *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*)
     pkgm=apt
@@ -103,6 +111,8 @@ if [[ -f /etc/os-release ]]; then
     nvidiaPackages="$nvidiaPackages $nvidiaPackagesDebian"
     virtconPackages="$virtconPackages $virtconPackagesDebian"
     desktopOption=1
+    grubPath="/etc/default/grub"
+    grubUpdate="update-grub"
     ;;
     *Gentoo*)
     caution "Gentoo is not supported, and you wouldn't be using scripts anyway"
@@ -359,8 +369,8 @@ flathubEnable ()
 }
 updateGrub ()
 {
-    sudo sed -i 's/GRUB_TIMEOUT=5/GRUB_TIMEOUT=0/' /etc/default/grub
-    sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+    sudo sed -i 's/GRUB_TIMEOUT=5/GRUB_TIMEOUT=0/' $grubPath
+    sudo $grubUpdate
 }
 installSVP ()
 {
@@ -711,7 +721,7 @@ essentialPackages="pciutils git cmake wget nano curl jq mesa-va-drivers mesa-vdp
 #Server packages ensure SSH, FTP and RDP connectivity, so advanced users can configure and use the server remotely
 serverPackages="netcat-traditional xserver-xorg-video-dummy openssh-server cockpit expect ftp vsftpd sshpass"
 #Basic packages will allow endusers to perform basic activities or get basic features
-basicUserPackages="gedit yt-dlp thunderbird mpv ffmpeg ffmpegthumbnailer tumbler clamav clamtk libreoffice obs-studio epiphany qbittorrent fontawesome-fonts-all pavucontrol vnstat feh"
+basicUserPackages="gedit yt-dlp thunderbird mpv ffmpeg ffmpegthumbnailer tumbler clamav clamtk libreoffice obs-studio epiphany transmission fontawesome-fonts-all pavucontrol vnstat feh"
 basicSystemPackages="wine xrdp htop powertop neofetch tldr *gtkglext* libxdo-* ncdu scrot xclip"
 basicDesktopEnvironmentPackages="nautilus fontawesome-fonts"
 #Gaming packages will allow enduseres to play on the most popular platforms
@@ -783,6 +793,9 @@ detectArgument() {
             ;;
         protonge)
             installproton
+            ;;
+        simple)
+            techSetup
             ;;
         server)
             techSetup
