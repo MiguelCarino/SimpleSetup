@@ -810,7 +810,8 @@ detectArgument() {
     case "$1" in
         quick)
             techSetup
-            sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $googlePackages $postFlags
+            sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $googlePackages $postFlag
+            ;;
         nvidia)
             graphicDrivers
             ;;
