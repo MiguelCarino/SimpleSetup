@@ -285,6 +285,11 @@ desktopenvironmentMenu ()
         success "You have HYPRLAND installed, moving on"
         ;;
     12)
+        info "Still on the works"
+        sudo $pkgm $argInstall $basicDesktopEnvironmentPackages $niriPackages $postFlags && sudo systemctl set-default graphical.target
+        success "You have NIRI installed, moving on"
+        ;;
+    13)
         caution "No Desktop Environment will be installed"
         ;;
     *)
@@ -480,7 +485,7 @@ askReboot ()
 distroboxContainers ()
 {
     distrobox-create --name fedora --image quay.io/fedora/fedora:latest -Y
-    distrobox-create --name ubuntu --image docker.io/library/ubuntu:latest -Y
+    #distrobox-create --name ubuntu --image docker.io/library/ubuntu:latest -Y
     #distrobox-create --name rhel --image registry.access.redhat.com/ubi9/ubi -Y
     distrobox-create --name debian --image docker.io/library/debian:latest -Y
     #distrobox-create --name clearlinux --image docker.io/library/clearlinux:latest -Y
@@ -502,15 +507,18 @@ purposeMenu ()
   load_dictionary
   read optionmenu
   case $optionmenu in
-    1)
+    #Basic
+    1) 
         caution $1
         sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $googlePackages $postFlags
         ;;
+    #Gaming
     2)
         caution $1
         sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $googlePackages $gamingPackages $postFlags
         installproton
         ;;
+    #Corporate
     3)
         caution $1
         microsoftRepo
@@ -518,7 +526,24 @@ purposeMenu ()
         microsoftPackages=$(echo "${microsoftPackagesArray[0]}")
         sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $microsoftPackages $googlePackages $ciscoPackages $postFlags
         ;;
+    #Corporate (just Microsoft)
     4)
+        caution $1
+        microsoftRepo
+        microsoftPackagesArray=($microsoftPackages)
+        microsoftPackages=$(echo "${microsoftPackagesArray[0]}")
+        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $microsoftPackages $postFlags
+        ;;
+    #Corporate (just Google)
+    5)
+        caution $1
+        microsoftRepo
+        microsoftPackagesArray=($microsoftPackages)
+        microsoftPackages=$(echo "${microsoftPackagesArray[0]}")
+        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $googlePackages $postFlags
+        ;;
+    #Development
+    6)
         caution $1
         microsoftRepo
         microsoftPackagesArray=($microsoftPackages)
@@ -526,39 +551,48 @@ purposeMenu ()
         sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $developmentPackages $microsoftPackages $virtconPackages $postFlags
         distroboxContainers
         ;;
-    5)
-        caution $1
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
-        ;;
-    6)
-        caution $1
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
-        ;;
+    #Astronomy
     7)
         caution $1
         sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
         ;;
+    #Comp-Neuro
     8)
         caution $1
         sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
         ;;
+    #Design
     9)
         caution $1
         sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
         ;;
+    #Music Production
     10)
         caution $1
         sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
         ;;
+    #Cybersecurity
     11)
         caution $1
         sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
         ;;
+    #Forensics
     12)
         caution $1
         sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
         ;;
+    #Scientific
     13)
+        caution $1
+        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
+        ;;
+    #Robotics
+    14)
+        caution $1
+        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
+        ;;
+    #
+    15)
         displayMenu
         ;;
     0)
@@ -745,6 +779,7 @@ openboxPackages="openbox @basic-desktop-environment @openbox @base-x"
 budgiePackages="budgie-desktop budgie-desktop @budgie @base-x"
 swayPackages="sway sway @sway @base-x"
 hyprlandPackages="hyprland xorg-x11-server-Xwayland waybar xdg-desktop-portal-hyprland hyprland-autoname-workspaces hyprpaper libdisplay-info libinput libliftoff hyprshot" #Still on the works
+niriPackages="niri waybar" #Still on the works
 # Specific GNU/Linux Packages
 intelPackages="intel-media-*driver"
 essentialPackagesRPM="NetworkManager-tui xkill tigervnc-server dhcp-server"
@@ -773,6 +808,9 @@ languagePackages="fcitx5 fcitx5-mozc"
 carinoPackages="lpf-spotify-client telegram-desktop texlive-scheme-full"
 detectArgument() {
     case "$1" in
+        quick)
+            techSetup
+            sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $googlePackages $postFlags
         nvidia)
             graphicDrivers
             ;;
@@ -813,3 +851,4 @@ detectArgument() {
     esac
 }
 detectArgument "$1"
+echo $1
