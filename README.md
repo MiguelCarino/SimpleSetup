@@ -19,9 +19,9 @@
 - **Multilingual menus**: English, Japanese, Russian, Spanish, Finnish, Chinese, Korean, Hebrew, with automatic locale detection.
 
 ## Arguments
-*All arguments are used after `setup.sh`*
-bash <(curl -s https://carino.systems/setup.sh) **argument**
-./setup.sh **argument**
+*All arguments are used after `setup.sh`*\
+bash <(curl -s https://carino.systems/setup.sh) **argument**\
+./setup.sh **argument**\
 ```bash
 ### General Arguments
 - quick
