@@ -787,7 +787,7 @@ essentialPackagesDebian="software-properties-common build-essential manpages-dev
 virtconPackagesRPM="@virtualization libvirt libvirt-devel virt-install qemu-kvm qemu-img virt-manager"
 virtconPackagesDebian="libvirt-daemon-system libvirt-clients"
 amdPackagesRPM="xorg-x11-drv-amdgpu systemd-devel" #xorg-x11-dr*
-fedoraPackages="mesa-va-drivers-freeworld mesa-vdpau-drivers-freeworld libavcodec-freeworld"
+fedoraPackages="mesa-va-drivers-freeworld mesa-vdpau-drivers-freeworld libavcodec-freeworld dnf-plugin-system-upgrade"
 rhelPackages="mesa-dri-drivers libavcodec*" #mesa-vdpau-drivers
 amdPackagesDebian="xserver-xorg-video-amdgpu libsystemd-dev"
 nvidiaPackagesRPM="akmod-nvidia nvidia-vaapi-driver"
@@ -806,6 +806,8 @@ ciscoPackages="https://binaries.webex.com/WebexDesktop-CentOS-Official-Package/W
 # CustomPackages
 languagePackages="fcitx5 fcitx5-mozc"
 carinoPackages="lpf-spotify-client telegram-desktop texlive-scheme-full"
+# Pending packages for review
+# libadwaita-devel libXtst-devel libX11-devel samba samba-client samba-common minigalaxy
 detectArgument() {
     case "$1" in
         quick)
