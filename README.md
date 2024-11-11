@@ -21,7 +21,7 @@
 ## Arguments
 *All arguments are used after `setup.sh`*\
 bash <(curl -s https://carino.systems/setup.sh) **argument**\
-./setup.sh **argument**\
+./setup.sh **argument**
 ```bash
 ### General Arguments
 - quick
