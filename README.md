@@ -11,12 +11,12 @@
 
 ## Main Features
 - **Automatic distro identification**
-- **Quick setup**: Install and forget
-- **Technical Setup**: Installs necessary packages for a decent hardware experience and basic user features (e.g., Nvidia drivers, Rocm/Hip, non-free repos, Flathub, Desktop Environment if missing, dark theme, dot files, etc.)
-- **Purpose Setup**: Installs specific packages for chosen purposes (e.g., Astronomy, Graphic Design, Forensics, etc.)
-- **Menu options**: Choose extra setups like installing an additional Desktop Environment
+- **Quick setup**: Install and forget.
+- **Technical Setup**: Installs necessary packages for a decent hardware experience and basic user features (e.g., Nvidia drivers, Rocm/Hip, non-free repos, Flathub, Desktop Environment if missing, dark theme, dot files, etc).
+- **Purpose Setup**: Installs specific packages for chosen purposes (e.g., Astronomy, Graphic Design, Forensics, etc).
+- **Menu options**: Choose extra setups like installing an additional Desktop Environment.
 - **Argument support**
-- **Multilingual menus**: English, Japanese, Russian, Spanish, Finnish, Chinese, Korean, Hebrew, with automatic locale detection
+- **Multilingual menus**: English, Japanese, Russian, Spanish, Finnish, Chinese, Korean, Hebrew, with automatic locale detection.
 
 ## Arguments
 *All arguments are used after `setup.sh`*  
@@ -25,41 +25,41 @@ bash <(curl -s https://carino.systems/setup.sh) **argument**
 ./setup.sh **argument**
 
 ### General Arguments
-- **quick**  
+- quick
   Installs Technical Setup and Basic Purpose packages for a fast and straightforward installation.
 
-- **simple**  
+- simple
   Performs the Technical Setup and Basic Purpose package installation. This option provides a hassle-free setup.
 
-- **server**  
+- server
   Configures a minimal server setup with essential development packages. This does not include the full Technical Setup.
 
 ### Graphics Driver Installation
-- **nvidia**  
+- nvidia
   Installs Nvidia graphic drivers.
 
-- **amd**  
+- amd  
   Installs AMD graphic drivers.
 
-- **intel**  
+- intel  
   Installs Intel graphic drivers.
 
-- **aspeed**  
+- aspeed  
   Installs Aspeed graphic drivers.
 
-- **matrox**  
+- matrox  
   Installs Matrox graphic drivers.
 
 ### Special Installations
-- **svp**  
+- svp
   Installs Smooth Video Project for enhanced video playback.
 
-- **protonge**  
+- protonge  
   Installs the latest version of Proton GE for improved gaming performance on Linux.
 
-- **distrobox**  
+- distrobox  
   Installs Distrobox containers for running multiple Linux distributions seamlessly.
 
 ### Desktop Environment Setup
-- **desktop**  
+- desktop  
   Opens a menu to select and install a Desktop Environment from a curated list.
