@@ -848,6 +848,9 @@ detectArgument() {
         desktop)
             desktopenvironmentMenu
             ;;
+        demo)
+            distroDemo
+            ;;
         *)
             identifyDistro
             ;;
