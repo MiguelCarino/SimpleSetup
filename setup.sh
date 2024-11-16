@@ -64,6 +64,7 @@ if [[ -f /etc/os-release ]]; then
     desktopOption=2
     grubPath="/etc/default/grub"
     grubUpdate="grub2-mkconfig -o /boot/grub2/grub.cfg"
+    flatpakRepo="fedora"
     ;;
     *Red*)
     caution "RHEL"
@@ -80,7 +81,6 @@ if [[ -f /etc/os-release ]]; then
     desktopOption="3,4"
     grubPath="/etc/default/grub"
     grubUpdate="grub2-mkconfig -o /boot/grub2/grub.cfg"
-
     ;;
     *CentOS*)
     caution "CentOS"
@@ -370,6 +370,7 @@ flathubEnable ()
     *)
     ;;
     esac
+    flatpakRepo="flathub"
 }
 updateGrub ()
 {
@@ -442,25 +443,28 @@ installproton() {
     fi
   done
 }
-
-microsoftRepo ()
-{
-    case $NAME in 
-    *Fedora*|*Nobara*|*Risi*|*Ultramarine*)
-    addMicrosoft="sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc"
-    enableMicrosoft="sudo $pkgm config-manager --add-repo https://packages.microsoft.com/yumrepos/edge && sudo mv /etc/yum.repos.d/packages.microsoft.com_yumrepos_edge.repo /etc/yum.repos.d/microsoft-edge-stable.repo && sudo $pkgm config-manager --add-repo https://packages.microsoft.com/yumrepos/vscode && curl https://packages.microsoft.com/config/rhel/7/prod.repo | sudo tee /etc/yum.repos.d/microsoft.repo"
-    $addMicrosoft && $enableMicrosoft
-    ;;
-    *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*)
-    if [[ "$NAME" == "Debian" ]]; then
-            addMicrosoft="curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -"
-            else
-            addMicrosoft="curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc"
-            fi
-    $addMicrosoft
-    ;;
-    esac
-}
+#Removed in favour of Flatpak
+#microsoftRepo
+#microsoftPackagesArray=($microsoftPackages)
+#microsoftPackages=$(echo "${microsoftPackagesArray[0]}")
+#microsoftRepo ()
+#{
+#    case $NAME in 
+#    *Fedora*|*Nobara*|*Risi*|*Ultramarine*)
+#    addMicrosoft="sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc"
+#    enableMicrosoft="sudo $pkgm config-manager --add-repo https://packages.microsoft.com/yumrepos/edge && sudo mv /etc/yum.repos.d/packages.microsoft.com_yumrepos_edge.repo /etc/yum.repos.d/microsoft-edge-stable.repo && sudo $pkgm config-manager --add-repo https://packages.microsoft.com/yumrepos/vscode && curl https://packages.microsoft.com/config/rhel/7/prod.repo | sudo tee /etc/yum.repos.d/microsoft.repo"
+#    $addMicrosoft && $enableMicrosoft
+#    ;;
+#    *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*)
+#    if [[ "$NAME" == "Debian" ]]; then
+#            addMicrosoft="curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -"
+#            else
+#            addMicrosoft="curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc"
+#            fi
+#    $addMicrosoft
+#    ;;
+#    esac
+#}
 niriRepo ()
 {
     case $NAME in 
@@ -479,7 +483,7 @@ anydeskRepo ()
 {
     case $NAME in 
     *Fedora*|*Nobara*|*Risi*|*Ultramarine*)
-        cat > /etc/yum.repos.d/AnyDesk-Fedora.repo << "EOF" 
+        sudo cat > /etc/yum.repos.d/AnyDesk-Fedora.repo << "EOF" 
 [anydesk]
 name=AnyDesk Fedora - stable
 baseurl=http://rpm.anydesk.com/fedora/$basearch/
@@ -489,7 +493,7 @@ gpgkey=https://keys.anydesk.com/repos/RPM-GPG-KEY
 EOF
     ;;
     *Red*)
-    cat > /etc/yum.repos.d/AnyDesk-RHEL.repo << "EOF"
+    sudo cat > /etc/yum.repos.d/AnyDesk-RHEL.repo << "EOF"
 [anydesk]
 name=AnyDesk RHEL - stable
 baseurl=http://rpm.anydesk.com/rhel/$releasever/$basearch/
@@ -499,7 +503,7 @@ gpgkey=https://keys.anydesk.com/repos/RPM-GPG-KEY
 EOF
     ;;
     *CentOS*)
-    cat > /etc/yum.repos.d/AnyDesk-CentOS.repo << "EOF"
+    sudo cat > /etc/yum.repos.d/AnyDesk-CentOS.repo << "EOF"
 [anydesk]
 name=AnyDesk CentOS - stable
 baseurl=http://rpm.anydesk.com/centos/$releasever/$basearch/
@@ -587,48 +591,36 @@ purposeMenu ()
     #Basic
     1) 
         caution $1
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $googlePackages $postFlags
+        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
         ;;
     #Gaming
     2)
         caution $1
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $googlePackages $gamingPackages $postFlags
+        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $gamingPackages $postFlags
         installproton
         ;;
     #Corporate
     3)
         caution $1
-        microsoftRepo
-        anydeskRepo
-        microsoftPackagesArray=($microsoftPackages)
-        microsoftPackages=$(echo "${microsoftPackagesArray[0]}")
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $remoteSupportPackages $microsoftPackages $googlePackages $ciscoPackages $postFlags
+        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $ciscoPackages $postFlags
+        sudo flatpak install $flatpakRepo $googleFlatpak $microsoftFlatpak $remoteSupportFlatpak -y
         ;;
     #Corporate (just Microsoft)
     4)
         caution $1
-        microsoftRepo
-        anydeskRepo
-        microsoftPackagesArray=($microsoftPackages)
-        microsoftPackages=$(echo "${microsoftPackagesArray[0]}")
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $remoteSupportPackage $microsoftPackages $postFlags
+        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
+        sudo flatpak install $flatpakRepo $microsoftFlatpak $remoteSupportFlatpak -y
         ;;
     #Corporate (just Google)
     5)
         caution $1
-        microsoftRepo
-        anydeskRepo
-        microsoftPackagesArray=($microsoftPackages)
-        microsoftPackages=$(echo "${microsoftPackagesArray[0]}")
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $remoteSupportPackage $googlePackages $postFlags
+        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
+        sudo flatpak install $flatpakRepo $googleFlatpak $remoteSupportFlatpak -y
         ;;
     #Development
     6)
         caution $1
-        microsoftRepo
-        microsoftPackagesArray=($microsoftPackages)
-        microsoftPackages=$(echo "${microsoftPackagesArray[1]}")
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $developmentPackages $microsoftPackages $virtconPackages $postFlags
+        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $developmentPackages $virtconPackages $postFlags
         distroboxContainers
         ;;
     #Astronomy
@@ -677,7 +669,7 @@ purposeMenu ()
         ;;
     0)
         caution $1
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $gamingPackages $multimediaPackages $developmentPackages $virtconPackages $amdPackagesRPM $supportPackages $ciscoPackages $googlePackages $languagePackages $postFlags
+        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $gamingPackages $multimediaPackages $developmentPackages $virtconPackages $amdPackagesRPM $supportPackages $ciscoPackages $languagePackages $postFlags
         installSVP #Trying to find a FOSS alternative for smooth video
         distroboxContainers
         sudo usermod -aG libvirt $(whoami)
@@ -872,27 +864,34 @@ rhelPackages="mesa-dri-drivers libavcodec*" #mesa-vdpau-drivers
 amdPackagesDebian="xserver-xorg-video-amdgpu libsystemd-dev"
 nvidiaPackagesRPM="akmod-nvidia nvidia-vaapi-driver"
 nvidiaPackagesDebian="nvidia-driver* nvidia-opencl* nvidia-xconfig nvidia-vdpau-driver nvidia-vulkan*"
-nvidiaPackagesUbuntu="nvidia-driver-535"
+nvidiaPackagesUbuntu="nvidia-driver-560"
 nvidiaPackagesArch="nvidia-open"
 astronomyPackages="astropy kstars celestia siril "
 compneuroPackages="neuron "
 # Corporate Packages
-remoteSupportPackages="anydesk"
+#remoteSupportPackages="anydesk"
 rustdesk="https://github.com/rustdesk/rustdesk/releases/download/1.3.2/rustdesk-1.3.2-0.x86_64.rpm https://github.com/rustdesk/rustdesk/releases/download/1.3.2/rustdesk-1.3.2-x86_64.deb" #Taken from https://github.com/rustdesk/rustdesk/releases/
 microsoftPackages="microsoft-edge-stable code" #powershell
 zoom="https://zoom.us/client/latest/zoom_x86_64.rpm"
-googlePackages="https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm"
+#googlePackages="https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm"
 ciscoPackages="https://binaries.webex.com/WebexDesktop-CentOS-Official-Package/Webex.rpm vpnc"
 # CustomPackages
 languagePackages="fcitx5 fcitx5-mozc"
 carinoPackages="lpf-spotify-client telegram-desktop texlive-scheme-full"
+# Flatpak packages
+googleFlatpak="com.google.Chrome"
+microsoftFlatpak="com.microsoft.Edge com.visualstudio.code com.github.IsmaelMartinez.teams_for_linux"
+corporateFlatpak="org.onlyoffice.desktopeditors "
+supportFlatpak="com.anydesk.Anydesk com.github.tchx84.Flatseal"
+remoteSupportFlatpak="com.anydesk.Anydesk"
 # Pending packages for review
 # libadwaita-devel libXtst-devel libX11-devel samba samba-client samba-common minigalaxy
 detectArgument() {
     case "$1" in
         quick)
             techSetup
-            sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $googlePackages $postFlag
+            sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlag
+            flatpak install $flatpakRepo $googleFlatpak
             ;;
         nvidia)
             graphicDrivers
@@ -932,8 +931,9 @@ detectArgument() {
             distroDemo
             ;;
         anydesk)
-            anydeskRepo
-            sudo $pkgm $argInstall anydesk -y
+            flathubEnable
+            sudo $pkgm $argInstall flatpak -y
+            sudo flatpak install $remoteSupportFlatpak -y
             ;;
         *)
             identifyDistro
