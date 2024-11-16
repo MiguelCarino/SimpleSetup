@@ -115,16 +115,16 @@ if [[ -f /etc/os-release ]]; then
     grubUpdate="update-grub"
     ;;
     *Gentoo*)
-    caution "Gentoo is not supported, and you wouldn't be using scripts anyway"
+    caution "Gentoo is not supported, and you wouldn't be using scripts anyway."
     ;;
     *Slackware*)
-    caution "Slackware is not supported"
+    caution "Slackware is not supported."
     ;;
     *Arch*)
-    caution "Arch is not supported, and you wouldn't be using scripts anyway"
+    caution "Arch is not supported, and you wouldn't be using scripts anyway."
     ;;
     *Opensuse*)
-    caution "openSUSE is not supported"
+    caution "openSUSE is not supported (yet)."
     ;;
     *)
     echo "2"
@@ -286,6 +286,7 @@ desktopenvironmentMenu ()
         ;;
     12)
         info "Still on the works"
+        niriRepo
         sudo $pkgm $argInstall $basicDesktopEnvironmentPackages $niriPackages $postFlags && sudo systemctl set-default graphical.target
         success "You have NIRI installed, moving on"
         ;;
@@ -461,17 +462,87 @@ microsoftRepo ()
     ;;
     esac
 }
+niriRepo ()
+{
+    case $NAME in 
+    *Fedora*|*Nobara*|*Risi*|*Ultramarine*)
+        sudo $pkgm copr enable yalter/niri -y
+    ;;
+    *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*)
+        caution "Still not supported."
+    ;;
+    *)
+        info "Not supported." 
+    ;;
+    esac
+}
+anydeskRepo ()
+{
+    case $NAME in 
+    *Fedora*|*Nobara*|*Risi*|*Ultramarine*)
+        cat > /etc/yum.repos.d/AnyDesk-Fedora.repo << "EOF" 
+[anydesk]
+name=AnyDesk Fedora - stable
+baseurl=http://rpm.anydesk.com/fedora/$basearch/
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://keys.anydesk.com/repos/RPM-GPG-KEY
+EOF
+    ;;
+    *Red*)
+    cat > /etc/yum.repos.d/AnyDesk-RHEL.repo << "EOF"
+[anydesk]
+name=AnyDesk RHEL - stable
+baseurl=http://rpm.anydesk.com/rhel/$releasever/$basearch/
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://keys.anydesk.com/repos/RPM-GPG-KEY
+EOF
+    ;;
+    *CentOS*)
+    cat > /etc/yum.repos.d/AnyDesk-CentOS.repo << "EOF"
+[anydesk]
+name=AnyDesk CentOS - stable
+baseurl=http://rpm.anydesk.com/centos/$releasever/$basearch/
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://keys.anydesk.com/repos/RPM-GPG-KEY
+EOF
+    ;;
+
+    *Opensuse*)
+    cat > AnyDesk-OpenSUSE.repo << "EOF" 
+[anydesk]
+name=AnyDesk OpenSUSE - stable
+baseurl=http://rpm.anydesk.com/opensuse/$basearch/
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://keys.anydesk.com/repos/RPM-GPG-KEY
+EOF
+
+$pkgm addrepo --repo AnyDesk-OpenSUSE.repo
+    ;;
+    *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*)
+        wget -qO - https://keys.anydesk.com/repos/DEB-GPG-KEY | apt-key add -
+        echo "deb http://deb.anydesk.com/ all main" > /etc/apt/sources.list.d/anydesk-stable.list
+        sudo $pkgm $argUpdate
+    ;;
+    *)
+    caution "Not supported for other distros yet."
+    ;;
+    esac
+}
 librewolfRepo ()
 {
     case $NAME in 
     *Fedora*|*Nobara*|*Risi*|*Ultramarine*)
-        sudo $pkgm config-manager --add-repo https://repo.librewolf.net/librewolf.repo -y
-        sudo $pkgm $argInstall librewolf -y
+        sudo $pkgm config-manager --add-repo https://repo.librewolf.net/librewolf.repo $postFlags
+        sudo $pkgm $argInstall librewolf $postFlags
     ;;
     *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*)
-        sudo $pkgm $argUpdate update && sudo $pkgm $argInstall extrepo -y
+        sudo $pkgm $argUpdate update && sudo $pkgm $argInstall extrepo $postFlags
         sudo extrepo enable librewolf
-        sudo $pkgm $argUpdate && sudo $pkgm $argInstall librewolf -y
+        sudo $pkgm $argUpdate && sudo $pkgm $argInstall librewolf $postFlags
     ;;
     *)
     caution "Not supported for other distros yet."
@@ -529,25 +600,28 @@ purposeMenu ()
     3)
         caution $1
         microsoftRepo
+        anydeskRepo
         microsoftPackagesArray=($microsoftPackages)
         microsoftPackages=$(echo "${microsoftPackagesArray[0]}")
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $microsoftPackages $googlePackages $ciscoPackages $postFlags
+        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $remoteSupportPackages $microsoftPackages $googlePackages $ciscoPackages $postFlags
         ;;
     #Corporate (just Microsoft)
     4)
         caution $1
         microsoftRepo
+        anydeskRepo
         microsoftPackagesArray=($microsoftPackages)
         microsoftPackages=$(echo "${microsoftPackagesArray[0]}")
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $microsoftPackages $postFlags
+        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $remoteSupportPackage $microsoftPackages $postFlags
         ;;
     #Corporate (just Google)
     5)
         caution $1
         microsoftRepo
+        anydeskRepo
         microsoftPackagesArray=($microsoftPackages)
         microsoftPackages=$(echo "${microsoftPackagesArray[0]}")
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $googlePackages $postFlags
+        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $remoteSupportPackage $googlePackages $postFlags
         ;;
     #Development
     6)
@@ -771,7 +845,7 @@ gamingPackages="steam goverlay lutris"
 multimediaPackages="gimp krita blender kdenlive gstreamer* gscan2pdf python3-qt* python3-vapoursynth qt5-qtbase-devel vapoursynth-* libqt5* libass*" #qt5-qtbase-devel python3-qt5
 developmentPackages="gcc cargo npm python3-pip nodejs golang conda*"
 virtconPackages="podman distrobox bridge-utils"
-supportPackages="remmina filezilla keepassxc bless xxd" #stacer barrier bleachbit
+supportPackages="remmina keepassxc bless xxd" #stacer barrier bleachbit filezilla
 amdPackages="ocl-icd-dev* opencl-headers libdrm-dev* rocm*"
 nvidiaPackages="vdpauinfo libva-utils vulkan nvidia-xconfig xorg-x11-drv-nvidia-cuda libva-vdpau-driver" #libva-vdpau-driver kernel-headers kernel-devel xorg-x11-drv-nvidia xorg-x11-drv-nvidia-libs xorg-x11-drv-nvidia-libs.i686 xorg-x11-drv-nvidia-cuda xorg-x11-drv-nvidia-cuda-libs
 xfcePackages="task-xfce-desktop @xfce-desktop-environment @Xfce @base-x"
@@ -804,8 +878,8 @@ nvidiaPackagesArch="nvidia-open"
 astronomyPackages="astropy kstars celestia siril "
 compneuroPackages="neuron "
 # Corporate Packages
-anydesk=""
-rustdesk="https://github.com/rustdesk/rustdesk/releases/download/1.2.3/rustdesk-1.2.3-0.x86_64.rpm https://github.com/rustdesk/rustdesk/releases/download/1.2.3/rustdesk-1.2.3-x86_64.deb"
+remoteSupportPackages="anydesk"
+rustdesk="https://github.com/rustdesk/rustdesk/releases/download/1.3.2/rustdesk-1.3.2-0.x86_64.rpm https://github.com/rustdesk/rustdesk/releases/download/1.3.2/rustdesk-1.3.2-x86_64.deb" #Taken from https://github.com/rustdesk/rustdesk/releases/
 microsoftPackages="microsoft-edge-stable code" #powershell
 zoom="https://zoom.us/client/latest/zoom_x86_64.rpm"
 googlePackages="https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm"
@@ -857,6 +931,10 @@ detectArgument() {
             ;;
         demo)
             distroDemo
+            ;;
+        anydesk)
+            anydeskRepo
+            sudo $pkgm $argInstall anydesk -y
             ;;
         *)
             identifyDistro
