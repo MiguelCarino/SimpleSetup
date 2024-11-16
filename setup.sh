@@ -357,7 +357,6 @@ graphicDrivers ()
 flathubEnable ()
 {
     info "Enabling Flathub repository for Flatpak"
-    read option
     case $NAME in
     *Fedora*|*Nobara*|*Risi*|*Ultramarine*)
     sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
