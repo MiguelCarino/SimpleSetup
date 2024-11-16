@@ -353,7 +353,6 @@ graphicDrivers ()
         caution "No dedicated GPU found or unrecognized GPU. Moving on."
     fi
 }
-
 flathubEnable ()
 {
     info "Enabling Flathub repository for Flatpak"
@@ -377,20 +376,22 @@ updateGrub ()
     sudo sed -i 's/GRUB_TIMEOUT=5/GRUB_TIMEOUT=0/' $grubPath
     sudo $grubUpdate
 }
-installSVP ()
-{
-  pkgs="/home/$(whoami)/SVP\ 4/SVPManager"
-        which $pkgs > /dev/null 2>&1
-        if [ $? == 0 ]
-        then
-          echo "SVP is already installed"
-        else
-            wget https://www.svp-team.com/files/svp4-linux.4.6.263.tar.bz2
-            bunzip2 svp4-linux.4.5.210-2.tar.bz2
-            tar -xf svp4-linux.4.5.210-2.tar.bz2
-            sudo chmod +x svp4-linux-64.run
-            sudo -u $(whoami) ./svp4-linux-64.run && rm svp4-latest* svp4-linux-64.run 
-        fi
+installSVP() {
+    local svpName="svp4-linux"
+    local svpVersion=".4.6.263"
+    local url="https://www.svp-team.com/files/$svpName$svpVersion.tar.bz2"
+
+    if which /home/$USER/SVP\ 4/SVPManager > /dev/null 2>&1;
+    then
+        echo "SVP is already installed"
+    else
+        wget "$url"
+        bunzip2 $svpName$svpVersion.tar.bz2
+        tar -xf $svpName$svpVersion.tar.bz2 &
+        wait $!
+        sudo chmod +x $svpName-64.run
+        sudo -u $USER ./$svpName-64.run && rm svp4-latest* $svpName-64.run 
+    fi
 }
 sharedFolder ()
 {
@@ -424,7 +425,7 @@ installproton() {
     mkdir -p "$COMPATIBILITY_DIR"
   fi
 
-  for VERSION in {14..7}; do
+  for VERSION in {24..20}; do
     if [ "$CURRENT_VERSION" -eq "$VERSION" ]; then
       continue
     fi
@@ -433,6 +434,7 @@ installproton() {
     if [ $? -eq 0 ]; then
       echo -e "Installing version $VERSION..."
       tar -xf "GE-Proton9-$VERSION.tar.gz" -C "$COMPATIBILITY_DIR" && rm "GE-Proton9-$VERSION.tar.gz"
+      wait $!
       echo -e "${GREEN}ProtonGE $VERSION has been installed.${ENDCOLOR}"
       break
     else
@@ -446,7 +448,7 @@ microsoftRepo ()
     case $NAME in 
     *Fedora*|*Nobara*|*Risi*|*Ultramarine*)
     addMicrosoft="sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc"
-    enableMicrosoft="sudo dnf config-manager --add-repo https://packages.microsoft.com/yumrepos/edge && sudo mv /etc/yum.repos.d/packages.microsoft.com_yumrepos_edge.repo /etc/yum.repos.d/microsoft-edge-stable.repo && sudo dnf config-manager --add-repo https://packages.microsoft.com/yumrepos/vscode && curl https://packages.microsoft.com/config/rhel/7/prod.repo | sudo tee /etc/yum.repos.d/microsoft.repo"
+    enableMicrosoft="sudo $pkgm config-manager --add-repo https://packages.microsoft.com/yumrepos/edge && sudo mv /etc/yum.repos.d/packages.microsoft.com_yumrepos_edge.repo /etc/yum.repos.d/microsoft-edge-stable.repo && sudo $pkgm config-manager --add-repo https://packages.microsoft.com/yumrepos/vscode && curl https://packages.microsoft.com/config/rhel/7/prod.repo | sudo tee /etc/yum.repos.d/microsoft.repo"
     $addMicrosoft && $enableMicrosoft
     ;;
     *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*)
@@ -463,8 +465,13 @@ librewolfRepo ()
 {
     case $NAME in 
     *Fedora*|*Nobara*|*Risi*|*Ultramarine*)
-    sudo dnf config-manager --add-repo https://rpm.librewolf.net/librewolf-repo.repo -y
-    sudo dnf install librewolf -y
+        sudo $pkgm config-manager --add-repo https://repo.librewolf.net/librewolf.repo -y
+        sudo $pkgm $argInstall librewolf -y
+    ;;
+    *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*)
+        sudo $pkgm $argUpdate update && sudo $pkgm $argInstall extrepo -y
+        sudo extrepo enable librewolf
+        sudo $pkgm $argUpdate && sudo $pkgm $argInstall librewolf -y
     ;;
     *)
     caution "Not supported for other distros yet."
