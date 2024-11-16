@@ -836,7 +836,7 @@ essentialPackages="pciutils git cmake wget nano curl jq mesa-va-drivers mesa-vdp
 serverPackages="netcat-traditional xserver-xorg-video-dummy openssh-server cockpit expect ftp vsftpd sshpass"
 #Basic packages will allow endusers to perform basic activities or get basic features
 basicUserPackages="gedit yt-dlp thunderbird mpv ffmpeg ffmpegthumbnailer tumbler clamav clamtk libreoffice obs-studio epiphany transmission fontawesome-fonts-all pavucontrol vnstat feh"
-basicSystemPackages="wine xrdp htop powertop neofetch tldr *gtkglext* libxdo-* ncdu scrot xclip"
+basicSystemPackages="wine xrdp htop powertop fastfetch tldr *gtkglext* libxdo-* ncdu scrot xclip"
 basicDesktopEnvironmentPackages="nautilus fontawesome-fonts"
 #Gaming packages will allow enduseres to play on the most popular platforms
 gamingPackages="steam goverlay lutris"
