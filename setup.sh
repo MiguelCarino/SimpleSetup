@@ -388,7 +388,7 @@ installSVP() {
     else
         wget "$url"
         bunzip2 $svpName$svpVersion.tar.bz2
-        tar -xf $svpName$svpVersion.tar.bz2 &
+        tar -xf $svpName$svpVersion.tar &
         wait $!
         sudo chmod +x $svpName-64.run
         sudo -u $USER ./$svpName-64.run && rm svp4-latest* $svpName-64.run 
