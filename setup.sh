@@ -419,27 +419,27 @@ installproton() {
   if [ -d "$COMPATIBILITY_DIR" ]; then
     CURRENT_VERSION=$(ls "$COMPATIBILITY_DIR" | grep -Eo '[0-9]+' | sort -nr | head -n 1)
     if [ "$CURRENT_VERSION" -eq "$LATEST_VERSION" ]; then
-      echo -e "${GREEN}You already have the latest ProtonGE $CURRENT_VERSION version.${ENDCOLOR}"
+      success "You already have the latest ProtonGE $CURRENT_VERSION version."
       return
     fi
   else
     mkdir -p "$COMPATIBILITY_DIR"
   fi
 
-  for VERSION in {24..20}; do
+  for VERSION in {26..20}; do
     if [ "$CURRENT_VERSION" -eq "$VERSION" ]; then
       continue
     fi
 
     wget -q "https://github.com/GloriousEggroll/proton-ge-custom/releases/download/GE-Proton9-$VERSION/GE-Proton9-$VERSION.tar.gz"
     if [ $? -eq 0 ]; then
-      echo -e "Installing version $VERSION..."
+      info "Installing version $VERSION..."
       tar -xf "GE-Proton9-$VERSION.tar.gz" -C "$COMPATIBILITY_DIR" && rm "GE-Proton9-$VERSION.tar.gz"
       wait $!
-      echo -e "${GREEN}ProtonGE $VERSION has been installed.${ENDCOLOR}"
+      success "ProtonGE $VERSION has been installed."
       break
     else
-      echo -e "${RED}Version $VERSION not found (yet).${ENDCOLOR}"
+      caution "Version $VERSION not found (yet)."
     fi
   done
 }
@@ -685,28 +685,28 @@ serverSetup ()
 {
     sudo $pkgm update -y && sudo $pkgm upgrade -y
     sudo $pkgm $argInstall $preFlags $essentialPackages $basicSystemPackages $serverPackages $developmentPackages $postFlags
-    #wget https://github.com/rustdesk/rustdesk/releases/download/1.2.3-2/rustdesk-1.2.3-2-x86_64.deb
-    #wget https://download.anydesk.com/linux/anydesk_6.3.1-1_amd64.deb
-    #sudo dpkg -i rustdesk-*
-    #sudo dpkg -i anydesk*
 }
 techSetup ()
 {
     caution $NAME
     case $NAME in
     *Fedora*)
-    if [ $(cat /etc/dnf/dnf.conf | grep fastestmirror=true) ]
-      then
-          echo ""
-      else
-          sudo sh -c 'echo fastestmirror=true >> /etc/dnf/dnf.conf' #Looks for the lowest ping, not necessarily the best bandwith
-          sudo sh -c 'echo max_parallel_downloads=10 >> /etc/dnf/dnf.conf'
-      fi 
+    #DNF5 works fine, will drop dnf.conf related configs
+    #if [ $(cat /etc/dnf/dnf.conf | grep fastestmirror=true) ]
+    #  then
+    #      echo ""
+    #  else
+    #      sudo sh -c 'echo fastestmirror=true >> /etc/dnf/dnf.conf' #Looks for the lowest ping, not necessarily the best bandwith
+    #      sudo sh -c 'echo max_parallel_downloads=10 >> /etc/dnf/dnf.conf'
+    #  fi 
     sudo systemctl disable NetworkManager-wait-online.service
     caution "Installing RPM FUsion"
-    sudo $pkgm $argInstall https://mirror.fcix.net/rpmfusion/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://opencolo.mm.fcix.net/rpmfusion/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm fedora-workstation-repositories dnf-plugins-core -y && sudo $pkgm update -y && sudo $pkgm install $essentialPackages -y
-    updateGrub
-    #swapCodecsFedora
+    if [ -f /etc/yum.repos.d/rpmfusion-free.repo ] || [ -f /etc/yum.repos.d/rpmfusion-nonfree.repo ]; then
+        caution "RPM Fusion is installed already, moving on"
+        else
+        sudo $pkgm $argInstall https://mirror.fcix.net/rpmfusion/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://opencolo.mm.fcix.net/rpmfusion/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm fedora-workstation-repositories dnf-plugins-core -y && sudo $pkgm update -y && sudo $pkgm install $essentialPackages -y
+        updateGrub
+    fi
     ;;
     *Nobara*|*Risi*|*Ultramarine*)
     sudo $pkgm update -y && sudo $pkgm install $essentialPackages -y
@@ -835,7 +835,9 @@ gamingPackages="steam goverlay lutris"
 #Multimedia pacakges allow the end user to use the most
 multimediaPackages="gimp krita blender kdenlive gstreamer* gscan2pdf python3-qt* python3-vapoursynth qt5-qtbase-devel vapoursynth-* libqt5* libass*" #qt5-qtbase-devel python3-qt5
 developmentPackages="gcc cargo npm python3-pip nodejs golang conda*"
-virtconPackages="podman distrobox bridge-utils"
+virtconPackages="podman distrobox bridge-utils virt-manager virt-top"
+virtconPackagesRPM="@virtualization libvirt libvirt-devel virt-install qemu-kvm qemu-img"
+virtconPackagesDebian="libvirt-daemon-system libvirt-clients virtinst"
 supportPackages="remmina keepassxc bless xxd" #stacer barrier bleachbit filezilla
 amdPackages="ocl-icd-dev* opencl-headers libdrm-dev* rocm*"
 nvidiaPackages="vdpauinfo libva-utils vulkan nvidia-xconfig xorg-x11-drv-nvidia-cuda libva-vdpau-driver" #libva-vdpau-driver kernel-headers kernel-devel xorg-x11-drv-nvidia xorg-x11-drv-nvidia-libs xorg-x11-drv-nvidia-libs.i686 xorg-x11-drv-nvidia-cuda xorg-x11-drv-nvidia-cuda-libs
@@ -855,9 +857,7 @@ niriPackages="niri waybar" #Still on the works
 # Specific GNU/Linux Packages
 intelPackages="intel-media-*driver"
 essentialPackagesRPM="NetworkManager-tui xkill tigervnc-server dhcp-server"
-essentialPackagesDebian="software-properties-common build-essential manpages-dev net-tools x11-utils tigervnc-standalone-server tigervnc-common tightvncserver isc-dhcp-server" #libncurses5-dev libncursesw5-dev libgtkglext1 linux-headers-amd64 linux-image-amd64 
-virtconPackagesRPM="@virtualization libvirt libvirt-devel virt-install qemu-kvm qemu-img virt-manager"
-virtconPackagesDebian="libvirt-daemon-system libvirt-clients"
+essentialPackagesDebian="software-properties-common build-essential manpages-dev net-tools x11-utils tigervnc-standalone-server tigervnc-common tightvncserver isc-dhcp-server" #libncurses5-dev libncursesw5-dev libgtkglext1 linux-headers-amd64 linux-image-amd64
 amdPackagesRPM="xorg-x11-drv-amdgpu systemd-devel" #xorg-x11-dr*
 fedoraPackages="mesa-va-drivers-freeworld mesa-vdpau-drivers-freeworld libavcodec-freeworld dnf-plugin-system-upgrade"
 rhelPackages="mesa-dri-drivers libavcodec*" #mesa-vdpau-drivers
