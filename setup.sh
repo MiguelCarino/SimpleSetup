@@ -107,6 +107,7 @@ if [[ -f /etc/os-release ]]; then
     preFlags="-f"
     postFlags="-y -m"
     essentialPackages="$essentialPackages $essentialPackagesDebian"
+    basicSystemPackages="$basicSystemPackages $basicSystemPackagesDebian"
     amdPackages="$amdPackages $amdPackagesDebian"
     nvidiaPackages="$nvidiaPackages $nvidiaPackagesDebian"
     virtconPackages="$virtconPackages $virtconPackagesDebian"
@@ -828,7 +829,7 @@ essentialPackages="pciutils git cmake wget nano curl jq mesa-va-drivers mesa-vdp
 serverPackages="netcat-traditional xserver-xorg-video-dummy openssh-server cockpit expect ftp vsftpd sshpass"
 #Basic packages will allow endusers to perform basic activities or get basic features
 basicUserPackages="gedit yt-dlp thunderbird mpv ffmpeg ffmpegthumbnailer tumbler clamav clamtk libreoffice obs-studio epiphany transmission fontawesome-fonts-all pavucontrol vnstat feh"
-basicSystemPackages="wine xrdp htop powertop fastfetch tldr *gtkglext* libxdo-* ncdu scrot xclip"
+basicSystemPackages="wine xrdp htop powertop tldr *gtkglext* libxdo-* ncdu scrot xclip"
 basicDesktopEnvironmentPackages="nautilus fontawesome-fonts"
 #Gaming packages will allow enduseres to play on the most popular platforms
 gamingPackages="steam goverlay lutris"
@@ -856,7 +857,8 @@ hyprlandPackages="hyprland xorg-x11-server-Xwayland waybar xdg-desktop-portal-hy
 niriPackages="niri waybar" #Still on the works
 # Specific GNU/Linux Packages
 intelPackages="intel-media-*driver"
-essentialPackagesRPM="NetworkManager-tui xkill tigervnc-server dhcp-server"
+basicSystemPackagesDebian="neofetch"
+essentialPackagesRPM="NetworkManager-tui xkill tigervnc-server dhcp-server fastfetch"
 essentialPackagesDebian="software-properties-common build-essential manpages-dev net-tools x11-utils tigervnc-standalone-server tigervnc-common tightvncserver isc-dhcp-server" #libncurses5-dev libncursesw5-dev libgtkglext1 linux-headers-amd64 linux-image-amd64
 amdPackagesRPM="xorg-x11-drv-amdgpu systemd-devel" #xorg-x11-dr*
 fedoraPackages="mesa-va-drivers-freeworld mesa-vdpau-drivers-freeworld libavcodec-freeworld dnf-plugin-system-upgrade"
