@@ -190,13 +190,13 @@ load_dictionary() {
 }
 displayMenu ()
 {
-  clear
+  #clear
   phase=tech_setup
   load_dictionary
   read optionmenu
   case $optionmenu in
     1)
-        clear
+        #clear
         caution "Tech Setup is starting..."
         techSetup
         ;;
@@ -599,7 +599,7 @@ distroDemo ()
 purposeMenu ()
 {
   phase=purpose_setup
-  clear
+  #clear
   load_dictionary
   read optionmenu
   case $optionmenu in
