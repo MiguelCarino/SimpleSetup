@@ -124,8 +124,22 @@ if [[ -f /etc/os-release ]]; then
     *Arch*)
     caution "Arch is not supported, and you wouldn't be using scripts anyway."
     ;;
-    *Opensuse*)
-    caution "openSUSE is not supported (yet)."
+    *openSUSE*)
+    caution "openSUSE is being tested."
+    pkgm=zypper
+    pkgext=rpm
+    argInstall=install
+    argUpdate=refresh
+    preFlags="--no-refresh"
+    postFlags="-y"
+    essentialPackages="$essentialPackages $essentialPackagesOpenSUSE"
+    basicSystemPackages="$basicSystemPackages"
+    amdPackages="$amdPackages $amdPackagesOpenSUSE"
+    nvidiaPackages="$nvidiaPackages $nvidiaPackagesOpenSUSE"
+    virtconPackages="$virtconPackages $virtconPackagesOpenSUSE"
+    desktopOption=5
+    grubPath="/etc/default/grub"
+    grubUpdate="grub2-mkconfig -o /boot/grub2/grub.cfg"
     ;;
     *)
     echo "2"
@@ -415,7 +429,7 @@ sharedFolder ()
 }
 installproton() {
   COMPATIBILITY_DIR="$HOME/.steam/root/compatibilitytools.d"
-  LATEST_VERSION=14
+  LATEST_VERSION=21
 
   if [ -d "$COMPATIBILITY_DIR" ]; then
     CURRENT_VERSION=$(ls "$COMPATIBILITY_DIR" | grep -Eo '[0-9]+' | sort -nr | head -n 1)
@@ -427,7 +441,7 @@ installproton() {
     mkdir -p "$COMPATIBILITY_DIR"
   fi
 
-  for VERSION in {26..20}; do
+  for VERSION in {28..21}; do
     if [ "$CURRENT_VERSION" -eq "$VERSION" ]; then
       continue
     fi
@@ -514,7 +528,7 @@ gpgkey=https://keys.anydesk.com/repos/RPM-GPG-KEY
 EOF
     ;;
 
-    *Opensuse*)
+    *openSUSE*)
     cat > AnyDesk-OpenSUSE.repo << "EOF" 
 [anydesk]
 name=AnyDesk OpenSUSE - stable
@@ -735,7 +749,7 @@ techSetup ()
     *Arch*)
     caution "Arch"
     ;;
-    *Opensuse*)
+    *openSUSE*)
     caution "openSUSE"
     ;;
     *)
@@ -830,6 +844,7 @@ serverPackages="netcat-traditional xserver-xorg-video-dummy openssh-server cockp
 #Basic packages will allow endusers to perform basic activities or get basic features
 basicUserPackages="gedit yt-dlp thunderbird mpv ffmpeg ffmpegthumbnailer tumbler clamav clamtk libreoffice obs-studio epiphany transmission fontawesome-fonts-all pavucontrol vnstat feh"
 basicSystemPackages="wine xrdp htop powertop tldr *gtkglext* libxdo-* ncdu scrot xclip"
+basicSystemPackagesOpenSUSE=""
 basicDesktopEnvironmentPackages="nautilus fontawesome-fonts"
 #Gaming packages will allow enduseres to play on the most popular platforms
 gamingPackages="steam goverlay lutris"
@@ -839,19 +854,25 @@ developmentPackages="gcc cargo npm python3-pip nodejs golang conda*"
 virtconPackages="podman distrobox bridge-utils virt-manager virt-top"
 virtconPackagesRPM="@virtualization libvirt libvirt-devel virt-install qemu-kvm qemu-img"
 virtconPackagesDebian="libvirt-daemon-system libvirt-clients virtinst"
+virtconPackagesOpenSUSE=""
 supportPackages="remmina keepassxc bless xxd" #stacer barrier bleachbit filezilla
 amdPackages="ocl-icd-dev* opencl-headers libdrm-dev* rocm*"
 nvidiaPackages="vdpauinfo libva-utils vulkan nvidia-xconfig xorg-x11-drv-nvidia-cuda libva-vdpau-driver" #libva-vdpau-driver kernel-headers kernel-devel xorg-x11-drv-nvidia xorg-x11-drv-nvidia-libs xorg-x11-drv-nvidia-libs.i686 xorg-x11-drv-nvidia-cuda xorg-x11-drv-nvidia-cuda-libs
-xfcePackages="task-xfce-desktop @xfce-desktop-environment @Xfce @base-x"
-gnomePackages="task-gnome-desktop @workstation-product-environment @gnome @base-x gnome-extensions"
-kdePackages="task-kde-desktop @kde-desktop-environment @kde @base-x"
-lxqtPackages="task-lxqt-desktop @lxqt-desktop-environment"
-cinnamonPackages="task-cinnamon-desktop @cinnamon-desktop-environment"
-matePackages="task-mate-desktop @mate-desktop-environment"
-i3Packages="i3 @i3-desktop-environment i3"
+nvidiaPackagesRPM="akmod-nvidia nvidia-vaapi-driver"
+nvidiaPackagesDebian="nvidia-driver* nvidia-opencl* nvidia-xconfig nvidia-vdpau-driver nvidia-vulkan*"
+nvidiaPackagesUbuntu="nvidia-driver-560"
+nvidiaPackagesOpenSUSE=""
+xfcePackages="task-xfce-desktop @xfce-desktop-environment patterns-openSUSE-xfce @Xfce @base-x"
+gnomePackages="task-gnome-desktop @workstation-product-environment patterns-openSUSE-gnome @gnome @base-x gnome-extensions"
+kdePackages="task-kde-desktop @kde-desktop-environment patterns-kde-kde @kde @base-x patterns-openSUSE-kde"
+lxqtPackages="task-lxqt-desktop @lxqt-desktop-environment patterns-lxqt-lxqt"
+cinnamonPackages="task-cinnamon-desktop @cinnamon-desktop-environment patterns-cinnamon-cinnamon"
+matePackages="task-mate-desktop @mate-desktop-environment patterns-mate-mate"
+i3Packages="i3 @i3-desktop-environment $i3openSUSE"
+i3openSUSE="i3 dmenu i3status"
 i3RicingPackages="rofi i3blocks picom kitty nitrogen lxappearance"
 openboxPackages="openbox @basic-desktop-environment @openbox @base-x"
-budgiePackages="budgie-desktop budgie-desktop @budgie @base-x"
+budgiePackages="budgie-desktop budgie-desktop budgie-desktop @budgie @base-x"
 swayPackages="sway sway @sway @base-x"
 hyprlandPackages="hyprland xorg-x11-server-Xwayland waybar xdg-desktop-portal-hyprland hyprland-autoname-workspaces hyprpaper libdisplay-info libinput libliftoff hyprshot" #Still on the works
 niriPackages="niri waybar" #Still on the works
@@ -860,14 +881,12 @@ intelPackages="intel-media-*driver"
 basicSystemPackagesDebian="neofetch"
 essentialPackagesRPM="NetworkManager-tui xkill tigervnc-server dhcp-server fastfetch"
 essentialPackagesDebian="software-properties-common build-essential manpages-dev net-tools x11-utils tigervnc-standalone-server tigervnc-common tightvncserver isc-dhcp-server" #libncurses5-dev libncursesw5-dev libgtkglext1 linux-headers-amd64 linux-image-amd64
+essentialPackagesOpenSUSE=""
 amdPackagesRPM="xorg-x11-drv-amdgpu systemd-devel" #xorg-x11-dr*
+amdPackagesDebian="xserver-xorg-video-amdgpu libsystemd-dev"
+amdPackagesOpenSUSE=""
 fedoraPackages="mesa-va-drivers-freeworld mesa-vdpau-drivers-freeworld libavcodec-freeworld dnf-plugin-system-upgrade"
 rhelPackages="mesa-dri-drivers libavcodec*" #mesa-vdpau-drivers
-amdPackagesDebian="xserver-xorg-video-amdgpu libsystemd-dev"
-nvidiaPackagesRPM="akmod-nvidia nvidia-vaapi-driver"
-nvidiaPackagesDebian="nvidia-driver* nvidia-opencl* nvidia-xconfig nvidia-vdpau-driver nvidia-vulkan*"
-nvidiaPackagesUbuntu="nvidia-driver-560"
-nvidiaPackagesArch="nvidia-open"
 astronomyPackages="astropy kstars celestia siril "
 compneuroPackages="neuron "
 # Corporate Packages
