@@ -211,7 +211,7 @@ displayMenu ()
         graphicDrivers
         ;;
     5)
-        installproton
+        caution "protonGE has been removed"
         ;;
     6)
         caution "Running distro demo, still on the works"
@@ -612,7 +612,6 @@ purposeMenu ()
     2)
         caution $1
         sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $gamingPackages $postFlags
-        installproton
         ;;
     #Corporate
     3)
@@ -934,9 +933,6 @@ detectArgument() {
             ;;
         svp)
             installSVP
-            ;;
-        protonge)
-            installproton
             ;;
         simple)
             techSetup
