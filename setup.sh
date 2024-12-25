@@ -722,7 +722,7 @@ techSetup ()
     info "Installing Essential Packages"
     sudo $pkgm install $essentialPackages $postFlags
     ;;
-    *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*)
+    *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*|*Pop!_OS*)
     sudo $pkgm update -y && sudo $pkgm upgrade -y
     sudo $pkgm install $essentialPackages -y
     ;;
