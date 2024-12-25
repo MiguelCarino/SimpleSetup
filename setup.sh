@@ -365,7 +365,7 @@ flathubEnable ()
     *Red*)
     sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
     ;;
-    *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*)
+    *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*|*Pop!_OS*)
     sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
     ;;
     *)
@@ -456,7 +456,7 @@ installproton() {
 #    enableMicrosoft="sudo $pkgm config-manager --add-repo https://packages.microsoft.com/yumrepos/edge && sudo mv /etc/yum.repos.d/packages.microsoft.com_yumrepos_edge.repo /etc/yum.repos.d/microsoft-edge-stable.repo && sudo $pkgm config-manager --add-repo https://packages.microsoft.com/yumrepos/vscode && curl https://packages.microsoft.com/config/rhel/7/prod.repo | sudo tee /etc/yum.repos.d/microsoft.repo"
 #    $addMicrosoft && $enableMicrosoft
 #    ;;
-#    *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*)
+#    *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*|*Pop!_OS*)
 #    if [[ "$NAME" == "Debian" ]]; then
 #            addMicrosoft="curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -"
 #            else
@@ -472,7 +472,7 @@ niriRepo ()
     *Fedora*|*Nobara*|*Risi*|*Ultramarine*)
         sudo $pkgm copr enable yalter/niri -y
     ;;
-    *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*)
+    *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*|*Pop!_OS*)
         caution "Still not supported."
     ;;
     *)
@@ -526,7 +526,7 @@ EOF
 
 $pkgm addrepo --repo AnyDesk-OpenSUSE.repo
     ;;
-    *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*)
+    *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*|*Pop!_OS*)
         wget -qO - https://keys.anydesk.com/repos/DEB-GPG-KEY | apt-key add -
         echo "deb http://deb.anydesk.com/ all main" > /etc/apt/sources.list.d/anydesk-stable.list
         sudo $pkgm $argUpdate
@@ -543,7 +543,7 @@ librewolfRepo ()
         sudo $pkgm config-manager --add-repo https://repo.librewolf.net/librewolf.repo $postFlags
         sudo $pkgm $argInstall librewolf $postFlags
     ;;
-    *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*)
+    *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*|*Pop!_OS*)
         sudo $pkgm $argUpdate update && sudo $pkgm $argInstall extrepo $postFlags
         sudo extrepo enable librewolf
         sudo $pkgm $argUpdate && sudo $pkgm $argInstall librewolf $postFlags
