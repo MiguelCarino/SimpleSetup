@@ -2,8 +2,9 @@
 *Simple setup* scripts (not short though) **for Linux and Windows systems**. So the user doesn't need to worry about choices besides their actual use case.  
 **Systems supported:**  
 *Linux:*  
-- **Debian** and derivatives with package name compatibility.  
+- **Debian** and **Ubuntu** derivatives with package name compatibility.
 - **Fedora** and derivatives with package name compatibility.  
+- **openSUSE** Leap. Currently working on it.
 
 *Windows:*  
 - **Windows 10**  
@@ -43,18 +44,9 @@ bash <(curl -s https://carino.systems/setup.sh) **argument**\
 - intel  
   Installs Intel graphic drivers.
 
-- aspeed  
-  Installs Aspeed graphic drivers.
-
-- matrox  
-  Installs Matrox graphic drivers.
-
-### Special Installations
+### Special Programs
 - svp
   Installs Smooth Video Project for enhanced video playback.
-
-- protonge  
-  Installs the latest version of Proton GE for improved gaming performance on Linux.
 
 - distrobox  
   Installs Distrobox containers for running multiple Linux distributions seamlessly.
@@ -62,3 +54,13 @@ bash <(curl -s https://carino.systems/setup.sh) **argument**\
 ### Desktop Environment Setup
 - desktop  
   Opens a menu to select and install a Desktop Environment from a curated list.
+
+
+## Known Issues
+- **Ubuntu derivatives like Pop_OS! have package name conflicts**
+
+
+### Removed functions (code still available)
+- protongeinstall
+  Installs the latest version of Proton GE for improved gaming performance on Linux. Removed due to proton experimental being good enough.
+- matrox and aspeed gpu drivers
