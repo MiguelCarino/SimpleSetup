@@ -130,7 +130,7 @@ if [[ -f /etc/os-release ]]; then
     pkgext=rpm
     argInstall=install
     argUpdate=refresh
-    preFlags="--non-interactive"
+    preFlags="-n"
     postFlags=""
     essentialPackages="$essentialPackages $essentialPackagesOpenSUSE"
     basicSystemPackages="$basicSystemPackages"
@@ -607,40 +607,44 @@ purposeMenu ()
     1) 
         caution $1
         sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
+        sudo flatpak install $flatpakRepo $basicFlatpak $googleFlatpak $microsoftFlatpak $supportFlatpak $remoteSupportFlatpak -y
         ;;
     #Gaming
     2)
         caution $1
         sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $gamingPackages $postFlags
+        sudo flatpak install $flatpakRepo $basicFlatpak $gamingFlatpak $googleFlatpak $microsoftFlatpak $supportFlatpak $remoteSupportFlatpak -y
         ;;
     #Corporate
     3)
         caution $1
         sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $ciscoPackages $postFlags
-        sudo flatpak install $flatpakRepo $googleFlatpak $microsoftFlatpak $remoteSupportFlatpak -y
+        sudo flatpak install $flatpakRepo $googleFlatpak $microsoftFlatpak $supportFlatpak $remoteSupportFlatpak -y
         ;;
     #Corporate (just Microsoft)
     4)
         caution $1
         sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
-        sudo flatpak install $flatpakRepo $microsoftFlatpak $remoteSupportFlatpak -y
+        sudo flatpak install $flatpakRepo $basicFlatpak $microsoftFlatpak $supportFlatpak $remoteSupportFlatpak -y
         ;;
     #Corporate (just Google)
     5)
         caution $1
         sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
-        sudo flatpak install $flatpakRepo $googleFlatpak $remoteSupportFlatpak -y
+        sudo flatpak install $flatpakRepo $basicFlatpak $googleFlatpak $supportFlatpak $remoteSupportFlatpak -y
         ;;
     #Development
     6)
         caution $1
         sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $developmentPackages $virtconPackages $postFlags
+        sudo flatpak install $flatpakRepo $basicFlatpak $googleFlatpak $developmentFlatpak $supportFlatpak $remoteSupportFlatpak -y
         distroboxContainers
         ;;
     #Astronomy
     7)
         caution $1
         sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
+        sudo flatpak install $flatpakRepo $basicFlatpak $googleFlatpak $astronomyFlatpak $supportFlatpak $remoteSupportFlatpak -y
         ;;
     #Comp-Neuro
     8)
@@ -844,20 +848,20 @@ essentialPackages="pciutils git cmake wget nano curl jq mesa-va-drivers mesa-vdp
 #Server packages ensure SSH, FTP and RDP connectivity, so advanced users can configure and use the server remotely
 serverPackages="netcat-traditional xserver-xorg-video-dummy openssh-server cockpit expect ftp vsftpd sshpass"
 #Basic packages will allow endusers to perform basic activities or get basic features
-basicUserPackages="gedit yt-dlp thunderbird mpv ffmpeg ffmpegthumbnailer tumbler clamav clamtk libreoffice obs-studio epiphany transmission pavucontrol vnstat feh" #fontawesome-fonts-all
+basicUserPackages="gedit yt-dlp ffmpeg ffmpegthumbnailer tumbler libreoffice pavucontrol vnstat feh" #fontawesome-fonts-all epiphany # Flatpak - clamav clamtk obs-studio transmission
 basicSystemPackages="wine xrdp htop powertop tldr *gtkglext* libxdo-* ncdu scrot xclip"
 basicSystemPackagesOpenSUSE=""
 basicDesktopEnvironmentPackages="nautilus fontawesome-fonts"
 #Gaming packages will allow enduseres to play on the most popular platforms
-gamingPackages="steam goverlay lutris"
+gamingPackages="goverlay"
 #Multimedia pacakges allow the end user to use the most
-multimediaPackages="gimp krita blender kdenlive gstreamer* gscan2pdf python3-qt* python3-vapoursynth qt5-qtbase-devel vapoursynth-* libqt5* libass*" #qt5-qtbase-devel python3-qt5
+multimediaPackages="gstreamer* gscan2pdf python3-qt* python3-vapoursynth qt5-qtbase-devel vapoursynth-* libqt5* libass*" #qt5-qtbase-devel python3-qt5 #Flatpak - gimp krita blender kdenlive
 developmentPackages="gcc cargo npm python3-pip nodejs golang conda*"
 virtconPackages="podman distrobox bridge-utils virt-manager virt-top"
 virtconPackagesRPM="@virtualization libvirt libvirt-devel virt-install qemu-kvm qemu-img"
 virtconPackagesDebian="libvirt-daemon-system libvirt-clients virtinst"
 virtconPackagesOpenSUSE=""
-supportPackages="remmina keepassxc xxd" #stacer barrier bleachbit filezilla bless
+supportPackages="xxd" #stacer barrier bleachbit filezilla bless #Flatpak - remmina bless
 amdPackages="ocl-icd-dev* opencl-headers libdrm-dev* rocm*"
 nvidiaPackages="vdpauinfo libva-utils vulkan nvidia-xconfig xorg-x11-drv-nvidia-cuda libva-vdpau-driver" #libva-vdpau-driver kernel-headers kernel-devel xorg-x11-drv-nvidia xorg-x11-drv-nvidia-libs xorg-x11-drv-nvidia-libs.i686 xorg-x11-drv-nvidia-cuda xorg-x11-drv-nvidia-cuda-libs
 nvidiaPackagesRPM="akmod-nvidia nvidia-vaapi-driver"
@@ -889,12 +893,12 @@ amdPackagesDebian="xserver-xorg-video-amdgpu libsystemd-dev"
 amdPackagesOpenSUSE=""
 fedoraPackages="mesa-va-drivers-freeworld mesa-vdpau-drivers-freeworld libavcodec-freeworld dnf-plugin-system-upgrade"
 rhelPackages="mesa-dri-drivers libavcodec*" #mesa-vdpau-drivers
-astronomyPackages="astropy kstars celestia siril "
+astronomyPackages="astropy celestia" #Flatpak - kstars siril
 compneuroPackages="neuron "
 # Corporate Packages
 #remoteSupportPackages="anydesk"
 rustdesk="https://github.com/rustdesk/rustdesk/releases/download/1.3.2/rustdesk-1.3.2-0.x86_64.rpm https://github.com/rustdesk/rustdesk/releases/download/1.3.2/rustdesk-1.3.2-x86_64.deb" #Taken from https://github.com/rustdesk/rustdesk/releases/
-microsoftPackages="microsoft-edge-stable code" #powershell
+#microsoftPackages="microsoft-edge-stable code" #powershell
 zoom="https://zoom.us/client/latest/zoom_x86_64.rpm"
 #googlePackages="https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm"
 ciscoPackages="https://binaries.webex.com/WebexDesktop-CentOS-Official-Package/Webex.rpm vpnc"
@@ -902,11 +906,16 @@ ciscoPackages="https://binaries.webex.com/WebexDesktop-CentOS-Official-Package/W
 languagePackages="fcitx5 fcitx5-mozc"
 carinoPackages="lpf-spotify-client telegram-desktop texlive-scheme-full"
 # Flatpak packages
+basicFlatpak="org.mozilla.Thunderbird io.mpv.Mpv com.gitlab.davem.ClamTk com.obsproject.Studio com.transmissionbt.Transmission"
+multimediaFlatpak="org.gimp.GIMP org.kde.krita org.blender.Blender org.kde.kdenlive "
+gamingFlatpak="com.valvesoftware.Steam net.davidotek.pupgui2 com.heroicgameslauncher.hgl com.discordapp.Discord net.lutris.Lutris"
+developmentFlatpak="io.podman_desktop.PodmanDesktop"
 googleFlatpak="com.google.Chrome"
 microsoftFlatpak="com.microsoft.Edge com.visualstudio.code com.github.IsmaelMartinez.teams_for_linux"
 corporateFlatpak="org.onlyoffice.desktopeditors "
-supportFlatpak="com.anydesk.Anydesk com.github.tchx84.Flatseal"
-remoteSupportFlatpak="com.anydesk.Anydesk"
+supportFlatpak="com.github.tchx84.Flatseal org.keepassxc.KeePassXC org.remmina.Remmina com.github.afrantzis.Bless"
+remoteSupportFlatpak="com.anydesk.Anydesk com.rustdesk.RustDesk"
+astronomyFlatpak="org.kde.kstars org.siril.Siril org.stellarium.Stellarium"
 # Pending packages for review
 # libadwaita-devel libXtst-devel libX11-devel samba samba-client samba-common minigalaxy
 detectArgument() {
