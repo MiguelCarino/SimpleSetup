@@ -724,7 +724,7 @@ techSetup ()
     fi
     ;;
     *Nobara*|*Risi*|*Ultramarine*)
-    sudo $pkgm update -y && sudo $pkgm install $essentialPackages -y
+    sudo $pkgm $argUpdate -y && sudo $pkgm install $essentialPackages -y
     updateGrub
     ;;
     *Red*)
@@ -734,11 +734,11 @@ techSetup ()
     sudo subscription-manager repos --enable codeready-builder-for-rhel-9-$(arch)-rpms
     sudo $pkgm $argInstall https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm -y
     info "Installing Essential Packages"
-    sudo $pkgm install $essentialPackages $postFlags
+    sudo $pkgm $argInstall $essentialPackages $postFlags
     ;;
     *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*|*Pop!_OS*)
-    sudo $pkgm update -y && sudo $pkgm upgrade -y
-    sudo $pkgm install $essentialPackages -y
+    sudo $pkgm $argUpdate -y && sudo $pkgm upgrade -y
+    sudo $pkgm $argInstall $essentialPackages -y
     ;;
     *Gentoo*)
     caution "Gentoo"
@@ -751,6 +751,9 @@ techSetup ()
     ;;
     *openSUSE*)
     caution "openSUSE"
+    sudo $pkgm $argUpdate -y && sudo $pkgm update -y
+    info "Installing Essential Packages"
+    sudo $pkgm $argInstall $essentialPackages -y
     ;;
     *)
     echo "2"
