@@ -131,7 +131,7 @@ if [[ -f /etc/os-release ]]; then
     argInstall=install
     argUpdate=refresh
     preFlags=""
-    postFlags="--force"
+    postFlags="--force --non-interactive"
     essentialPackages="$essentialPackages $essentialPackagesOpenSUSE"
     basicSystemPackages="$basicSystemPackages"
     amdPackages="$amdPackages $amdPackagesOpenSUSE"
