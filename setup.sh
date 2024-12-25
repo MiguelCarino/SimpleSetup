@@ -845,7 +845,7 @@ essentialPackages="pciutils git cmake wget nano curl jq mesa-va-drivers mesa-vdp
 #Server packages ensure SSH, FTP and RDP connectivity, so advanced users can configure and use the server remotely
 serverPackages="netcat-traditional xserver-xorg-video-dummy openssh-server cockpit expect ftp vsftpd sshpass"
 #Basic packages will allow endusers to perform basic activities or get basic features
-basicUserPackages="gedit yt-dlp thunderbird mpv ffmpeg ffmpegthumbnailer tumbler clamav clamtk libreoffice obs-studio epiphany transmission fontawesome-fonts-all pavucontrol vnstat feh"
+basicUserPackages="gedit yt-dlp thunderbird mpv ffmpeg ffmpegthumbnailer tumbler clamav clamtk libreoffice obs-studio epiphany transmission pavucontrol vnstat feh" #fontawesome-fonts-all
 basicSystemPackages="wine xrdp htop powertop tldr *gtkglext* libxdo-* ncdu scrot xclip"
 basicSystemPackagesOpenSUSE=""
 basicDesktopEnvironmentPackages="nautilus fontawesome-fonts"
