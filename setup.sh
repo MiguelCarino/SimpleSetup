@@ -99,7 +99,7 @@ if [[ -f /etc/os-release ]]; then
     grubUpdate="grub2-mkconfig -o /boot/grub2/grub.cfg"
 
     ;;
-    *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*|*pop*)
+    *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*|*Pop!_OS*)
     pkgm=apt
     pkgext=deb
     argInstall=install
