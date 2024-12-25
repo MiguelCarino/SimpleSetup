@@ -130,8 +130,8 @@ if [[ -f /etc/os-release ]]; then
     pkgext=rpm
     argInstall=install
     argUpdate=refresh
-    preFlags=""
-    postFlags="--force --non-interactive"
+    preFlags="--non-interactive"
+    postFlags=""
     essentialPackages="$essentialPackages $essentialPackagesOpenSUSE"
     basicSystemPackages="$basicSystemPackages"
     amdPackages="$amdPackages $amdPackagesOpenSUSE"
@@ -750,9 +750,9 @@ techSetup ()
     ;;
     *openSUSE*)
     caution "openSUSE"
-    sudo $pkgm $argUpdate $postFlags && sudo $pkgm update $postFlags
+    sudo $pkgm $preFlags $argUpdate $postFlags && sudo $pkgm update $postFlags
     info "Installing Essential Packages"
-    sudo $pkgm $argInstall $essentialPackages $postFlags
+    sudo $pkgm $preFlags $argInstall $essentialPackages $postFlags
     ;;
     *)
     echo "2"
