@@ -750,7 +750,7 @@ techSetup ()
     ;;
     *openSUSE*)
     caution "openSUSE"
-    sudo $pkgm $preFlags $argUpdate $postFlags && sudo $pkgm update $postFlags
+    sudo $pkgm $preFlags $argUpdate $postFlags && sudo $pkgm $preFlags update $postFlags
     info "Installing Essential Packages"
     sudo $pkgm $preFlags $argInstall $essentialPackages $postFlags
     ;;
