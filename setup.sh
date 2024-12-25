@@ -130,8 +130,8 @@ if [[ -f /etc/os-release ]]; then
     pkgext=rpm
     argInstall=install
     argUpdate=refresh
-    preFlags="--no-refresh"
-    postFlags="-y"
+    preFlags=""
+    postFlags="--force"
     essentialPackages="$essentialPackages $essentialPackagesOpenSUSE"
     basicSystemPackages="$basicSystemPackages"
     amdPackages="$amdPackages $amdPackagesOpenSUSE"
