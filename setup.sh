@@ -99,7 +99,7 @@ if [[ -f /etc/os-release ]]; then
     grubUpdate="grub2-mkconfig -o /boot/grub2/grub.cfg"
 
     ;;
-    *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*)
+    *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*|*pop*)
     pkgm=apt
     pkgext=deb
     argInstall=install
@@ -410,7 +410,7 @@ sharedFolder ()
             read srvuser2o mount.cifs //$server/$folder /home/$(whoami)/WinFiles/ -o user=$srvuser
             echo "Windows Shared Folder has been successfully mounted!"
         else
-            echo -e "No Windows shared folders were added\n--------------------------------------"
+            info "No Windows shared folders were added\n--------------------------------------"
         fi
 }
 installproton() {
