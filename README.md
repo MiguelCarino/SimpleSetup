@@ -54,11 +54,9 @@ bash <(curl -s https://carino.systems/setup.sh) **argument**\
 ### Desktop Environment Setup
 - desktop  
   Opens a menu to select and install a Desktop Environment from a curated list.
-
-
+```
 ## Known Issues
 - **Ubuntu derivatives like Pop_OS! have package name conflicts**
-
 
 ### Removed functions (code still available)
 - protongeinstall
