@@ -7,14 +7,18 @@
 - **openSUSE** Leap and Tumbleweed. Currently working on it.
 
 Just open your Terminal and paste\
+```bash
 bash <(curl -s https://carino.systems/setup.sh)
+```
 
 *Windows:*  
 - **Windows 10**  
 - **Windows 11**
 
 Just open **Terminal** and paste\
+```bash
 iwr -useb https://carino.systems/setup.ps1 | iex
+```
 
 ## Main Features
 - **Automatic distro identification**
