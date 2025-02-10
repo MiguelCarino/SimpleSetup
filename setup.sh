@@ -51,6 +51,7 @@ if [[ -f /etc/os-release ]]; then
     fi
     case $NAME in
     *Fedora*|*Nobara*|*Risi*|*Ultramarine*)
+    family="fedora"
     pkgm=dnf
     pkgext=rpm
     argInstall=install
@@ -61,13 +62,13 @@ if [[ -f /etc/os-release ]]; then
     amdPackages="$amdPackages $amdPackagesRPM"
     nvidiaPackages="$nvidiaPackages $nvidiaPackagesRPM"
     virtconPackages="$virtconPackages $virtconPackagesRPM"
-    desktopOption=2
     grubPath="/etc/default/grub"
     grubUpdate="grub2-mkconfig -o /boot/grub2/grub.cfg"
     flatpakRepo="fedora"
     ;;
     *Red*)
     caution "RHEL"
+    family=rhel
     pkgm=dnf
     pkgext=rpm
     argInstall=install
@@ -78,12 +79,12 @@ if [[ -f /etc/os-release ]]; then
     amdPackages="$amdPackages $rhelPackages $amdPackagesRPM"
     nvidiaPackages="$nvidiaPackages $nvidiaPackagesRPM"
     virtconPackages="$virtconPackages $virtconPackagesRPM"
-    desktopOption="3,4"
     grubPath="/etc/default/grub"
     grubUpdate="grub2-mkconfig -o /boot/grub2/grub.cfg"
     ;;
     *CentOS*)
     caution "CentOS"
+    family=centos
     pkgm=dnf
     pkgext=rpm
     argInstall=install
@@ -94,12 +95,12 @@ if [[ -f /etc/os-release ]]; then
     amdPackages="$amdPackages $amdPackagesRPM"
     nvidiaPackages="$nvidiaPackages $nvidiaPackagesRPM"
     virtconPackages="$virtconPackages $virtconPackagesRPM"
-    desktopOption=2
     grubPath="/etc/default/grub"
     grubUpdate="grub2-mkconfig -o /boot/grub2/grub.cfg"
 
     ;;
     *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*|*Pop!_OS*)
+    family=debian
     pkgm=apt
     pkgext=deb
     argInstall=install
@@ -111,7 +112,6 @@ if [[ -f /etc/os-release ]]; then
     amdPackages="$amdPackages $amdPackagesDebian"
     nvidiaPackages="$nvidiaPackages $nvidiaPackagesDebian"
     virtconPackages="$virtconPackages $virtconPackagesDebian"
-    desktopOption=1
     grubPath="/etc/default/grub"
     grubUpdate="update-grub"
     ;;
@@ -126,6 +126,7 @@ if [[ -f /etc/os-release ]]; then
     ;;
     *openSUSE*)
     caution "openSUSE is being tested."
+    family=opensuse
     pkgm=zypper
     pkgext=rpm
     argInstall=install
@@ -137,7 +138,6 @@ if [[ -f /etc/os-release ]]; then
     amdPackages="$amdPackages $amdPackagesOpenSUSE"
     nvidiaPackages="$nvidiaPackages $nvidiaPackagesOpenSUSE"
     virtconPackages="$virtconPackages $virtconPackagesOpenSUSE"
-    desktopOption=5
     grubPath="/etc/default/grub"
     grubUpdate="grub2-mkconfig -o /boot/grub2/grub.cfg"
     ;;
@@ -245,64 +245,90 @@ desktopenvironmentMenu ()
   read option
   case $option in
     1)
-        gnomePackages="$(echo "$gnomePackages" | awk '{print $desktopOption}')"
-        sudo $pkgm $argInstall $gnomePackages $postFlags && sudo systemctl set-default graphical.target
+        gnomePackagesVar="${family}gnomePackages"
+        gnomePackages=${!gnomePackagesVar}
+        echo $gnomePackages
+        sudo $pkgm $preFlags $argInstall $gnomePackages $postFlags && sudo systemctl set-default graphical.target
+        info $gnomePackages
         success "You have GNOME installed, moving on"
         ;;
     2)
-        xfcePackages="$(echo "$xfcePackages" | awk '{print $desktopOption}')"
+        xfcePackagesVar="${family}xfcePackages"
+        xfcePackages=${!xfcePackagesVar}
         sudo $pkgm $argInstall $xfcePackages $basicDesktopEnvironmentPackages $postFlags && sudo systemctl set-default graphical.target
+        info $xfcePackages
         success "You have XFCE installed, moving on"
         ;;
     3)
-        kdePackages="$(echo "$kdePackages" | awk '{print $desktopOption}')"
+        kdePackagesVar="${family}kdePackages"
+        kdePackages=${!kdePackagesVar}
         sudo $pkgm $argInstall $kdePackages $postFlags && sudo systemctl set-default graphical.target
+        info $kdePackages
         success "You have KDE installed, moving on"
         ;;
     4)
-        lxqtPackages="$(echo "$lxqtPackages" | awk '{print $desktopOption}')"
+        lxqtPackagesVar="${family}lxqtPackages"
+        lxqtPackages=${!lxqtPackagesVar}
         sudo $pkgm $argInstall $lxqtPackages $postFlags && sudo systemctl set-default graphical.target
+        info $lxqtPackages
         success "You have LXQT installed, moving on"
         ;;
     5)
-        cinnamonPackages="$(echo "$cinnamonPackages" | awk '{print $desktopOption}')"
+        cinnamonPackagesVar="${family}cinnamonPackages"
+        cinnamonPackages=${!cinnamonPackagesVar}
         sudo $pkgm $argInstall $cinnamonPackages $postFlags && sudo systemctl set-default graphical.target
+        info $cinnamonPackages
         success "You have CINNAMON installed, moving on"
         ;;
     6)
-        matePackages="$(echo "$matePackages" | awk '{print $desktopOption}')"
+        matePackagesVar="${family}matePackages"
+        matePackages=${!matePackagesVar}
         sudo $pkgm $argInstall $matePackages $postFlags && sudo systemctl set-default graphical.target
+        info $matePackages
         success "You have MATE installed, moving on"
         ;;
     7)
-        i3Packages="$(echo "$i3Packages" | awk '{print $desktopOption}')"
+        i3PackagesVar="${family}i3Packages"
+        i3Packages=${!i3PackagesVar}
         sudo $pkgm $argInstall $i3Packages $i3RicingPackages $basicDesktopEnvironmentPackages $postFlags && sudo systemctl set-default graphical.target
+        info $i3Packages
         success "You have i3 installed, moving on"
         ;;
     8)
-        openboxPackages="$(echo "$openboxPackages" | awk '{print $desktopOption}')"
+        openboxPackagesVar="${family}openboxPackages"
+        openboxPackages=${!openboxPackagesVar}
         sudo $pkgm $argInstall $openboxPackages $postFlags && sudo systemctl set-default graphical.target
+        info $openboxPackages
         success "You have OPENBOX installed, moving on"
         ;;
     9)
-        budgiePackages="$(echo "$budgiePackages" | awk '{print $desktopOption}')"
+        budgiePackagesVar="${family}budgiePackages"
+        budgiePackages=${!budgiePackagesVar}
         sudo $pkgm $argInstall $budgiePackages $postFlags && sudo systemctl set-default graphical.target
+        info $budgiePackages
         success "You have BUDGIE installed, moving on"
         ;;
     10)
-        swayPackages="$(echo "$swayPackages" | awk '{print $desktopOption}')"
+        swayPackagesVar="${family}swayPackages"
+        swayPackages=${!swayPackagesVar}
         sudo $pkgm $argInstall $swayPackages $basicDesktopEnvironmentPackages $postFlags && sudo systemctl set-default graphical.target
+        info $swayPackages
         success "You have SWAY installed, moving on"
         ;;
     11)
         info "Still on the works"
+        hyprlandPackagesVar="${family}hyprlandPackages"
+        hyprlandPackages=${!hyprlandPackagesVar}
         sudo $pkgm $argInstall $basicDesktopEnvironmentPackages $hyprlandPackages $postFlags && sudo systemctl set-default graphical.target
+        info $hyprlandPackages
         success "You have HYPRLAND installed, moving on"
         ;;
     12)
         info "Still on the works"
-        niriRepo
+        niriPackagesVar="${family}niriPackages"
+        niriPackages=${!niriPackagesVar}
         sudo $pkgm $argInstall $basicDesktopEnvironmentPackages $niriPackages $postFlags && sudo systemctl set-default graphical.target
+        info $niriPackages
         success "You have NIRI installed, moving on"
         ;;
     13)
@@ -581,13 +607,13 @@ askReboot ()
 distroboxContainers ()
 {
     distrobox-create --name fedora --image quay.io/fedora/fedora:latest -Y
-    #distrobox-create --name ubuntu --image docker.io/library/ubuntu:latest -Y
+    distrobox-create --name ubuntu --image docker.io/library/ubuntu:latest -Y
     #distrobox-create --name rhel --image registry.access.redhat.com/ubi9/ubi -Y
     distrobox-create --name debian --image docker.io/library/debian:latest -Y
     #distrobox-create --name clearlinux --image docker.io/library/clearlinux:latest -Y
     #distrobox-create --name centos --image quay.io/centos/centos:stream9 -Y
     #distrobox-create --name arch --image docker.io/library/archlinux:latest -Y
-    #distrobox-create --name opensusel --image registry.opensuse.org/opensuse/leap:latest -Y
+    distrobox-create --name opensusel --image registry.opensuse.org/opensuse/leap:latest -Y
     #distrobox-create --name opensuset --image registry.opensuse.org/opensuse/tumbleweed:latest  -Y
     #distrobox-create --name gentoo --image docker.io/gentoo/stage3:latest -Y
 }
@@ -606,7 +632,7 @@ purposeMenu ()
     #Basic
     1) 
         caution $1
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
+        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $postFlags
         sudo flatpak install $flatpakRepo $basicFlatpak $googleFlatpak $microsoftFlatpak $supportFlatpak $remoteSupportFlatpak -y
         ;;
     #Gaming
@@ -754,10 +780,10 @@ techSetup ()
     ;;
     *openSUSE*)
     caution "openSUSE"
-    sudo $pkgm $argUpdate $preFlags $postFlags
-    sudo $pkgm update $preFlags $postFlags
+    sudo $pkgm $preFlags $argUpdate $postFlags
+    sudo $pkgm $preFlags update $postFlags
     info "Installing Essential Packages"
-    sudo $pkgm $argInstall $preFlags $essentialPackages $postFlags
+    sudo $pkgm $preFlags $argInstall $essentialPackages $postFlags
     ;;
     *)
     echo "2"
@@ -844,19 +870,19 @@ updateSystem ()
 }
 # Declaring Packages
 # Generic GNU/Linux Packages
-#Essential packages are what will allow system review for advanced users and stable hardware experience
+# Essential packages are what will allow system review for advanced users and stable hardware experience
 essentialPackages="pciutils git cmake wget nano curl jq mesa-va-drivers mesa-vdpau-drivers elinks nasm ncurses-dev* lshw lm*sensors rsync rclone mediainfo cifs-utils ntfs-3g* lsof xinput flatpak" #gcc-c++ lm_sensors.x86_64
-#Server packages ensure SSH, FTP and RDP connectivity, so advanced users can configure and use the server remotely
+# Server packages ensure SSH, FTP and RDP connectivity, so advanced users can configure and use the server remotely
 serverPackages="netcat-traditional xserver-xorg-video-dummy openssh-server cockpit expect ftp vsftpd sshpass"
-#Basic packages will allow endusers to perform basic activities or get basic features
+# Basic packages will allow endusers to perform basic activities or get basic features
 basicUserPackages="gedit yt-dlp ffmpeg ffmpegthumbnailer tumbler libreoffice pavucontrol vnstat feh" #fontawesome-fonts-all epiphany # Flatpak - clamav clamtk obs-studio transmission
 basicSystemPackages="wine xrdp htop powertop tldr *gtkglext* libxdo-* ncdu scrot xclip"
 basicSystemPackagesOpenSUSE=""
 basicDesktopEnvironmentPackages="nautilus fontawesome-fonts"
-#Gaming packages will allow enduseres to play on the most popular platforms
+# Gaming packages will allow enduseres to play on the most popular platforms
 gamingPackages="goverlay"
-#Multimedia pacakges allow the end user to use the most
-multimediaPackages="gstreamer* gscan2pdf python3-qt* python3-vapoursynth qt5-qtbase-devel vapoursynth-* libqt5* libass*" #qt5-qtbase-devel python3-qt5 #Flatpak - gimp krita blender kdenlive
+# Multimedia pacakges allow the end user to use the most
+multimediaPackages="gstreamer* gscan2pdf python3-qt* python3-vapoursynth qt5-qtbase-devel vapoursynth-* libqt5* libass*" #qt5-qtbase-devel python3-qt5 # Flatpak - gimp krita blender kdenlive
 developmentPackages="gcc cargo npm python3-pip nodejs golang conda*"
 virtconPackages="podman distrobox bridge-utils virt-manager virt-top"
 virtconPackagesRPM="@virtualization libvirt libvirt-devel virt-install qemu-kvm qemu-img"
@@ -869,20 +895,62 @@ nvidiaPackagesRPM="akmod-nvidia nvidia-vaapi-driver"
 nvidiaPackagesDebian="nvidia-driver* nvidia-opencl* nvidia-xconfig nvidia-vdpau-driver nvidia-vulkan*"
 nvidiaPackagesUbuntu="nvidia-driver-560"
 nvidiaPackagesOpenSUSE=""
-xfcePackages="task-xfce-desktop @xfce-desktop-environment patterns-openSUSE-xfce @Xfce @base-x"
-gnomePackages="task-gnome-desktop @workstation-product-environment patterns-openSUSE-gnome @gnome @base-x gnome-extensions"
-kdePackages="task-kde-desktop @kde-desktop-environment patterns-kde-kde @kde @base-x patterns-openSUSE-kde"
-lxqtPackages="task-lxqt-desktop @lxqt-desktop-environment patterns-lxqt-lxqt"
-cinnamonPackages="task-cinnamon-desktop @cinnamon-desktop-environment patterns-cinnamon-cinnamon"
-matePackages="task-mate-desktop @mate-desktop-environment patterns-mate-mate"
-i3Packages="i3 @i3-desktop-environment $i3openSUSE"
-i3openSUSE="i3 dmenu i3status"
+
+# Desktop Environment variables (I'm too drunk and lazy to setup arrays, sorry) Also, some packages will be repeating between variables. This solution could be way better. Once I integrate more distros will look into it.
+fedoraxfcePackages="@xfce-desktop-environment"
+fedoragnomePackages="@workstation-product-environment"
+fedorakdePackages="@kde-desktop-environment"
+fedoramatePackages="@mate-desktop-environment"
+fedoracinnamonPackages="@cinnamon-desktop-environment"
+fedoralxqtPackages="@lxqt-desktop-environment"
+fedorai3Packages="@i3-desktop-environment"
+fedoraopenboxPackages="@basic-desktop-environment"
+fedorabudgiePackages="budgie-desktop"
+fedoraswayPackages="sway"
+fedorahyprlandPackages="hyprland xorg-x11-server-Xwayland waybar xdg-desktop-portal-hyprland hyprland-autoname-workspaces hyprpaper libdisplay-info libinput libliftoff hyprshot"
+fedoraniriPackages="niri waybar"
+
+rhelxfcePackages="@Xfce @base-x"
+rhelgnomePackages="@gnome @base-x gnome-extensions"
+rhelkdePackages="@kde @base-x"
+rhelmatePackages=""
+rhelcinnamonPackages=""
+rhellxqtPackages=""
+rheli3Packages=""
+rhelopenboxPackages=""
+rhelbudgiePackages=""
+rhelswayPackages=""
+rhelhyprlandPackages=""
+rhelniriPackages=""
+
+debianxfcePackages="task-xfce-desktop"
+debiangnomePackages="task-gnome-desktop"
+debiankdePackages="task-kde-desktop"
+debianmatePackages="task-mate-desktop"
+debiancinnamonPackages="task-cinnamon-desktop"
+debianlxqtPackages="task-lxqt-desktop"
+debiani3Packages="i3"
+debianopenboxPackages="openbox"
+debianbudgiePackages="budgie-desktop"
+debianswayPackages="sway"
+debianhyprlandPackages=""
+debianniriPackages=""
+
+opensusexfcePackages="patterns-openSUSE-xfce"
+opensusegnomePackages="patterns-openSUSE-gnome"
+opensusekdePackages="patterns-kde-kde"
+opensusematePackages="patterns-mate-mate"
+opensusecinnamonPackages="patterns-cinnamon-cinnamon"
+opensuselxqtPackages="patterns-lxqt-lxqt"
+opensusei3Packages="i3 dmenu i3status"
+opensuseopenboxPackages=""
+opensusebudgiePackages="budgie-desktop"
+opensuseswayPackages="sway"
+opensusehyprlandPackages=""
+opensuseniriPackages=""
+
 i3RicingPackages="rofi i3blocks picom kitty nitrogen lxappearance"
-openboxPackages="openbox @basic-desktop-environment @openbox @base-x"
-budgiePackages="budgie-desktop budgie-desktop budgie-desktop @budgie @base-x"
-swayPackages="sway sway @sway @base-x"
-hyprlandPackages="hyprland xorg-x11-server-Xwayland waybar xdg-desktop-portal-hyprland hyprland-autoname-workspaces hyprpaper libdisplay-info libinput libliftoff hyprshot" #Still on the works
-niriPackages="niri waybar" #Still on the works
+
 # Specific GNU/Linux Packages
 intelPackages="intel-media-*driver"
 basicSystemPackagesDebian="neofetch"
