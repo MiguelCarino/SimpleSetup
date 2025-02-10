@@ -255,63 +255,63 @@ desktopenvironmentMenu ()
     2)
         xfcePackagesVar="${family}xfcePackages"
         xfcePackages=${!xfcePackagesVar}
-        sudo $pkgm $argInstall $xfcePackages $basicDesktopEnvironmentPackages $postFlags && sudo systemctl set-default graphical.target
+        sudo $pkgm $preFlags $argInstall $xfcePackages $basicDesktopEnvironmentPackages $postFlags && sudo systemctl set-default graphical.target
         info $xfcePackages
         success "You have XFCE installed, moving on"
         ;;
     3)
         kdePackagesVar="${family}kdePackages"
         kdePackages=${!kdePackagesVar}
-        sudo $pkgm $argInstall $kdePackages $postFlags && sudo systemctl set-default graphical.target
+        sudo $pkgm $preFlags $argInstall $kdePackages $postFlags && sudo systemctl set-default graphical.target
         info $kdePackages
         success "You have KDE installed, moving on"
         ;;
     4)
         lxqtPackagesVar="${family}lxqtPackages"
         lxqtPackages=${!lxqtPackagesVar}
-        sudo $pkgm $argInstall $lxqtPackages $postFlags && sudo systemctl set-default graphical.target
+        sudo $pkgm $preFlags $argInstall $lxqtPackages $postFlags && sudo systemctl set-default graphical.target
         info $lxqtPackages
         success "You have LXQT installed, moving on"
         ;;
     5)
         cinnamonPackagesVar="${family}cinnamonPackages"
         cinnamonPackages=${!cinnamonPackagesVar}
-        sudo $pkgm $argInstall $cinnamonPackages $postFlags && sudo systemctl set-default graphical.target
+        sudo $pkgm $preFlags $argInstall $cinnamonPackages $postFlags && sudo systemctl set-default graphical.target
         info $cinnamonPackages
         success "You have CINNAMON installed, moving on"
         ;;
     6)
         matePackagesVar="${family}matePackages"
         matePackages=${!matePackagesVar}
-        sudo $pkgm $argInstall $matePackages $postFlags && sudo systemctl set-default graphical.target
+        sudo $pkgm $preFlags $argInstall $matePackages $postFlags && sudo systemctl set-default graphical.target
         info $matePackages
         success "You have MATE installed, moving on"
         ;;
     7)
         i3PackagesVar="${family}i3Packages"
         i3Packages=${!i3PackagesVar}
-        sudo $pkgm $argInstall $i3Packages $i3RicingPackages $basicDesktopEnvironmentPackages $postFlags && sudo systemctl set-default graphical.target
+        sudo $pkgm $preFlags $argInstall $i3Packages $i3RicingPackages $basicDesktopEnvironmentPackages $postFlags && sudo systemctl set-default graphical.target
         info $i3Packages
         success "You have i3 installed, moving on"
         ;;
     8)
         openboxPackagesVar="${family}openboxPackages"
         openboxPackages=${!openboxPackagesVar}
-        sudo $pkgm $argInstall $openboxPackages $postFlags && sudo systemctl set-default graphical.target
+        sudo $pkgm $preFlags $argInstall $openboxPackages $postFlags && sudo systemctl set-default graphical.target
         info $openboxPackages
         success "You have OPENBOX installed, moving on"
         ;;
     9)
         budgiePackagesVar="${family}budgiePackages"
         budgiePackages=${!budgiePackagesVar}
-        sudo $pkgm $argInstall $budgiePackages $postFlags && sudo systemctl set-default graphical.target
+        sudo $pkgm $preFlags $argInstall $budgiePackages $postFlags && sudo systemctl set-default graphical.target
         info $budgiePackages
         success "You have BUDGIE installed, moving on"
         ;;
     10)
         swayPackagesVar="${family}swayPackages"
         swayPackages=${!swayPackagesVar}
-        sudo $pkgm $argInstall $swayPackages $basicDesktopEnvironmentPackages $postFlags && sudo systemctl set-default graphical.target
+        sudo $pkgm $preFlags $argInstall $swayPackages $basicDesktopEnvironmentPackages $postFlags && sudo systemctl set-default graphical.target
         info $swayPackages
         success "You have SWAY installed, moving on"
         ;;
@@ -319,7 +319,7 @@ desktopenvironmentMenu ()
         info "Still on the works"
         hyprlandPackagesVar="${family}hyprlandPackages"
         hyprlandPackages=${!hyprlandPackagesVar}
-        sudo $pkgm $argInstall $basicDesktopEnvironmentPackages $hyprlandPackages $postFlags && sudo systemctl set-default graphical.target
+        sudo $pkgm $preFlags $argInstall $basicDesktopEnvironmentPackages $hyprlandPackages $postFlags && sudo systemctl set-default graphical.target
         info $hyprlandPackages
         success "You have HYPRLAND installed, moving on"
         ;;
@@ -327,7 +327,7 @@ desktopenvironmentMenu ()
         info "Still on the works"
         niriPackagesVar="${family}niriPackages"
         niriPackages=${!niriPackagesVar}
-        sudo $pkgm $argInstall $basicDesktopEnvironmentPackages $niriPackages $postFlags && sudo systemctl set-default graphical.target
+        sudo $pkgm $preFlags $argInstall $basicDesktopEnvironmentPackages $niriPackages $postFlags && sudo systemctl set-default graphical.target
         info $niriPackages
         success "You have NIRI installed, moving on"
         ;;
@@ -405,7 +405,13 @@ flathubEnable ()
     *Red*)
     sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
     ;;
+    *CentOS*)
+    sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+    ;;
     *Debian*|*Ubuntu*|*Kubuntu*|*Lubuntu*|*Xubuntu*|*Uwuntu*|*Linuxmint*|*Pop!_OS*)
+    sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+    ;;
+    *openSUSE*)
     sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
     ;;
     *)
@@ -611,7 +617,8 @@ distroboxContainers ()
     #distrobox-create --name rhel --image registry.access.redhat.com/ubi9/ubi -Y
     distrobox-create --name debian --image docker.io/library/debian:latest -Y
     #distrobox-create --name clearlinux --image docker.io/library/clearlinux:latest -Y
-    #distrobox-create --name centos --image quay.io/centos/centos:stream9 -Y
+    distrobox-create --name centos --image quay.io/centos/centos:stream9 -Y
+    distrobox-create --name centos --image quay.io/centos/centos:stream10 -Y
     #distrobox-create --name arch --image docker.io/library/archlinux:latest -Y
     distrobox-create --name opensusel --image registry.opensuse.org/opensuse/leap:latest -Y
     #distrobox-create --name opensuset --image registry.opensuse.org/opensuse/tumbleweed:latest  -Y
@@ -638,74 +645,74 @@ purposeMenu ()
     #Gaming
     2)
         caution $1
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $gamingPackages $postFlags
+        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $gamingPackages $postFlags
         sudo flatpak install $flatpakRepo $basicFlatpak $gamingFlatpak $googleFlatpak $microsoftFlatpak $supportFlatpak $remoteSupportFlatpak -y
         ;;
     #Corporate
     3)
         caution $1
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $ciscoPackages $postFlags
+        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $ciscoPackages $postFlags
         sudo flatpak install $flatpakRepo $googleFlatpak $microsoftFlatpak $supportFlatpak $remoteSupportFlatpak -y
         ;;
     #Corporate (just Microsoft)
     4)
         caution $1
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
+        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $postFlags
         sudo flatpak install $flatpakRepo $basicFlatpak $microsoftFlatpak $supportFlatpak $remoteSupportFlatpak -y
         ;;
     #Corporate (just Google)
     5)
         caution $1
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
+        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $postFlags
         sudo flatpak install $flatpakRepo $basicFlatpak $googleFlatpak $supportFlatpak $remoteSupportFlatpak -y
         ;;
     #Development
     6)
         caution $1
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $developmentPackages $virtconPackages $postFlags
+        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $developmentPackages $virtconPackages $postFlags
         sudo flatpak install $flatpakRepo $basicFlatpak $googleFlatpak $developmentFlatpak $supportFlatpak $remoteSupportFlatpak -y
         distroboxContainers
         ;;
     #Astronomy
     7)
         caution $1
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
+        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $postFlags
         sudo flatpak install $flatpakRepo $basicFlatpak $googleFlatpak $astronomyFlatpak $supportFlatpak $remoteSupportFlatpak -y
         ;;
     #Comp-Neuro
     8)
         caution $1
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
+        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $postFlags
         ;;
     #Design
     9)
         caution $1
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
+        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $postFlags
         ;;
     #Music Production
     10)
         caution $1
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
+        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $postFlags
         ;;
     #Cybersecurity
     11)
         caution $1
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
+        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $postFlags
         ;;
     #Forensics
     12)
         caution $1
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
+        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $postFlags
         ;;
     #Scientific
     13)
         caution $1
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
+        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $postFlags
         ;;
     #Robotics
     14)
         caution $1
-        sudo $pkgm $argInstall $preFlags $basicUserPackages $basicSystemPackages $supportPackages $postFlags
+        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $postFlags
         ;;
     #
     15)
@@ -753,6 +760,10 @@ techSetup ()
     fi
     ;;
     *Nobara*|*Risi*|*Ultramarine*)
+    sudo $pkgm $argUpdate -y && sudo $pkgm install $essentialPackages -y
+    updateGrub
+    ;;
+    *CentOS*)
     sudo $pkgm $argUpdate -y && sudo $pkgm install $essentialPackages -y
     updateGrub
     ;;
@@ -948,6 +959,20 @@ opensusebudgiePackages="budgie-desktop"
 opensuseswayPackages="sway"
 opensusehyprlandPackages=""
 opensuseniriPackages=""
+
+centosxfcePackages="@xfce"
+centosgnomePackages="@gnome"
+centoskdePackages="@kde"
+centosmatePackages="@mate"
+centoscinnamonPackages="@cinnamon"
+centoslxqtPackages="@lxqt"
+centosi3Packages="i3"
+centosopenboxPackages="openbox"
+centosbudgiePackages="budgie-desktop"
+centosswayPackages="sway xorg-x11-server-Xwayland waybar xdg-desktop-portal-wlr wl-clipboard"
+centoshyprlandPackages="hyprland xorg-x11-server-Xwayland waybar xdg-desktop-portal-wlr libinput wl-clipboard hyprpaper"
+centosniriPackages="niri waybar"
+
 
 i3RicingPackages="rofi i3blocks picom kitty nitrogen lxappearance"
 
