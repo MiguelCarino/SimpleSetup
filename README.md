@@ -1,27 +1,31 @@
 # SimpleSetup
-*Simple setup* scripts (not short though) **for Linux and Windows systems**. So the user doesn't need to worry about choices besides their actual use case.  
-**Systems supported:**  
-*Linux:*
+*Simple setup* scripts (not short though) **for Linux and Windows systems**. So the user doesn't need to worry about choices besides their actual use case.
+
+**Systems supported:**
+
+**Linux**:
 - **Debian** and **Ubuntu** derivatives with package name compatibility.
 - **Fedora** and derivatives with package name compatibility.  
-- **openSUSE** Leap and Tumbleweed. Currently working on it.
-
-Just open your Terminal and paste\
+- **openSUSE** Leap and Tumbleweed. **Currently working on it**.
+- **Red Hat Enterprise Linux** 9 and 10. **Currently working on it**.
+- **CentOS Stream** 9 and 10. **Currently working on it**.
+  
+Just open your Terminal and paste
 ```bash
 bash <(curl -s https://carino.systems/setup.sh)
 ```
 
-*Windows:*  
+**Windows**:  
 - **Windows 10**  
 - **Windows 11**
 
-Just open **Terminal** and paste\
+Just open **Terminal** and paste
 ```bash
 iwr -useb https://carino.systems/setup.ps1 | iex
 ```
 
 ## Main Features
-- **Automatic distro identification**
+- **Automatic distro identification**.
 - **Quick setup**: Install and forget.
 - **Technical Setup**: Installs necessary packages for a decent hardware experience and basic user features (e.g., Nvidia drivers, Rocm/Hip, non-free repos, Flathub, Desktop Environment if missing, dark theme, dot files, etc).
 - **Purpose Setup**: Installs specific packages for chosen purposes (e.g., Astronomy, Graphic Design, Forensics, etc).
