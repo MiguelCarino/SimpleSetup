@@ -1,14 +1,20 @@
 # SimpleSetup
 *Simple setup* scripts (not short though) **for Linux and Windows systems**. So the user doesn't need to worry about choices besides their actual use case.  
 **Systems supported:**  
-*Linux:*  
+*Linux:*
 - **Debian** and **Ubuntu** derivatives with package name compatibility.
 - **Fedora** and derivatives with package name compatibility.  
-- **openSUSE** Leap. Currently working on it.
+- **openSUSE** Leap and Tumbleweed. Currently working on it.
+
+Just open your Terminal and paste\
+bash <(curl -s https://carino.systems/setup.sh)
 
 *Windows:*  
 - **Windows 10**  
-- **Windows 11**  
+- **Windows 11**
+
+Just open **Terminal** and paste\
+iwr -useb https://carino.systems/setup.ps1 | iex
 
 ## Main Features
 - **Automatic distro identification**
