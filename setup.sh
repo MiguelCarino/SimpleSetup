@@ -52,18 +52,48 @@ if [[ -f /etc/os-release ]]; then
     case $NAME in
     *Fedora*|*Nobara*|*Risi*|*Ultramarine*)
     family="fedora"
-    pkgm=dnf
-    pkgext=rpm
-    argInstall=install
-    argUpdate=update
-    preFlags=""
-    postFlags="--allowerasing --skip-broken -y"
+    
+    # Check if it is an atomic (rpm-ostree) Fedora system
+    if command -v rpm-ostree >/dev/null; then
+        distroType="atomic"
+        pkgm="rpm-ostree"
+        argInstall="install"
+        argUpdate="upgrade"
+        preFlags=""
+        postFlags="--allow-inactive"
+        essentialPackages="$essentialPackages $essentialPackagesRPM"
+        amdPackages="$amdPackages $amdPackagesRPM"
+        nvidiaPackages="$nvidiaPackages $nvidiaPackagesRPM"
+        virtconPackages="$virtconPackages $virtconPackagesRPM"
+        # Custom grub update function for atomic systems
+        grubPath="/etc/default/grub"
+        grubUpdate="sudo ostree admin unlock --hotfix && \
+                    sudo sed -i 's/GRUB_TIMEOUT=5/GRUB_TIMEOUT=0/' $grubPath && \
+                    sudo grub2-mkconfig -o /boot/grub2/grub.cfg && \
+                    sudo ostree admin unlock --commit && \
+                    sudo rpm-ostree cleanup -m"
+    else
+        pkgm=dnf
+        pkgext=rpm
+        argInstall=install
+        argUpdate=update
+        preFlags=""
+        postFlags="--allowerasing --skip-broken -y"
+        essentialPackages="$essentialPackages $essentialPackagesRPM"
+        amdPackages="$amdPackages $amdPackagesRPM"
+        nvidiaPackages="$nvidiaPackages $nvidiaPackagesRPM"
+        virtconPackages="$virtconPackages $virtconPackagesRPM"
+        grubPath="/etc/default/grub"
+        grubUpdate="grub2-mkconfig -o /boot/grub2/grub.cfg"
+        flatpakRepo="fedora"
+    fi
+
+    pkgext="rpm"
     essentialPackages="$essentialPackages $essentialPackagesRPM"
     amdPackages="$amdPackages $amdPackagesRPM"
     nvidiaPackages="$nvidiaPackages $nvidiaPackagesRPM"
     virtconPackages="$virtconPackages $virtconPackagesRPM"
     grubPath="/etc/default/grub"
-    grubUpdate="grub2-mkconfig -o /boot/grub2/grub.cfg"
     flatpakRepo="fedora"
     ;;
     *Red*)
@@ -421,6 +451,7 @@ flathubEnable ()
 }
 updateGrub ()
 {
+    info "Updating GRUB"
     sudo sed -i 's/GRUB_TIMEOUT=5/GRUB_TIMEOUT=0/' $grubPath
     sudo $grubUpdate
 }
@@ -758,6 +789,7 @@ techSetup ()
         sudo $pkgm $argInstall https://mirror.fcix.net/rpmfusion/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://opencolo.mm.fcix.net/rpmfusion/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm fedora-workstation-repositories dnf-plugins-core -y && sudo $pkgm update -y && sudo $pkgm install $essentialPackages -y
         updateGrub
     fi
+    # Removing ffmpeg 
     ;;
     *Nobara*|*Risi*|*Ultramarine*)
     sudo $pkgm $argUpdate -y && sudo $pkgm install $essentialPackages -y
