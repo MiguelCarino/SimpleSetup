@@ -12,7 +12,7 @@
   
 Just open your Terminal and paste
 ```bash
-bash <(curl -s https://carino.systems/setup.sh)
+bash <(curl -s https://carino.systems/ca.sh)
 ```
 
 **Windows**:  
@@ -34,9 +34,9 @@ iwr -useb https://carino.systems/setup.ps1 | iex
 - **Multilingual menus**: English, Japanese, Russian, Spanish, Finnish, Chinese, Korean, Hebrew, with automatic locale detection.
 
 ## Arguments
-*All arguments are used after `setup.sh`*\
-bash <(curl -s https://carino.systems/setup.sh) **argument**\
-./setup.sh **argument**
+*All arguments are used after `ca.sh`*\
+bash <(curl -s https://carino.systems/ca.sh) **argument**\
+./ca.sh **argument**
 ```bash
 ### General Arguments
 - quick
