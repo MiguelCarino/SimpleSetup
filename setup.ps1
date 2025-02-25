@@ -67,13 +67,21 @@ switch ($a)
     Write-Host "Basic profile for Windows 11"
     windows11tweaks
     setwindowsUpdate
+    installPackages
     continue
 }
  '10.0.22631' {
     Write-Host "Basic profile for Windows 11"
     windows11tweaks
     setwindowsUpdate
-    continue'Second Block Executes'
+    installPackages
+    continue
+}
+ '10.0.26100' {
+    Write-Host "Basic profile for Windows 11"
+    windows11tweaks
+    setwindowsUpdate
+    installPackages
     continue
 }
  '3'  {
@@ -82,136 +90,140 @@ switch ($a)
 }
  Default {'Nothing executed'}
 }
-$b=Read-Host -Prompt "Now you must choose for a use case profile`nPlease select an option:`n1. Basic profile. For the most basic use cases like media playback, internet browsing, office suite, file manipulation, communication and remote assistance. `n2. Gaming profile. Is Basic profile plus popular gaming platforms and utilities, like Steam. `n3. Corporate profile. Delivers the most packages for office work, videocalls, including applications for specific working ecosystems like Microsoft's, Google's and Cisco's.`n4. FOSS profile. Includes ONLY open source alternatives for general use cases. Still on the works.`n6. Exit`n"
-#Installing packages
-switch ($b)
-{
-   "1" {
-    Write-Host "Installing packages..."
-(
-    "KDE.Okular.Nightly",
-    "Google.Chrome",
-    "CodecGuide.K-LiteCodecPack.Mega",
-    "AdrienAllard.FileConverter",
-    "7zip.7zip",
-    "OBSProject.OBSStudio",
-    "Oracle.JavaRuntimeEnvironment",
-    #"Mozilla.Thunderbird",
-    "AnyDeskSoftwareGmbH.AnyDesk",
-    "RustDesk.RustDesk",
-    #"Telegram.TelegramDesktop",
-    #"TheDocumentFoundation.LibreOffice",
-    #"KeePassXCTeam.KeePassXC",
-    #"Git.Git"
-    "ONLYOFFICE.DesktopEditors"
-) | foreach {winget install $_}
-   } 
-   "2" {#Probably can execute basic case then gaming to avoid repeating so many packages
-    Write-Host "Installing packages..."
-(
-    "CodecGuide.K-LiteCodecPack.Mega",
-    "KDE.Okular.Nightly",
-    "Spotify.Spotify",
-    "AdrienAllard.FileConverter",
-    "7zip.7zip",
-    "Oracle.JavaRuntimeEnvironment",
-    #"Mozilla.Thunderbird",
-    "ventoy.Ventoy",
-    "RustDesk.RustDesk",
-    #"Telegram.TelegramDesktop",
-    "TheDocumentFoundation.LibreOffice",
-    "Valve.Steam",
-    "OBSProject.OBSStudio",
-    "Mumble.Mumble.Client"
-) | foreach {winget install $_}
-   }
-   "3" {
-    Write-Host "Installing packages..."
-(
-    "Cisco.WebexTeams",
-    "KDE.Okular.Nightly",
-    "Cisco.Jabber",
-    "Google.Chrome",
-    "Google.Drive",
-    "CodecGuide.K-LiteCodecPack.Mega",
-    "AdrienAllard.FileConverter",
-    "7zip.7zip",
-    #"ventoy.Ventoy",
-    "OBSProject.OBSStudio",
-    "Oracle.JavaRuntimeEnvironment",
-    #"Mozilla.Thunderbird",
-    #"AnyDeskSoftwareGmbH.AnyDesk",
-    #"RustDesk.RustDesk",
-    #"Telegram.TelegramDesktop",
-    #"TheDocumentFoundation.LibreOffice",
-    #"KeePassXCTeam.KeePassXC",
-    #"Git.Git"
-    "ONLYOFFICE.DesktopEditors"
-) | foreach {winget install $_}
-   }
-   "4" {
-    Write-Host "Installing packages..."
-(
-    "CodecGuide.K-LiteCodecPack.Mega",
-    "KDE.Okular.Nightly",
-    "Spotify.Spotify",
-    "AdrienAllard.FileConverter",
-    "7zip.7zip",
-    "ventoy.Ventoy",
-    "OBSProject.OBSStudio",
-    "Oracle.JavaRuntimeEnvironment",
-    #"Mozilla.Thunderbird",
-    "RustDesk.RustDesk",
-    "Telegram.TelegramDesktop",
-    "TheDocumentFoundation.LibreOffice",
-    "Valve.Steam",
-    "Mumble.Mumble.Client",
-    "Microsoft.VisualStudioCode",
-    "KeePassXCTeam.KeePassXC",
-    "SleuthKit.Autopsy",
-    "StrawberryPerl.StrawberryPerl",
-    "mRemoteNG.mRemoteNG",
-    "DebaucheeOpenSourceGroup",
-    "Git.Git",
-    "Python.Python.3.11",
-    "qBittorrent.qBittorrent"
 
-) | foreach {winget install $_}
-   }
-   "0" {
-     Write-Host "Installing packages..."
-(
-    "CodecGuide.K-LiteCodecPack.Mega",
-    "KDE.Okular.Nightly",
-    "AdrienAllard.FileConverter",
-    "7zip.7zip",
-    "dbeaver.dbeaver",
-    "Espanso.Espanso",
-    "Gyan.FFmpeg",
-    "GIMP.GIMP",
-    "KDE.Kdenlive",
-    "Oracle.JavaRuntimeEnvironment",
-    #"Mozilla.Thunderbird",
-    "AnyDeskSoftwareGmbH.AnyDesk",
-    "ventoy.Ventoy",
-    "RustDesk.RustDesk",
-    "OBSProject.OBSStudio",
-    "Google.Chrome",
-    #"Telegram.TelegramDesktop",
-    "TheDocumentFoundation.LibreOffice",
-    "qBittorrent.qBittorrent",
-    "Mozilla.Thunderbird",
-    "KDE.Okular",
-    "RedHat.Podman",
-    "RedHat.Podman-Desktop",
-    "KeePassXCTeam.KeePassXC",
-    "Microsoft.VisualStudioCode"
-    #"Spotify.Spotify"
-) | foreach {winget install $_}
-   }
-   Default {
-    'Nothing will be installed'
-   }
+function installPackages {
+
+    $b=Read-Host -Prompt "Now you must choose for a use case profile`nPlease select an option:`n1. Basic profile. For the most basic use cases like media playback, internet browsing, office suite, file manipulation, communication and remote assistance. `n2. Gaming profile. Is Basic profile plus popular gaming platforms and utilities, like Steam. `n3. Corporate profile. Delivers the most packages for office work, videocalls, including applications for specific working ecosystems like Microsoft's, Google's and Cisco's.`n4. FOSS profile. Includes ONLY open source alternatives for general use cases. Still on the works.`n6. Exit`n"
+    #Installing packages
+    switch ($b)
+    {
+       "1" {
+        Write-Host "Installing packages..."
+    (
+        "KDE.Okular.Nightly",
+        "Google.Chrome",
+        "CodecGuide.K-LiteCodecPack.Mega",
+        "AdrienAllard.FileConverter",
+        "7zip.7zip",
+        "OBSProject.OBSStudio",
+        "Oracle.JavaRuntimeEnvironment",
+        #"Mozilla.Thunderbird",
+        "AnyDeskSoftwareGmbH.AnyDesk",
+        "RustDesk.RustDesk",
+        #"Telegram.TelegramDesktop",
+        #"TheDocumentFoundation.LibreOffice",
+        #"KeePassXCTeam.KeePassXC",
+        #"Git.Git"
+        "ONLYOFFICE.DesktopEditors"
+    ) | foreach {winget install $_}
+       } 
+       "2" {#Probably can execute basic case then gaming to avoid repeating so many packages
+        Write-Host "Installing packages..."
+    (
+        "CodecGuide.K-LiteCodecPack.Mega",
+        "KDE.Okular.Nightly",
+        "Spotify.Spotify",
+        "AdrienAllard.FileConverter",
+        "7zip.7zip",
+        "Oracle.JavaRuntimeEnvironment",
+        #"Mozilla.Thunderbird",
+        "ventoy.Ventoy",
+        "RustDesk.RustDesk",
+        #"Telegram.TelegramDesktop",
+        "TheDocumentFoundation.LibreOffice",
+        "Valve.Steam",
+        "OBSProject.OBSStudio",
+        "Mumble.Mumble.Client"
+    ) | foreach {winget install $_}
+       }
+       "3" {
+        Write-Host "Installing packages..."
+    (
+        "Cisco.WebexTeams",
+        "KDE.Okular.Nightly",
+        "Cisco.Jabber",
+        "Google.Chrome",
+        "Google.Drive",
+        "CodecGuide.K-LiteCodecPack.Mega",
+        "AdrienAllard.FileConverter",
+        "7zip.7zip",
+        #"ventoy.Ventoy",
+        "OBSProject.OBSStudio",
+        "Oracle.JavaRuntimeEnvironment",
+        #"Mozilla.Thunderbird",
+        #"AnyDeskSoftwareGmbH.AnyDesk",
+        #"RustDesk.RustDesk",
+        #"Telegram.TelegramDesktop",
+        #"TheDocumentFoundation.LibreOffice",
+        #"KeePassXCTeam.KeePassXC",
+        #"Git.Git"
+        "ONLYOFFICE.DesktopEditors"
+    ) | foreach {winget install $_}
+       }
+       "4" {
+        Write-Host "Installing packages..."
+    (
+        "CodecGuide.K-LiteCodecPack.Mega",
+        "KDE.Okular.Nightly",
+        "Spotify.Spotify",
+        "AdrienAllard.FileConverter",
+        "7zip.7zip",
+        "ventoy.Ventoy",
+        "OBSProject.OBSStudio",
+        "Oracle.JavaRuntimeEnvironment",
+        #"Mozilla.Thunderbird",
+        "RustDesk.RustDesk",
+        "Telegram.TelegramDesktop",
+        "TheDocumentFoundation.LibreOffice",
+        "Valve.Steam",
+        "Mumble.Mumble.Client",
+        "Microsoft.VisualStudioCode",
+        "KeePassXCTeam.KeePassXC",
+        "SleuthKit.Autopsy",
+        "StrawberryPerl.StrawberryPerl",
+        "mRemoteNG.mRemoteNG",
+        "DebaucheeOpenSourceGroup",
+        "Git.Git",
+        "Python.Python.3.11",
+        "qBittorrent.qBittorrent"
+
+    ) | foreach {winget install $_}
+       }
+       "0" {
+         Write-Host "Installing packages..."
+    (
+        "CodecGuide.K-LiteCodecPack.Mega",
+        "KDE.Okular.Nightly",
+        "AdrienAllard.FileConverter",
+        "7zip.7zip",
+        "dbeaver.dbeaver",
+        "Espanso.Espanso",
+        "Gyan.FFmpeg",
+        "GIMP.GIMP",
+        "KDE.Kdenlive",
+        "Oracle.JavaRuntimeEnvironment",
+        #"Mozilla.Thunderbird",
+        "AnyDeskSoftwareGmbH.AnyDesk",
+        "ventoy.Ventoy",
+        "RustDesk.RustDesk",
+        "OBSProject.OBSStudio",
+        "Google.Chrome",
+        #"Telegram.TelegramDesktop",
+        "TheDocumentFoundation.LibreOffice",
+        "qBittorrent.qBittorrent",
+        "Mozilla.Thunderbird",
+        "KDE.Okular",
+        "RedHat.Podman",
+        "RedHat.Podman-Desktop",
+        "KeePassXCTeam.KeePassXC",
+        "Microsoft.VisualStudioCode"
+        #"Spotify.Spotify"
+    ) | foreach {winget install $_}
+       }
+       Default {
+        'Nothing will be installed'
+       }
+    }
 }
 #Setting up a new hostname
 #Write-Host "Please, provide a name for your computer:"
