@@ -114,7 +114,8 @@ function installPackages {
         #"TheDocumentFoundation.LibreOffice",
         #"KeePassXCTeam.KeePassXC",
         #"Git.Git"
-        "ONLYOFFICE.DesktopEditors"
+        "ONLYOFFICE.DesktopEditors",
+        "IDRIX.VeraCrypt"
     ) | foreach {winget install $_}
        } 
        "2" {#Probably can execute basic case then gaming to avoid repeating so many packages
@@ -133,7 +134,8 @@ function installPackages {
         "TheDocumentFoundation.LibreOffice",
         "Valve.Steam",
         "OBSProject.OBSStudio",
-        "Mumble.Mumble.Client"
+        "Mumble.Mumble.Client",
+        "IDRIX.VeraCrypt"
     ) | foreach {winget install $_}
        }
        "3" {
@@ -157,7 +159,8 @@ function installPackages {
         #"TheDocumentFoundation.LibreOffice",
         #"KeePassXCTeam.KeePassXC",
         #"Git.Git"
-        "ONLYOFFICE.DesktopEditors"
+        "ONLYOFFICE.DesktopEditors",
+        "IDRIX.VeraCrypt"
     ) | foreach {winget install $_}
        }
        "4" {
@@ -185,7 +188,8 @@ function installPackages {
         "DebaucheeOpenSourceGroup",
         "Git.Git",
         "Python.Python.3.11",
-        "qBittorrent.qBittorrent"
+        "qBittorrent.qBittorrent",
+        "IDRIX.VeraCrypt"
 
     ) | foreach {winget install $_}
        }
@@ -216,7 +220,8 @@ function installPackages {
         "RedHat.Podman",
         "RedHat.Podman-Desktop",
         "KeePassXCTeam.KeePassXC",
-        "Microsoft.VisualStudioCode"
+        "Microsoft.VisualStudioCode",
+        "IDRIX.VeraCrypt"
         #"Spotify.Spotify"
     ) | foreach {winget install $_}
        }
