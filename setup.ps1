@@ -114,14 +114,17 @@ function installPackages {
         "OBSProject.OBSStudio",
         "Oracle.JavaRuntimeEnvironment",
         #"Mozilla.Thunderbird",
-        #"AnyDeskSoftwareGmbH.AnyDesk",
-        #"RustDesk.RustDesk",
+        "AnyDeskSoftwareGmbH.AnyDesk",
+        "RustDesk.RustDesk",
         #"Telegram.TelegramDesktop",
         #"TheDocumentFoundation.LibreOffice",
-        #"KeePassXCTeam.KeePassXC",
+        "KeePassXCTeam.KeePassXC",
         #"Git.Git"
         "ONLYOFFICE.DesktopEditors",
-        "Fortinet.FortiClientVPN"
+        "Fortinet.FortiClientVPN",
+        "Mozilla.Firefox.ESR",
+        "NSSM.NSSM",
+        "ActivityWatch.ActivityWatch"
     ) | foreach {winget install $_}
        }
        "4" {
