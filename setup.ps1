@@ -64,7 +64,7 @@ function installPackages {
        "1" {
         Write-Host "Installing packages..."
     (
-        "KDE.Okular.Nightly",
+        "KDE.Okular",
         "Google.Chrome",
         "CodecGuide.K-LiteCodecPack.Mega",
         "AdrienAllard.FileConverter",
@@ -78,8 +78,7 @@ function installPackages {
         #"TheDocumentFoundation.LibreOffice",
         #"KeePassXCTeam.KeePassXC",
         #"Git.Git"
-        "ONLYOFFICE.DesktopEditors",
-        "IDRIX.VeraCrypt"
+        "ONLYOFFICE.DesktopEditors"
     ) | foreach {winget install $_}
        } 
        "2" {#Probably can execute basic case then gaming to avoid repeating so many packages
@@ -98,8 +97,7 @@ function installPackages {
         "TheDocumentFoundation.LibreOffice",
         "Valve.Steam",
         "OBSProject.OBSStudio",
-        "Mumble.Mumble.Client",
-        "IDRIX.VeraCrypt"
+        "Mumble.Mumble.Client"
     ) | foreach {winget install $_}
        }
        "3" {
@@ -123,8 +121,7 @@ function installPackages {
         #"TheDocumentFoundation.LibreOffice",
         #"KeePassXCTeam.KeePassXC",
         #"Git.Git"
-        "ONLYOFFICE.DesktopEditors",
-        "IDRIX.VeraCrypt"
+        "ONLYOFFICE.DesktopEditors"
     ) | foreach {winget install $_}
        }
        "4" {
@@ -152,8 +149,7 @@ function installPackages {
         "DebaucheeOpenSourceGroup",
         "Git.Git",
         "Python.Python.3.11",
-        "qBittorrent.qBittorrent",
-        "IDRIX.VeraCrypt"
+        "qBittorrent.qBittorrent"
 
     ) | foreach {winget install $_}
        }
@@ -184,8 +180,7 @@ function installPackages {
         "RedHat.Podman",
         "RedHat.Podman-Desktop",
         "KeePassXCTeam.KeePassXC",
-        "Microsoft.VisualStudioCode",
-        "IDRIX.VeraCrypt"
+        "Microsoft.VisualStudioCode"
         #"Spotify.Spotify"
     ) | foreach {winget install $_}
        }
