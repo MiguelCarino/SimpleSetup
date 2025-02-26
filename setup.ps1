@@ -105,7 +105,6 @@ function installPackages {
     (
         "Cisco.WebexTeams",
         "KDE.Okular.Nightly",
-        "Cisco.Jabber",
         "Google.Chrome",
         "Google.Drive",
         "CodecGuide.K-LiteCodecPack.Mega",
@@ -121,7 +120,8 @@ function installPackages {
         #"TheDocumentFoundation.LibreOffice",
         #"KeePassXCTeam.KeePassXC",
         #"Git.Git"
-        "ONLYOFFICE.DesktopEditors"
+        "ONLYOFFICE.DesktopEditors",
+        "Fortinet.FortiClientVPN"
     ) | foreach {winget install $_}
        }
        "4" {
