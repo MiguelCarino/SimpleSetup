@@ -54,42 +54,6 @@ function windows11tweaks{
     #Stops explorer to load changes
     Stop-Process -name explorer -force
 }
-#Selecting case
-Write-Host "Microsoft Windows Setup Script"
-#Read-Host -Prompt "Welcome $env:username`nPlease select an option:`n1. Setup for Workstation`n2. Setup for Server`n3. Update my Windows System`n4. Install Video Drivers`n"
-#Getting Windows Version
-$windoeVersion=(Get-CimInstance Win32_OperatingSystem).version
-"Your current Windows version is $windoeVersion"
-$a=(Get-CimInstance Win32_OperatingSystem).version
-switch ($a)
-{
- "10.0.22000" {
-    Write-Host "Basic profile for Windows 11"
-    windows11tweaks
-    setwindowsUpdate
-    installPackages
-    continue
-}
- '10.0.22631' {
-    Write-Host "Basic profile for Windows 11"
-    windows11tweaks
-    setwindowsUpdate
-    installPackages
-    continue
-}
- '10.0.26100' {
-    Write-Host "Basic profile for Windows 11"
-    windows11tweaks
-    setwindowsUpdate
-    installPackages
-    continue
-}
- '3'  {
-    'Third Block Exectues'
-    continue
-}
- Default {'Nothing executed'}
-}
 
 function installPackages {
 
@@ -230,8 +194,47 @@ function installPackages {
        }
     }
 }
+
+#Selecting case
+Write-Host "Microsoft Windows Setup Script"
+#Read-Host -Prompt "Welcome $env:username`nPlease select an option:`n1. Setup for Workstation`n2. Setup for Server`n3. Update my Windows System`n4. Install Video Drivers`n"
+#Getting Windows Version
+$windoeVersion=(Get-CimInstance Win32_OperatingSystem).version
+"Your current Windows version is $windoeVersion"
+$a=(Get-CimInstance Win32_OperatingSystem).version
+switch ($a)
+{
+ "10.0.22000" {
+    Write-Host "Basic profile for Windows 11"
+    windows11tweaks
+    setwindowsUpdate
+    installPackages
+    continue
+}
+ '10.0.22631' {
+    Write-Host "Basic profile for Windows 11"
+    windows11tweaks
+    setwindowsUpdate
+    installPackages
+    continue
+}
+ '10.0.26100' {
+    Write-Host "Basic profile for Windows 11"
+    windows11tweaks
+    setwindowsUpdate
+    installPackages
+    continue
+}
+ '3'  {
+    'Third Block Exectues'
+    continue
+}
+ Default {'Nothing executed'}
+}
 #Setting up a new hostname
 #Write-Host "Please, provide a name for your computer:"
 #ForegroundColor Green
 #$ComputerName = Read-Host
 #Rename-Computer -NewName "$ComputerName"
+
+Write-Host "Finished."
