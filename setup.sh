@@ -952,6 +952,7 @@ fedorabudgiePackages="budgie-desktop"
 fedoraswayPackages="sway"
 fedorahyprlandPackages="hyprland xorg-x11-server-Xwayland waybar xdg-desktop-portal-hyprland hyprland-autoname-workspaces hyprpaper libdisplay-info libinput libliftoff hyprshot"
 fedoraniriPackages="niri waybar"
+fedoracosmicPackages="@cosmic-desktop"
 
 rhelxfcePackages="@Xfce @base-x"
 rhelgnomePackages="@gnome @base-x gnome-extensions"
