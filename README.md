@@ -12,7 +12,7 @@
   
 Just open your Terminal and paste
 ```bash
-bash <(curl -s https://carino.systems/ca.sh)
+bash <(curl -s https://setup.carino.systems/setup.sh)
 ```
 
 **Windows**:  
@@ -35,7 +35,7 @@ iwr -useb https://carino.systems/setup.ps1 | iex
 
 ## Arguments
 *All arguments are used after `ca.sh`*\
-bash <(curl -s https://carino.systems/ca.sh) **argument**\
+bash <(curl -s https://setup.carino.systems/setup.sh) **argument**\
 ./ca.sh **argument**
 ```bash
 ### General Arguments
