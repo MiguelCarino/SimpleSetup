@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimpleSetup | Universal OS Automation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --terminal-bg: #000000;
+            --success: #10b981;
+            --beta: #f59e0b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg); 
+            color: var(--text-main); 
+            line-height: 1.6;
+            padding-bottom: 5rem;
+        }
+
+        .container { max-width: 900px; margin: 0 auto; padding: 0 1.5rem; }
+
+        #locale-banner {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 0.75rem;
+            text-align: center;
+            border-radius: 8px;
+            margin-top: 1.5rem;
+            font-weight: 600;
+            display: none;
+        }
+
+        .hero { text-align: center; padding: 4rem 0 2rem; }
+        .hero h1 { font-size: 3.5rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 1rem; background: linear-gradient(to right, #60a5fa, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { font-size: 1.25rem; color: var(--text-dim); max-width: 600px; margin: 0 auto; }
+
+        .tabs-container { margin: 3rem 0 1rem; text-align: center; }
+        .tabs { display: inline-flex; background: var(--card); padding: 0.4rem; border-radius: 12px; gap: 5px; flex-wrap: wrap; justify-content: center; }
+        .tab-btn { 
+            background: transparent; border: none; color: var(--text-dim); 
+            padding: 0.8rem 1.5rem; cursor: pointer; border-radius: 8px; 
+            font-weight: 600; transition: all 0.2s; font-size: 1rem;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .tab-btn.active { background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+        
+        .beta-badge { font-size: 0.65rem; background: var(--beta); color: #000; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+
+        .terminal-wrapper { position: relative; margin-bottom: 3rem; }
+        .terminal { 
+            background: var(--terminal-bg); border-radius: 12px; padding: 2rem; 
+            border: 1px solid #334155; box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+            font-family: 'Fira Code', monospace; position: relative; overflow-x: auto;
+        }
+        .terminal code { color: var(--success); font-size: 1.1rem; white-space: nowrap; }
+        .copy-btn {
+            position: absolute; right: 1rem; top: 1rem;
+            background: #334155; color: white; border: none; 
+            padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer;
+            font-size: 0.8rem; font-weight: 600; transition: 0.2s;
+        }
+        .copy-btn:hover { background: var(--accent); }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 4rem; }
+        .card { background: var(--card); padding: 1.5rem; border-radius: 12px; border: 1px solid #334155; }
+        .card h3 { margin-bottom: 0.5rem; color: var(--accent); }
+        .card p { font-size: 0.95rem; color: var(--text-dim); }
+
+        .args-section { margin-top: 4rem; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: var(--card); border-radius: 12px; overflow: hidden; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: rgba(255,255,255,0.05); color: var(--accent); font-weight: 600; }
+        code.arg { background: #000; color: #f472b6; padding: 0.2rem 0.5rem; border-radius: 4px; }
+
+        .hidden { display: none; }
+        
+        @media (max-width: 600px) {
+            .hero h1 { font-size: 2.5rem; }
+            .terminal { padding: 1.5rem 1rem; }
+            .terminal code { font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="locale-banner"></div>
+
+    <header class="hero">
+        <h1 id="txt-title">SimpleSetup</h1>
+        <p id="txt-tagline">Automated system configuration for Linux, Windows, and macOS. One command, zero stress.</p>
+    </header>
+
+    <div class="tabs-container">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showOS('linux', this)">🐧 Linux</button>
+            <button class="tab-btn" onclick="showOS('windows', this)">🪟 Windows</button>
+            <button class="tab-btn" onclick="showOS('mac', this)">🍎 macOS <span class="beta-badge">Beta</span></button>
+        </div>
+    </div>
+
+    <div id="linux-section" class="os-content">
+        <div class="terminal-wrapper">
+            <div class="terminal">
+                <button class="copy-btn" onclick="copyText('linux-cmd')">Copy</button>
+                <code id="linux-cmd">bash <(curl -s https://setup.carino.systems/setup.sh)</code>
+            </div>
+        </div>
+        <p style="text-align: center; color: var(--text-dim);">Supports Debian, Ubuntu, Fedora, openSUSE, RHEL & CentOS.</p>
+    </div>
+
+    <div id="windows-section" class="os-content hidden">
+        <div class="terminal-wrapper">
+            <div class="terminal">
+                <button class="copy-btn" onclick="copyText('win-cmd')">Copy</button>
+                <code id="win-cmd">iwr -useb https://carino.systems/setup.ps1 | iex</code>
+            </div>
+        </div>
+        <p style="text-align: center; color: var(--text-dim);">Optimized for Windows 10 and 11 via PowerShell.</p>
+    </div>
+
+    <div id="mac-section" class="os-content hidden">
+        <div class="terminal-wrapper">
+            <div class="terminal">
+                <button class="copy-btn" onclick="copyText('mac-cmd')">Copy</button>
+                <code id="mac-cmd">bash <(curl -s https://setup.carino.systems/setup.sh)</code>
+            </div>
+        </div>
+        <p style="text-align: center; color: var(--text-dim);">Testing support for Homebrew and system defaults. Use with caution.</p>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h3>Smart Detection</h3>
+            <p>Automatically identifies your OS, distribution, and hardware to install the right components.</p>
+        </div>
+        <div class="card">
+            <h3>Fully Localized</h3>
+            <p>Menus available in English, Japanese, Russian, Spanish, Finnish, Chinese, Korean, and Hebrew.</p>
+        </div>
+        <div class="card">
+            <h3>Purpose-Built</h3>
+            <p>Choose between Quick, Server, or specialized setups for Astronomy, Design, and more.</p>
+        </div>
+    </div>
+
+    <div class="args-section">
+        <h2 id="txt-args-title">Available Arguments</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Flag</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td><code class="arg">quick</code></td><td>Installs Technical Setup and Basic Purpose packages.</td></tr>
+                <tr><td><code class="arg">server</code></td><td>Minimal server setup with essential dev tools.</td></tr>
+                <tr><td><code class="arg">nvidia/amd/intel</code></td><td>Forces specific graphic driver installation.</td></tr>
+                <tr><td><code class="arg">desktop</code></td><td>Opens a menu to select a new Desktop Environment.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <footer style="margin-top: 5rem; text-align: center; color: var(--text-dim); font-size: 0.9rem;">
+        <p>This project is open source. <a href="https://github.com/MiguelCarino/SimpleSetup" style="color: var(--accent);">Improve this page on GitHub</a>.</p>
+    </footer>
+</div>
+
+<script>
+    const translations = {
+        en: { title: "SimpleSetup", tagline: "Automated system configuration for Linux, Windows, and macOS. One command, zero stress.", banner: "Language: English", args: "Available Arguments" },
+        es: { title: "SimpleSetup", tagline: "Configuración automatizada para Linux, Windows y macOS. Un comando, cero estrés.", banner: "Idioma: Español", args: "Argumentos Disponibles" },
+        ja: { title: "SimpleSetup", tagline: "Linux、Windows、macOS向けの自動セットアップ。1つのコマンドでストレスゼロ。", banner: "言語: 日本語", args: "利用可能な引数" },
+        ru: { title: "SimpleSetup", tagline: "Автоматическая настройка для Linux, Windows и macOS. Одна команда, ноль стресса.", banner: "Язык: Русский", args: "Доступные аргументы" },
+        zh: { title: "SimpleSetup", tagline: "适用于 Linux、Windows 和 macOS 的自动系统配置。一个命令，零压力。", banner: "语言: 中文", args: "可用参数" },
+        ko: { title: "SimpleSetup", tagline: "Linux, Windows 및 macOS용 자동 시스템 구성. 하나의 명령으로 스트레스 제로.", banner: "언어: 한국어", args: "사용 가능한 인수" },
+        fi: { title: "SimpleSetup", tagline: "Automatisoitu järjestelmän asennus Linuxille, Windowsille ja macOS:lle. Yksi komento, nolla stressiä.", banner: "Kieli: Suomi", args: "Saatavilla olevat argumentit" },
+        he: { title: "SimpleSetup", tagline: "הגדרה אוטומטית עבור Linux, Windows ו-macOS. פקודה אחת, אפס מאמץ.", banner: "שפה: עברית", args: "ארגומנטים זמינים" }
+    };
+
+    const userLang = navigator.language.split('-')[0];
+    const content = translations[userLang] || translations.en;
+
+    document.getElementById('txt-title').innerText = content.title;
+    document.getElementById('txt-tagline').innerText = content.tagline;
+    document.getElementById('txt-args-title').innerText = content.args;
+    
+    if (userLang !== 'en' && translations[userLang]) {
+        const banner = document.getElementById('locale-banner');
+        banner.innerText = content.banner;
+        banner.style.display = 'block';
+    }
+
+    function showOS(os, btn) {
+        document.querySelectorAll('.os-content').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(os + '-section').classList.remove('hidden');
+        btn.classList.add('active');
+    }
+
+    function copyText(id) {
+        const text = document.getElementById(id).innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = document.querySelector(`#${id}`).parentElement.querySelector('.copy-btn');
+            const originalText = btn.innerText;
+            btn.innerText = "✓ Copied";
+            btn.style.background = "#10b981";
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.background = "#334155";
+            }, 2000);
+        });
+    }
+</script>
+
+</body>
+</html>
