@@ -645,13 +645,13 @@ distroboxContainers ()
 {
     distrobox-create --name fedora --image quay.io/fedora/fedora:latest -Y
     distrobox-create --name ubuntu --image docker.io/library/ubuntu:latest -Y
-    #distrobox-create --name rhel --image registry.access.redhat.com/ubi9/ubi -Y
+    #distrobox-create --name rhel --image registry.access.redhat.com/ubi10/ubi -Y
     distrobox-create --name debian --image docker.io/library/debian:latest -Y
     #distrobox-create --name clearlinux --image docker.io/library/clearlinux:latest -Y
-    distrobox-create --name centos --image quay.io/centos/centos:stream9 -Y
-    distrobox-create --name centos --image quay.io/centos/centos:stream10 -Y
+    #distrobox-create --name centos --image quay.io/centos/centos:stream9 -Y
+    #distrobox-create --name centos --image quay.io/centos/centos:stream10 -Y
     #distrobox-create --name arch --image docker.io/library/archlinux:latest -Y
-    distrobox-create --name opensusel --image registry.opensuse.org/opensuse/leap:latest -Y
+    #distrobox-create --name opensusel --image registry.opensuse.org/opensuse/leap:latest -Y
     #distrobox-create --name opensuset --image registry.opensuse.org/opensuse/tumbleweed:latest  -Y
     #distrobox-create --name gentoo --image docker.io/gentoo/stage3:latest -Y
 }
@@ -755,7 +755,6 @@ purposeMenu ()
         installSVP #Trying to find a FOSS alternative for smooth video
         distroboxContainers
         sudo usermod -aG libvirt $(whoami)
-        #xdg-settings set default-web-browser microsoft-edge.desktop
         ;;
     *)
         # Code to execute when $variable doesn't match any of the specified values
@@ -781,14 +780,15 @@ techSetup ()
     #      sudo sh -c 'echo fastestmirror=true >> /etc/dnf/dnf.conf' #Looks for the lowest ping, not necessarily the best bandwith
     #      sudo sh -c 'echo max_parallel_downloads=10 >> /etc/dnf/dnf.conf'
     #  fi 
-    sudo systemctl disable NetworkManager-wait-online.service
+    #sudo systemctl disable NetworkManager-wait-online.service
     caution "Installing RPM FUsion"
     if [ -f /etc/yum.repos.d/rpmfusion-free.repo ] || [ -f /etc/yum.repos.d/rpmfusion-nonfree.repo ]; then
         caution "RPM Fusion is installed already, moving on"
         else
-        sudo $pkgm $argInstall https://mirror.fcix.net/rpmfusion/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://opencolo.mm.fcix.net/rpmfusion/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm fedora-workstation-repositories dnf-plugins-core -y && sudo $pkgm update -y && sudo $pkgm install $essentialPackages -y
+        sudo $pkgm $argInstall https://mirror.fcix.net/rpmfusion/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://opencolo.mm.fcix.net/rpmfusion/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm fedora-workstation-repositories dnf-plugins-core -y
         updateGrub
     fi
+    sudo $pkgm update -y && sudo $pkgm install $essentialPackages -y
     # Removing ffmpeg 
     ;;
     *Nobara*|*Risi*|*Ultramarine*)
@@ -832,6 +832,9 @@ techSetup ()
     echo "2"
     ;;
     esac
+    info "Troubleshooting DONE"
+    exit
+    caution "Something is wrong"
     flathubEnable
     desktopenvironment
     graphicDrivers
@@ -914,11 +917,11 @@ updateSystem ()
 # Declaring Packages
 # Generic GNU/Linux Packages
 # Essential packages are what will allow system review for advanced users and stable hardware experience
-essentialPackages="pciutils git cmake wget nano curl jq mesa-va-drivers mesa-vdpau-drivers elinks nasm ncurses-dev* lshw lm*sensors rsync rclone mediainfo cifs-utils ntfs-3g* lsof xinput flatpak" #gcc-c++ lm_sensors.x86_64
+essentialPackages="pciutils git cmake wget nano curl jq elinks nasm lshw lm*sensors rsync rclone mediainfo cifs-utils ntfs-3g* lsof xinput procps git-lfs gnupg openssh-client* blktrace iotop smartmontools NetworkManager" #gcc-c++ lm_sensors.x86_64
 # Server packages ensure SSH, FTP and RDP connectivity, so advanced users can configure and use the server remotely
 serverPackages="netcat-traditional xserver-xorg-video-dummy openssh-server cockpit expect ftp vsftpd sshpass"
 # Basic packages will allow endusers to perform basic activities or get basic features
-basicUserPackages="gedit yt-dlp ffmpeg* tumbler libreoffice pavucontrol vnstat feh" #fontawesome-fonts-all epiphany # Flatpak - clamav clamtk obs-studio transmission
+basicUserPackages="gedit yt-dlp ffmpeg* tumbler libreoffice pavucontrol vnstat feh flatpak" #fontawesome-fonts-all epiphany # Flatpak - clamav clamtk obs-studio transmission
 basicSystemPackages="wine xrdp htop powertop tldr *gtkglext* libxdo-* ncdu scrot xclip"
 basicSystemPackagesOpenSUSE=""
 basicDesktopEnvironmentPackages="nautilus fontawesome-fonts"
@@ -926,13 +929,13 @@ basicDesktopEnvironmentPackages="nautilus fontawesome-fonts"
 gamingPackages="goverlay"
 # Multimedia pacakges allow the end user to use the most
 multimediaPackages="gstreamer* gscan2pdf python3-qt* python3-vapoursynth qt5-qtbase-devel vapoursynth-* libqt5* libass*" #qt5-qtbase-devel python3-qt5 # Flatpak - gimp krita blender kdenlive
-developmentPackages="gcc cargo npm python3-pip nodejs golang conda*"
+developmentPackages="gcc cargo npm python3-pip nodejs golang conda* ncurses-dev*"
 virtconPackages="podman distrobox bridge-utils virt-manager virt-top"
 virtconPackagesRPM="@virtualization libvirt libvirt-devel virt-install qemu-kvm qemu-img"
 virtconPackagesDebian="libvirt-daemon-system libvirt-clients virtinst"
 virtconPackagesOpenSUSE=""
 supportPackages="xxd" #stacer barrier bleachbit filezilla bless #Flatpak - remmina bless
-amdPackages="ocl-icd-dev* opencl-headers libdrm-dev* rocm*"
+amdPackages="ocl-icd-dev* opencl-headers libdrm-dev* rocm*" #mesa-vdpau-drivers mesa-va-drivers
 nvidiaPackages="vdpauinfo libva-utils vulkan nvidia-xconfig xorg-x11-drv-nvidia-cuda libva-vdpau-driver" #libva-vdpau-driver kernel-headers kernel-devel xorg-x11-drv-nvidia xorg-x11-drv-nvidia-libs xorg-x11-drv-nvidia-libs.i686 xorg-x11-drv-nvidia-cuda xorg-x11-drv-nvidia-cuda-libs
 nvidiaPackagesRPM="akmod-nvidia nvidia-vaapi-driver"
 nvidiaPackagesDebian="nvidia-driver* nvidia-opencl* nvidia-xconfig nvidia-vdpau-driver nvidia-vulkan*"
