@@ -7,25 +7,26 @@
     <title>SimpleSetup | Universal OS Automation</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;600;700&family=Red+Hat+Display:wght@700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0f172a;
-            --card: #1e293b;
-            --accent: #3b82f6;
-            --accent-hover: #2563eb;
-            --text-main: #f8fafc;
-            --text-dim: #94a3b8;
+            --bg: #050505;
+            --card: #0d0d0d;
+            --accent: #eab308;
+            --accent-hover: #fde047;
+            --text-main: #f5f5f5;
+            --text-dim: #8a8a8a;
+            --border: #262626;
             --terminal-bg: #000000;
-            --success: #10b981;
+            --success: #22c55e;
             --beta: #f59e0b;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: var(--bg); 
-            color: var(--text-main); 
+        body {
+            font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
             line-height: 1.6;
             padding-bottom: 5rem;
         }
@@ -33,8 +34,8 @@
         .container { max-width: 900px; margin: 0 auto; padding: 0 1.5rem; }
 
         #locale-banner {
-            background: rgba(59, 130, 246, 0.15);
-            border: 1px solid var(--accent);
+            background: rgba(234, 179, 8, 0.10);
+            border: 1px solid var(--border);
             color: var(--accent);
             padding: 0.75rem;
             text-align: center;
@@ -44,50 +45,54 @@
             display: none;
         }
 
-        .hero { text-align: center; padding: 4rem 0 2rem; }
-        .hero h1 { font-size: 3.5rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 1rem; background: linear-gradient(to right, #60a5fa, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .hero p { font-size: 1.25rem; color: var(--text-dim); max-width: 600px; margin: 0 auto; }
+        .hero { text-align: center; padding: 3.5rem 0 2rem; }
+        .hero h1 { font-family: 'Red Hat Display', 'IBM Plex Sans', sans-serif; font-size: 3.5rem; font-weight: 900; letter-spacing: -1px; margin-bottom: 1rem; background: linear-gradient(130deg, #fef08a 0%, #eab308 50%, #b45309 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { font-size: 1.2rem; color: var(--text-dim); max-width: 600px; margin: 0 auto; }
 
-        .tabs-container { margin: 3rem 0 1rem; text-align: center; }
-        .tabs { display: inline-flex; background: var(--card); padding: 0.4rem; border-radius: 12px; gap: 5px; flex-wrap: wrap; justify-content: center; }
-        .tab-btn { 
-            background: transparent; border: none; color: var(--text-dim); 
-            padding: 0.8rem 1.5rem; cursor: pointer; border-radius: 8px; 
+        .tabs-container { margin: 2.5rem 0 1rem; text-align: center; }
+        .tabs { display: inline-flex; background: var(--card); padding: 0.4rem; border-radius: 12px; gap: 5px; flex-wrap: wrap; justify-content: center; border: 1px solid var(--border); }
+        .tab-btn {
+            background: transparent; border: none; color: var(--text-dim);
+            padding: 0.8rem 1.5rem; cursor: pointer; border-radius: 8px;
             font-weight: 600; transition: all 0.2s; font-size: 1rem;
             display: flex; align-items: center; gap: 8px;
         }
-        .tab-btn.active { background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
-        
-        .beta-badge { font-size: 0.65rem; background: var(--beta); color: #000; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+        .tab-btn:hover { color: var(--text-main); }
+        .tab-btn.active { background: var(--accent); color: #050505; box-shadow: 0 6px 18px rgba(234, 179, 8, 0.28); }
+
+        .beta-badge { font-size: 0.65rem; background: var(--beta); color: #000; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; font-weight: 700; }
 
         .terminal-wrapper { position: relative; margin-bottom: 3rem; }
-        .terminal { 
-            background: var(--terminal-bg); border-radius: 12px; padding: 2rem; 
-            border: 1px solid #334155; box-shadow: 0 20px 50px rgba(0,0,0,0.4);
-            font-family: 'Fira Code', monospace; position: relative; overflow-x: auto;
+        .terminal {
+            background: var(--terminal-bg); border-radius: 12px; padding: 2rem;
+            border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            font-family: 'IBM Plex Mono', ui-monospace, monospace; position: relative; overflow-x: auto;
         }
-        .terminal code { color: var(--success); font-size: 1.1rem; white-space: nowrap; }
+        .terminal code { color: var(--success); font-size: 1.05rem; white-space: nowrap; }
         .copy-btn {
             position: absolute; right: 1rem; top: 1rem;
-            background: #334155; color: white; border: none; 
+            background: #1a1a1a; color: var(--text-main); border: 1px solid var(--border);
             padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer;
             font-size: 0.8rem; font-weight: 600; transition: 0.2s;
         }
-        .copy-btn:hover { background: var(--accent); }
+        .copy-btn:hover { background: var(--accent); color: #050505; border-color: var(--accent); }
 
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 4rem; }
-        .card { background: var(--card); padding: 1.5rem; border-radius: 12px; border: 1px solid #334155; }
+        .card { background: var(--card); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); transition: .2s; }
+        .card:hover { border-color: var(--accent); }
         .card h3 { margin-bottom: 0.5rem; color: var(--accent); }
         .card p { font-size: 0.95rem; color: var(--text-dim); }
 
         .args-section { margin-top: 4rem; }
-        table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: var(--card); border-radius: 12px; overflow: hidden; }
-        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #334155; }
-        th { background: rgba(255,255,255,0.05); color: var(--accent); font-weight: 600; }
-        code.arg { background: #000; color: #f472b6; padding: 0.2rem 0.5rem; border-radius: 4px; }
+        .args-section h2 { font-family: 'Red Hat Display', sans-serif; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        tr:last-child td { border-bottom: none; }
+        th { background: rgba(255,255,255,0.03); color: var(--accent); font-weight: 600; }
+        code.arg { background: #000; color: #fde047; padding: 0.2rem 0.5rem; border-radius: 4px; font-family: 'IBM Plex Mono', monospace; }
 
         .hidden { display: none; }
-        
+
         @media (max-width: 600px) {
             .hero h1 { font-size: 2.5rem; }
             .terminal { padding: 1.5rem 1rem; }
@@ -96,6 +101,8 @@
     </style>
 </head>
 <body>
+<!-- Carino navbar self-injects at the top of <body> (loads carino-clock.js locally) -->
+<script src="carino-navbar.js" data-app="Setup" defer></script>
 
 <div class="container">
     <div id="locale-banner"></div>
@@ -222,7 +229,7 @@
             btn.style.background = "#10b981";
             setTimeout(() => {
                 btn.innerText = originalText;
-                btn.style.background = "#334155";
+                btn.style.background = "";
             }, 2000);
         });
     }
