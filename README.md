@@ -76,3 +76,7 @@ bash <(curl -s https://setup.carino.systems/setup.sh) **argument**\
 - protongeinstall
   Installs the latest version of Proton GE for improved gaming performance on Linux. Removed due to proton experimental being good enough.
 - matrox and aspeed gpu drivers
+
+## License
+
+Licensed under the **GNU Affero General Public License v3.0 or later** (AGPL-3.0-or-later) — see [LICENSE](LICENSE). Copyright © 2026 Miguel Carino.
