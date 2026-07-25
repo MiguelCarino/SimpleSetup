@@ -11,13 +11,12 @@
             --bg: #050505;
             --card: #0d0d0d;
             --accent: #eab308;
-            --accent-hover: #fde047;
-            --text-main: #f5f5f5;
-            --text-dim: #8a8a8a;
+            --text-main: #fff;
+            --text-dim: #a3a3a3;
             --border: #262626;
-            --terminal-bg: #000000;
+            --terminal-bg: #050505;
             --success: #22c55e;
-            --beta: #f59e0b;
+            --beta: #eab308;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -58,7 +57,7 @@
         .tab-btn:hover { color: var(--text-main); }
         .tab-btn.active { background: var(--accent); color: #050505; box-shadow: 0 6px 18px rgba(234, 179, 8, 0.28); }
 
-        .beta-badge { font-size: 0.65rem; background: var(--beta); color: #000; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; font-weight: 700; }
+        .beta-badge { font-size: 0.65rem; background: var(--beta); color: #050505; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; font-weight: 700; }
 
         .terminal-wrapper { position: relative; margin-bottom: 3rem; }
         .terminal {
@@ -69,7 +68,7 @@
         .terminal code { color: var(--success); font-size: 1.05rem; white-space: nowrap; }
         .copy-btn {
             position: absolute; right: 1rem; top: 1rem;
-            background: #1a1a1a; color: var(--text-main); border: 1px solid var(--border);
+            background: var(--card); color: var(--text-main); border: 1px solid var(--border);
             padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer;
             font-size: 0.8rem; font-weight: 600; transition: 0.2s;
         }
@@ -87,7 +86,7 @@
         th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
         tr:last-child td { border-bottom: none; }
         th { background: rgba(255,255,255,0.03); color: var(--accent); font-weight: 600; }
-        code.arg { background: #000; color: #fde047; padding: 0.2rem 0.5rem; border-radius: 4px; font-family: 'IBM Plex Mono', monospace; }
+        code.arg { background: var(--bg); color: var(--accent); padding: 0.2rem 0.5rem; border-radius: 4px; font-family: 'IBM Plex Mono', monospace; }
 
         .hidden { display: none; }
 
@@ -224,7 +223,7 @@
             const btn = document.querySelector(`#${id}`).parentElement.querySelector('.copy-btn');
             const originalText = btn.innerText;
             btn.innerText = "✓ Copied";
-            btn.style.background = "#10b981";
+            btn.style.background = "#22c55e";
             setTimeout(() => {
                 btn.innerText = originalText;
                 btn.style.background = "";
