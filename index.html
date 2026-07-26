@@ -113,7 +113,7 @@
         <div class="tabs">
             <button class="tab-btn active" onclick="showOS('linux', this)">🐧 Linux</button>
             <button class="tab-btn" onclick="showOS('windows', this)">🪟 Windows</button>
-            <button class="tab-btn" onclick="showOS('mac', this)">🍎 macOS <span class="beta-badge">Beta</span></button>
+            <button class="tab-btn" onclick="showOS('mac', this)">🍎 macOS</button>
         </div>
     </div>
 
@@ -124,14 +124,14 @@
                 <code id="linux-cmd">bash <(curl -s https://setup.carino.systems/setup.sh)</code>
             </div>
         </div>
-        <p style="text-align: center; color: var(--text-dim);">Supports Debian, Ubuntu, Fedora, openSUSE, RHEL & CentOS.</p>
+        <p style="text-align: center; color: var(--text-dim);">Supports the Debian family (Debian, Ubuntu and its flavours, Mint, LMDE, Pop!_OS, Zorin, elementary, Kali, Parrot, Devuan, Raspberry Pi OS, MX, Deepin, KDE neon and more), the Fedora family (Fedora, Nobara, Risi, Ultramarine, plus the atomic variants Silverblue, Kinoite, Bazzite, Bluefin, Aurora and Universal Blue), RHEL, CentOS Stream and the RHEL rebuilds (Rocky, AlmaLinux, Oracle Linux and others), the Arch family (Arch, Manjaro, EndeavourOS, Garuda, CachyOS, ArcoLinux, RebornOS, Archcraft) via pacman, and Amazon Linux headless only. openSUSE is still under test. Some distributions are refused by design, among them SteamOS, Artix, Gentoo, Slackware, NixOS, Guix, Alpine, Void, Solus, Qubes and the transactional openSUSE variants; the script explains why for each.</p>
     </div>
 
     <div id="windows-section" class="os-content hidden">
         <div class="terminal-wrapper">
             <div class="terminal">
                 <button class="copy-btn" onclick="copyText('win-cmd')">Copy</button>
-                <code id="win-cmd">iwr -useb https://carino.systems/setup.ps1 | iex</code>
+                <code id="win-cmd">iwr -useb https://setup.carino.systems/setup.ps1 | iex</code>
             </div>
         </div>
         <p style="text-align: center; color: var(--text-dim);">Optimized for Windows 10 and 11 via PowerShell.</p>
@@ -144,7 +144,7 @@
                 <code id="mac-cmd">bash <(curl -s https://setup.carino.systems/macos.sh)</code>
             </div>
         </div>
-        <p style="text-align: center; color: var(--text-dim);">Testing support for Homebrew and system defaults. Use with caution.</p>
+        <p style="text-align: center; color: var(--text-dim);">Installs Homebrew if missing, then a Basic, Gaming, Corporate or FOSS profile. The FOSS profile installs open source applications only, for general use cases &mdash; no Steam and no proprietary browsers. Apple Silicon and Intel.</p>
     </div>
 
     <div class="grid">
@@ -158,7 +158,7 @@
         </div>
         <div class="card">
             <h3>Purpose-Built</h3>
-            <p>Choose between Quick, Server, or specialized setups for Astronomy, Design, and more.</p>
+            <p>Quick or Server setups, plus 14 purpose profiles: Gaming, Corporate, Development, Astronomy, Neuroscience, Design, Music, Cybersecurity, Forensics, Scientific, Robotics and more.</p>
         </div>
     </div>
 
@@ -172,10 +172,19 @@
                 </tr>
             </thead>
             <tbody>
-                <tr><td><code class="arg">quick</code></td><td>Installs Technical Setup and Basic Purpose packages.</td></tr>
-                <tr><td><code class="arg">server</code></td><td>Minimal server setup with essential dev tools.</td></tr>
+                <tr><td><code class="arg">quick</code></td><td>Technical Setup, then the basic user, system and support packages plus the basic and Google flatpaks.</td></tr>
+                <tr><td><code class="arg">simple</code></td><td>Runs the Technical Setup only.</td></tr>
+                <tr><td><code class="arg">server</code></td><td>Minimal server setup with essential dev tools. Skips the full Technical Setup.</td></tr>
                 <tr><td><code class="arg">nvidia/amd/intel</code></td><td>Forces specific graphic driver installation.</td></tr>
                 <tr><td><code class="arg">desktop</code></td><td>Opens a menu to select a new Desktop Environment.</td></tr>
+                <tr><td><code class="arg">svp</code></td><td>Installs Smooth Video Project for frame-interpolated playback.</td></tr>
+                <tr><td><code class="arg">distrobox</code></td><td>Installs Distrobox containers for other distros.</td></tr>
+                <tr><td><code class="arg">proton</code></td><td>Installs the latest ProtonGE release.</td></tr>
+                <tr><td><code class="arg">librewolf</code></td><td>Adds the LibreWolf repository and installs it. Fedora and Debian families only.</td></tr>
+                <tr><td><code class="arg">anydesk</code></td><td>Enables Flathub and installs the AnyDesk and RustDesk flatpaks.</td></tr>
+                <tr><td><code class="arg">anydesk-repo</code></td><td>Adds the official AnyDesk repository and installs it natively.</td></tr>
+                <tr><td><code class="arg">share</code></td><td>Mounts a Windows/CIFS share at <code class="arg">~/WinFiles</code>.</td></tr>
+                <tr><td><em>no argument</em></td><td>Opens the interactive menu, where option 5 updates the system.</td></tr>
             </tbody>
         </table>
     </div>
