@@ -106,7 +106,7 @@ if [[ "$NETWORK" == 1 ]]; then
         c=$(curl -s -o /dev/null -w '%{http_code}' -L --max-time 15 "$u")
         [[ "$c" == 200 ]] && ok "$c $u" || bad "$c $u"
     done
-    for id in $(grep -oE '\b[a-z][a-z0-9_]*(\.[A-Za-z][A-Za-z0-9_-]*){2,}\b' setup.sh | grep -vE '\.(sh|ps1|com|org|net|io|us|systems|conf|repo|list|asc|json|target|service|rpm|deb|gz|bz2|zst|d)$' | grep -vE '^org\.gnome\.desktop' | sort -u); do
+    for id in $(sed 's/#.*$//' setup.sh | grep -oE '\b[a-z][a-z0-9_]*(\.[A-Za-z][A-Za-z0-9_-]*){2,}\b' | grep -vE '\.(sh|ps1|com|org|net|io|us|systems|conf|repo|list|asc|json|target|service|rpm|deb|gz|bz2|zst|d)$' | grep -vE '^org\.gnome\.desktop' | sort -u); do # comments are stripped first, a trailing note naming the wrong identifier that was replaced would otherwise be looked up as if the script still installed it
         c=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "https://flathub.org/api/v2/appstream/$id")
         [[ "$c" == 200 ]] && ok "flathub $id" || bad "flathub $id returned $c"
     done

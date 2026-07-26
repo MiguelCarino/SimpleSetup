@@ -15,7 +15,7 @@ names() { grep -hoE "^($1)=.*" setup.sh | cut -d= -f2- | sed 's/#.*$//' | tr -d 
 
 if [[ "$WHAT" == "all" || "$WHAT" == "flathub" ]]; then
     echo -e "\n${BLUE}Flathub application identifiers${ENDCOLOR}"
-    for id in $(grep -ohE '\b[a-z][a-z0-9_]*(\.[A-Za-z][A-Za-z0-9_-]*){2,}\b' setup.sh | grep -vE '\.(sh|ps1|com|org|net|io|us|systems|conf|repo|list|asc|json|target|service|rpm|deb|gz|bz2|zst|d)$' | grep -vE '^org\.gnome\.desktop' | sort -u); do
+    for id in $(sed 's/#.*$//' setup.sh | grep -ohE '\b[a-z][a-z0-9_]*(\.[A-Za-z][A-Za-z0-9_-]*){2,}\b' | grep -vE '\.(sh|ps1|com|org|net|io|us|systems|conf|repo|list|asc|json|target|service|rpm|deb|gz|bz2|zst|d)$' | grep -vE '^org\.gnome\.desktop' | sort -u); do # same comment stripping as names() above, the flathub leg reads the whole file rather than a variable
         code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "https://flathub.org/api/v2/appstream/$id")
         if [[ "$code" == 200 ]]; then here; else gone "flathub  $id (HTTP $code)"; fi
     done
