@@ -104,6 +104,32 @@ Running it with no argument, or with an unrecognised one, opens the interactive 
 
 **Note:** updating the system is menu option 5, not an argument. There is no `update` argument in `setup.sh`.
 
+## Rehearsing a run
+
+`dry-run` is a modifier rather than an argument, so it goes *before* whatever you were going to run and prints every privileged command instead of executing it:
+
+```bash
+./setup.sh dry-run          # opens the menu, installs nothing
+./setup.sh dry-run quick    # shows exactly what quick would do on this machine
+```
+
+`SIMPLESETUP_OSRELEASE` points the distro detection at a file of your choosing, so you can see what a Debian or an Arch user would get without owning either machine:
+
+```bash
+printf 'NAME="Arch Linux"\n' > /tmp/osr
+SIMPLESETUP_OSRELEASE=/tmp/osr ./setup.sh dry-run
+```
+
+## Testing
+
+```bash
+./test.sh                       # syntax, menu-to-case parity in all 8 languages, and a dry run of every distribution
+./test.sh --network             # also verifies every published URL and every Flathub identifier
+./tools/check-packages.sh all   # confirms every package name still resolves upstream
+```
+
+`test.sh` refuses to pass if a printed menu stops matching the `case` that dispatches it, if a supported distribution stops producing an install command, or if an unsupported one produces any command at all. `check-packages.sh` queries the Arch, Fedora, Debian and Flathub indexes directly; it uses `dnf --whatprovides` where a package manager is available, because names such as `wget` and `gnupg` are satisfied through virtual provides rather than by a package of that name. Both run in CI on every push, on Linux and on Windows.
+
 ## Known Issues
 - **Ubuntu derivatives like Pop_OS! have package name conflicts**
 - **openSUSE support is still under test**

@@ -1,7 +1,10 @@
 #!/bin/bash
 # Setup script
 # Log all output to file
-LOG="carino-setup-$(date +%Y%m%d-%H%M%S).log" # one timestamped log per run, replaces the undefined $version and the malformed currentDate
+if [[ "$1" == "dry-run" || "$1" == "--dry-run" ]]; then DRYRUN=1; shift; else DRYRUN=${SIMPLESETUP_DRYRUN:-0}; fi # a modifier rather than an action, so it prefixes any other argument and leaves the dispatch below unchanged
+LOG="${SIMPLESETUP_LOG:-carino-setup-$(date +%Y%m%d-%H%M%S).log}" # one timestamped log per run, replaces the undefined $version and the malformed currentDate
+[[ "$DRYRUN" == 1 && -z "$SIMPLESETUP_LOG" ]] && LOG=$(mktemp -t carino-setup-XXXXXX.log) # a rehearsal should not leave a log behind in whatever directory it was run from
+OSRELEASE="${SIMPLESETUP_OSRELEASE:-/etc/os-release}" # overridable so test.sh can drive identifyDistro through every supported family without those distributions being installed
 exec > >(tee -a "$LOG") 2>&1
 set -f # the package lists carry dnf style globs, without noglob the shell expands ffmpeg*, rocm* and lm*sensors against the working directory and hands the package manager a tarball name instead
 # Defining Global Variables
@@ -59,8 +62,8 @@ purpose_setup_he_IL="-------------------------------------\nבחר מטרה עב
 # Declaring Specific Functions
 identifyDistro ()
 {
-if [[ -f /etc/os-release ]]; then
-        source /etc/os-release 
+if [[ -f "$OSRELEASE" ]]; then
+        source "$OSRELEASE"
         if [[ -n "$NAME" ]]; then
             export DISTRIBUTION=$NAME
             export VERSION=$VERSION_ID
@@ -1061,7 +1064,7 @@ updateSystem ()
 # Declaring Packages
 # Generic GNU/Linux Packages
 # Essential packages are what will allow system review for advanced users and stable hardware experience
-essentialPackages="pciutils git cmake wget nano curl jq elinks nasm lshw lm*sensors rsync rclone mediainfo cifs-utils ntfs-3g* lsof xinput procps git-lfs gnupg openssh-client* blktrace iotop smartmontools NetworkManager" #gcc-c++ lm_sensors.x86_64
+essentialPackages="pciutils git cmake wget nano curl jq elinks nasm lshw lm*sensors rsync rclone mediainfo cifs-utils ntfs-3g* lsof xinput procps git-lfs gnupg openssh-client* blktrace iotop smartmontools" #gcc-c++ lm_sensors.x86_64
 # Server packages ensure SSH, FTP and RDP connectivity, so advanced users can configure and use the server remotely
 serverPackages="netcat-traditional xserver-xorg-video-dummy openssh-server cockpit expect ftp vsftpd sshpass" # these are the Debian spellings, the RPM and openSUSE families replace the whole list below because netcat-traditional and xserver-xorg-video-dummy exist on neither
 serverPackagesRPM="nmap-ncat xorg-x11-drv-dummy openssh-server cockpit expect ftp vsftpd sshpass"
@@ -1085,7 +1088,7 @@ virtconPackagesOpenSUSE=""
 supportPackages="xxd" #stacer barrier bleachbit filezilla bless #Flatpak - remmina bless
 amdPackages="ocl-icd-dev* opencl-headers libdrm-dev* rocm*" #mesa-vdpau-drivers mesa-va-drivers
 nvidiaPackages="vdpauinfo libva-utils vulkan nvidia-xconfig xorg-x11-drv-nvidia-cuda libva-vdpau-driver" #libva-vdpau-driver kernel-headers kernel-devel xorg-x11-drv-nvidia xorg-x11-drv-nvidia-libs xorg-x11-drv-nvidia-libs.i686 xorg-x11-drv-nvidia-cuda xorg-x11-drv-nvidia-cuda-libs
-nvidiaPackagesRPM="akmod-nvidia nvidia-vaapi-driver"
+nvidiaPackagesRPM="akmod-nvidia libva-nvidia-driver" # RPM Fusion renamed nvidia-vaapi-driver, the old name resolves to nothing and --skip-broken dropped it silently so VA-API was simply never installed
 nvidiaPackagesDebian="nvidia-driver* nvidia-opencl* nvidia-xconfig nvidia-vdpau-driver nvidia-vulkan*"
 nvidiaPackagesUbuntu="nvidia-driver-560"
 nvidiaPackagesOpenSUSE=""
@@ -1176,8 +1179,8 @@ i3RicingPackagesArch="rofi i3blocks picom kitty lxappearance" # nitrogen is AUR 
 # Specific GNU/Linux Packages
 intelPackages="intel-media-*driver"
 basicSystemPackagesDebian="tealdeer" # neofetch is gone from Debian trixie and sid, and fastfetch is absent from Ubuntu noble, so neither replacement is safe across this family; tealdeer exists in both and provides the tldr command
-essentialPackagesRPM="NetworkManager-tui xkill tigervnc-server dhcp-server fastfetch"
-essentialPackagesDebian="software-properties-common build-essential manpages-dev net-tools x11-utils tigervnc-standalone-server tigervnc-common tightvncserver isc-dhcp-server" #libncurses5-dev libncursesw5-dev libgtkglext1 linux-headers-amd64 linux-image-amd64
+essentialPackagesRPM="NetworkManager-tui NetworkManager xkill tigervnc-server dhcp-server fastfetch" # NetworkManager moved out of the shared list, Debian spells it network-manager in lowercase and the capitalised name resolves to nothing there
+essentialPackagesDebian="software-properties-common network-manager build-essential manpages-dev net-tools x11-utils tigervnc-standalone-server tigervnc-common tightvncserver isc-dhcp-server" #libncurses5-dev libncursesw5-dev libgtkglext1 linux-headers-amd64 linux-image-amd64
 essentialPackagesOpenSUSE=""
 essentialPackagesArch="pciutils git cmake wget nano curl jq nasm lshw rsync rclone mediainfo cifs-utils lsof git-lfs gnupg iotop smartmontools lm_sensors ntfs-3g openssh procps-ng networkmanager xorg-xinput xorg-xkill tigervnc fastfetch" # spelled out because pacman expands no wildcards, and it is a replacement rather than an addition: lm*sensors, ntfs-3g*, openssh-client*, procps, xinput and NetworkManager are all Debian or RPM spellings, and blktrace is AUR only so it is dropped rather than left to abort the single transaction serverSetup uses
 basicUserPackagesArch="gedit yt-dlp ffmpeg tumbler libreoffice-fresh pavucontrol vnstat feh flatpak" # libreoffice itself is not a package on Arch, only libreoffice-fresh and libreoffice-still are
@@ -1305,5 +1308,13 @@ detectArgument() {
             ;;
     esac
 }
+enableDryRun ()
+{
+    dryBin=$(mktemp -d) # a PATH shim rather than shell function overrides, because distrobox-create and mount.cifs are not portable function names
+    trap 'rm -rf "$dryBin"' EXIT
+    for cmd in sudo flatpak wget git gsettings xdg-mime distrobox-create usermod modprobe hostnamectl mount.cifs subscription-manager; do printf '#!/bin/bash\necho "DRY-RUN: %s $*"\nexit 0\n' "$cmd" > "$dryBin/$cmd"; chmod +x "$dryBin/$cmd"; done # rpm-ostree and systemctl are deliberately absent, both are only ever reached through sudo and rpm-ostree is command -v probed to detect an atomic system, so shimming it would make every Fedora look like Silverblue
+    PATH="$dryBin:$PATH" # detection commands such as lspci and uname are deliberately left real, only the privileged and mutating calls are intercepted
+    caution "DRY RUN: nothing below will actually run. Every privileged or system-modifying command is printed instead."
+}
+[[ "$DRYRUN" == 1 ]] && enableDryRun
 detectArgument "$1"
-echo $1

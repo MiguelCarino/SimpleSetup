@@ -1,0 +1,30 @@
+name: checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shell syntax, menu parity and a dry run of every supported distribution
+        run: ./test.sh --network   # --network also verifies the published URLs and every Flathub identifier, which is what caught the 404 install command
+      - name: shellcheck
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+          shellcheck -S error setup.sh macos.sh test.sh tools/check-packages.sh   # errors only, this codebase predates shellcheck and the warning-level backlog would drown the signal
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: PowerShell parse, cmdlet resolution and menu parity
+        shell: pwsh
+        run: ./test.ps1
+      - name: Same checks under Windows PowerShell 5.1
+        shell: powershell
+        run: ./test.ps1   # 5.1 is what ships on a stock Windows box and is what actually runs setup.ps1, pwsh alone would not catch a 7-only construct
