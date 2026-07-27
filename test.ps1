@@ -1,4 +1,4 @@
-# SimpleSetup test harness for the Windows half. Run from the repository root: .\test.ps1
+# Carino Setup test harness for the Windows half. Run from the repository root: .\test.ps1
 # Checks only, it never installs anything and never writes to the registry.
 $script:pass = 0
 $script:fail = 0

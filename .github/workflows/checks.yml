@@ -11,8 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Shell syntax, menu parity and a dry run of every supported distribution
+      - name: Shell syntax, menu parity, install command shape, every argument, every plan directive and a dry run of every supported distribution
         run: ./test.sh --network   # --network also verifies the published URLs and every Flathub identifier, which is what caught the 404 install command
+      - name: Every package list in setup.sh is watched by a leg of the package check
+        run: ./tools/check-packages.sh coverage   # text only and instant, and it is the one check that notices a brand new package list nothing is looking at, which is how the RPM family desktop lists went unwatched
       - name: shellcheck
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck

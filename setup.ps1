@@ -1,4 +1,4 @@
-#Microsoft Windows Setup Script
+#Carino Setup - Microsoft Windows - https://setup.carino.systems
 #Remember to Set-ExecutionPolicy Bypass -Scope Process -Force
 Write-Host "Remember to Set-ExecutionPolicy Bypass -Scope Process -Force"
 #Defining variables
@@ -220,7 +220,7 @@ function installPackages {
 }
 
 #Selecting case
-Write-Host "Microsoft Windows Setup Script"
+Write-Host "Carino Setup - Microsoft Windows"
 #Read-Host -Prompt "Welcome $env:username`nPlease select an option:`n1. Setup for Workstation`n2. Setup for Server`n3. Update my Windows System`n4. Install Video Drivers`n"
 if (-not (isElevated)) {
     error "This script needs administrator rights. Reopen PowerShell as Administrator and run it again."   # failing here beats half applying tweaks, modules and updates

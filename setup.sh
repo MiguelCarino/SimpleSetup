@@ -1,10 +1,11 @@
 #!/bin/bash
 # Setup script
 # Log all output to file
-if [[ "$1" == "dry-run" || "$1" == "--dry-run" ]]; then DRYRUN=1; shift; else DRYRUN=${SIMPLESETUP_DRYRUN:-0}; fi # a modifier rather than an action, so it prefixes any other argument and leaves the dispatch below unchanged
-LOG="${SIMPLESETUP_LOG:-carino-setup-$(date +%Y%m%d-%H%M%S).log}" # one timestamped log per run, replaces the undefined $version and the malformed currentDate
-[[ "$DRYRUN" == 1 && -z "$SIMPLESETUP_LOG" ]] && LOG=$(mktemp -t carino-setup-XXXXXX.log) # a rehearsal should not leave a log behind in whatever directory it was run from
-OSRELEASE="${SIMPLESETUP_OSRELEASE:-/etc/os-release}" # overridable so test.sh can drive identifyDistro through every supported family without those distributions being installed
+if [[ "$1" == "dry-run" || "$1" == "--dry-run" ]]; then DRYRUN=1; shift; else DRYRUN=${CARINO_SETUP_DRYRUN:-0}; fi # a modifier rather than an action, so it prefixes any other argument and leaves the dispatch below unchanged
+LOG="${CARINO_SETUP_LOG:-carino-setup-$(date +%Y%m%d-%H%M%S).log}" # one timestamped log per run, replaces the undefined $version and the malformed currentDate
+[[ "$DRYRUN" == 1 && -z "$CARINO_SETUP_LOG" ]] && LOG=/dev/null # a rehearsal writes no log at all, not even a temporary one, so nothing on the filesystem changes while the shims below print what would have run
+OSRELEASE="${CARINO_SETUP_OSRELEASE:-/etc/os-release}" # overridable so test.sh can drive identifyDistro through every supported family without those distributions being installed
+NONINTERACTIVE=0 # the single flag every prompt in this file reads, runPlan sets it to 1 so each read takes its documented default and says so instead of blocking on stdin
 exec > >(tee -a "$LOG") 2>&1
 set -f # the package lists carry dnf style globs, without noglob the shell expands ffmpeg*, rocm* and lm*sensors against the working directory and hands the package manager a tarball name instead
 # Defining Global Variables
@@ -17,6 +18,29 @@ error() { echo -e "${RED}$1${ENDCOLOR}"; }
 caution() { echo -e "${YELLOW}$1${ENDCOLOR}"; }
 success() { echo -e "${GREEN}$1${ENDCOLOR}"; }
 profileWarning() { [[ -n "$2" ]] || caution "No native $1 package list exists for '${DISTRIBUTION:-this system}', only the shared base packages and the Flatpaks below will be installed."; } # the specialised lists are populated in the fedora and debian arms only, on rhel, centos, amazon, arch and opensuse the profile would otherwise look identical to Basic without saying so
+setupPrivilege ()
+{
+    if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
+        privilegeTool="root"
+        sudo() { if [[ "$1" == "-u" ]]; then local privUser="$2"; shift 2; if command -v runuser >/dev/null 2>&1; then runuser -u "$privUser" -- "$@"; else su "$privUser" -c "$*"; fi; else "$@"; fi; } # every privileged line in this file is written "sudo something", as root that is just execution, and only the -u form of installSVP needs translating back to an unprivileged user
+        success "Running as root, no privilege escalation is needed."
+    elif command -v sudo >/dev/null 2>&1; then
+        privilegeTool="sudo" # the literal calls throughout the file are already correct, nothing is overridden
+    elif command -v doas >/dev/null 2>&1; then
+        privilegeTool="doas"
+        sudo() { command doas "$@"; } # doas spells the target user -u exactly as sudo does, so the arguments pass straight through
+        caution "sudo is not installed, doas will be used to elevate."
+    elif command -v run0 >/dev/null 2>&1; then
+        privilegeTool="run0"
+        sudo() { local runArgs=(); while [[ "$1" == "-u" ]]; do runArgs+=("--user=$2"); shift 2; done; command run0 "${runArgs[@]}" "$@"; } # run0 spells the target user --user= instead of -u
+        caution "sudo is not installed, run0 will be used to elevate."
+    else
+        privilegeTool=""
+        error "This script installs packages as root, but you are not root and this system has none of sudo, doas or run0. Install one of them, or re-run this script as root. Nothing was run."
+        return 1
+    fi
+    return 0
+}
 systemFacts ()
 {
     kernelVersion=$(uname -r 2>/dev/null)
@@ -50,14 +74,14 @@ tech_setup_fi_FI="Versio:1.2\nTunnistettu jakelu: $DISTRIBUTION $VERSION\nViimei
 tech_setup_zh_CN="版本：1.2\n检测到的发行版：$DISTRIBUTION $VERSION\n最新的GitHub提交：$latest_commit\n最新的Linux内核版本：$latest_kernel\n您的内核版本：$kernelVersion\nCPU架构：$archType\n硬件加速已启用：$hardwareAcceleration\n硬件渲染器：$hardwareRenderer\n-------------------------------------\n请选择一个选项：\n1. 技术设置\n2. 用途设置\n3. 安装桌面环境\n4. 安装图形驱动程序\n5. 更新系统\n6. 服务器设置\n7. 退出"
 tech_setup_ko_KR="버전:1.2\n감지된 배포판: $DISTRIBUTION $VERSION\n최신 GitHub 커밋: $latest_commit\n최신 Linux 커널 버전: $latest_kernel\n사용 중인 커널 버전: $kernelVersion\nCPU 아키텍처: $archType\n하드웨어 가속 활성화됨: $hardwareAcceleration\n하드웨어 렌더러: $hardwareRenderer\n-------------------------------------\n옵션을 선택하세요:\n1. 기술 설정\n2. 용도별 설정\n3. 데스크톱 환경 설치\n4. 그래픽 드라이버 설치\n5. 시스템 업데이트\n6. 서버 설정\n7. 종료"
 tech_setup_he_IL="גרסה:1.2\nהפצה שזוהתה: $DISTRIBUTION $VERSION\nקומיט אחרון ב-GitHub: $latest_commit\nגרסת ליבת Linux האחרונה: $latest_kernel\nגרסת הליבה שלך: $kernelVersion\nארכיטקטורת CPU: $archType\nהאצת חומרה מופעלת: $hardwareAcceleration\nמנוע רינדור חומרה: $hardwareRenderer\n-------------------------------------\nבחר אפשרות:\n1. הגדרה טכנית\n2. הגדרה לפי מטרה\n3. התקנת סביבת שולחן עבודה\n4. התקנת מנהלי התקנים גרפיים\n5. עדכון המערכת\n6. הגדרת שרת\n7. יציאה"
-purpose_setup_en_US="-------------------------------------\nPlease select a purpose for your distro\n-------------------------------------\n1. Basic\n2. Gaming\n3. Corporate\n4. Corporate (Microsoft only)\n5. Corporate (Google only)\n6. Development\n7. Astronomy\n8. Computational Neuroscience\n9. Design\n10. Music Production\n11. Cybersecurity\n12. Forensics\n13. Scientific\n14. Robotics\n15. Back to main menu"
-purpose_setup_ja_JP="-------------------------------------\nディストリビューションの用途を選択してください\n-------------------------------------\n1. ベーシック\n2. ゲーミング\n3. 企業向け\n4. 企業向け (Microsoftのみ)\n5. 企業向け (Googleのみ)\n6. 開発\n7. 天文学\n8. 計算論的神経科学\n9. デザイン\n10. 音楽制作\n11. サイバーセキュリティ\n12. デジタルフォレンジック\n13. 科学技術計算\n14. ロボティクス\n15. メインメニューに戻る"
-purpose_setup_ru_RU="-------------------------------------\nВыберите назначение вашего дистрибутива\n-------------------------------------\n1. Базовый\n2. Игровой\n3. Корпоративный\n4. Корпоративный (только Microsoft)\n5. Корпоративный (только Google)\n6. Разработка\n7. Астрономия\n8. Вычислительная нейробиология\n9. Дизайн\n10. Производство музыки\n11. Кибербезопасность\n12. Компьютерная криминалистика\n13. Научный\n14. Робототехника\n15. Вернуться в главное меню"
-purpose_setup_es_ES="-------------------------------------\nSeleccione un propósito para su distro\n-------------------------------------\n1. Básico\n2. Juegos\n3. Corporativo\n4. Corporativo (solo Microsoft)\n5. Corporativo (solo Google)\n6. Desarrollo\n7. Astronomía\n8. Neurociencia Computacional\n9. Diseño\n10. Producción Musical\n11. Ciberseguridad\n12. Informática Forense\n13. Científico\n14. Robótica\n15. Volver al menú principal"
-purpose_setup_fi_FI="-------------------------------------\nValitse käyttötarkoitus jakelullesi\n-------------------------------------\n1. Perus\n2. Pelaaminen\n3. Yrityskäyttö\n4. Yrityskäyttö (vain Microsoft)\n5. Yrityskäyttö (vain Google)\n6. Ohjelmistokehitys\n7. Tähtitiede\n8. Laskennallinen neurotiede\n9. Suunnittelu\n10. Musiikkituotanto\n11. Kyberturvallisuus\n12. Digitaalinen forensiikka\n13. Tieteellinen\n14. Robotiikka\n15. Takaisin päävalikkoon"
-purpose_setup_zh_CN="-------------------------------------\n请选择您的发行版用途\n-------------------------------------\n1. 基础\n2. 游戏\n3. 企业\n4. 企业 (仅 Microsoft)\n5. 企业 (仅 Google)\n6. 开发\n7. 天文学\n8. 计算神经科学\n9. 设计\n10. 音乐制作\n11. 网络安全\n12. 数字取证\n13. 科学计算\n14. 机器人技术\n15. 返回主菜单"
-purpose_setup_ko_KR="-------------------------------------\n배포판의 용도를 선택하세요\n-------------------------------------\n1. 기본\n2. 게이밍\n3. 기업용\n4. 기업용 (Microsoft 전용)\n5. 기업용 (Google 전용)\n6. 개발\n7. 천문학\n8. 계산 신경과학\n9. 디자인\n10. 음악 제작\n11. 사이버 보안\n12. 디지털 포렌식\n13. 과학 계산\n14. 로보틱스\n15. 메인 메뉴로 돌아가기"
-purpose_setup_he_IL="-------------------------------------\nבחר מטרה עבור ההפצה שלך\n-------------------------------------\n1. בסיסי\n2. משחקים\n3. ארגוני\n4. ארגוני (Microsoft בלבד)\n5. ארגוני (Google בלבד)\n6. פיתוח\n7. אסטרונומיה\n8. מדעי המוח החישוביים\n9. עיצוב\n10. הפקת מוזיקה\n11. אבטחת סייבר\n12. פורנזיקה דיגיטלית\n13. מדעי\n14. רובוטיקה\n15. חזרה לתפריט הראשי"
+purpose_setup_en_US="-------------------------------------\nPlease select a purpose for your distro\n-------------------------------------\n1. Basic\n2. Gaming\n3. Corporate\n4. Corporate (Microsoft only)\n5. Corporate (Google only)\n6. Development\n7. Astronomy\n8. Computational Neuroscience\n9. Design\n10. Music Production\n11. Cybersecurity\n12. Forensics\n13. Scientific\n14. Robotics\n15. Medical Imaging\n16. Back to main menu"
+purpose_setup_ja_JP="-------------------------------------\nディストリビューションの用途を選択してください\n-------------------------------------\n1. ベーシック\n2. ゲーミング\n3. 企業向け\n4. 企業向け (Microsoftのみ)\n5. 企業向け (Googleのみ)\n6. 開発\n7. 天文学\n8. 計算論的神経科学\n9. デザイン\n10. 音楽制作\n11. サイバーセキュリティ\n12. デジタルフォレンジック\n13. 科学技術計算\n14. ロボティクス\n15. 医用画像\n16. メインメニューに戻る"
+purpose_setup_ru_RU="-------------------------------------\nВыберите назначение вашего дистрибутива\n-------------------------------------\n1. Базовый\n2. Игровой\n3. Корпоративный\n4. Корпоративный (только Microsoft)\n5. Корпоративный (только Google)\n6. Разработка\n7. Астрономия\n8. Вычислительная нейробиология\n9. Дизайн\n10. Производство музыки\n11. Кибербезопасность\n12. Компьютерная криминалистика\n13. Научный\n14. Робототехника\n15. Медицинская визуализация\n16. Вернуться в главное меню"
+purpose_setup_es_ES="-------------------------------------\nSeleccione un propósito para su distro\n-------------------------------------\n1. Básico\n2. Juegos\n3. Corporativo\n4. Corporativo (solo Microsoft)\n5. Corporativo (solo Google)\n6. Desarrollo\n7. Astronomía\n8. Neurociencia Computacional\n9. Diseño\n10. Producción Musical\n11. Ciberseguridad\n12. Informática Forense\n13. Científico\n14. Robótica\n15. Imagenología\n16. Volver al menú principal"
+purpose_setup_fi_FI="-------------------------------------\nValitse käyttötarkoitus jakelullesi\n-------------------------------------\n1. Perus\n2. Pelaaminen\n3. Yrityskäyttö\n4. Yrityskäyttö (vain Microsoft)\n5. Yrityskäyttö (vain Google)\n6. Ohjelmistokehitys\n7. Tähtitiede\n8. Laskennallinen neurotiede\n9. Suunnittelu\n10. Musiikkituotanto\n11. Kyberturvallisuus\n12. Digitaalinen forensiikka\n13. Tieteellinen\n14. Robotiikka\n15. Lääketieteellinen kuvantaminen\n16. Takaisin päävalikkoon"
+purpose_setup_zh_CN="-------------------------------------\n请选择您的发行版用途\n-------------------------------------\n1. 基础\n2. 游戏\n3. 企业\n4. 企业 (仅 Microsoft)\n5. 企业 (仅 Google)\n6. 开发\n7. 天文学\n8. 计算神经科学\n9. 设计\n10. 音乐制作\n11. 网络安全\n12. 数字取证\n13. 科学计算\n14. 机器人技术\n15. 医学影像\n16. 返回主菜单"
+purpose_setup_ko_KR="-------------------------------------\n배포판의 용도를 선택하세요\n-------------------------------------\n1. 기본\n2. 게이밍\n3. 기업용\n4. 기업용 (Microsoft 전용)\n5. 기업용 (Google 전용)\n6. 개발\n7. 천문학\n8. 계산 신경과학\n9. 디자인\n10. 음악 제작\n11. 사이버 보안\n12. 디지털 포렌식\n13. 과학 계산\n14. 로보틱스\n15. 의료 영상\n16. 메인 메뉴로 돌아가기"
+purpose_setup_he_IL="-------------------------------------\nבחר מטרה עבור ההפצה שלך\n-------------------------------------\n1. בסיסי\n2. משחקים\n3. ארגוני\n4. ארגוני (Microsoft בלבד)\n5. ארגוני (Google בלבד)\n6. פיתוח\n7. אסטרונומיה\n8. מדעי המוח החישוביים\n9. עיצוב\n10. הפקת מוזיקה\n11. אבטחת סייבר\n12. פורנזיקה דיגיטלית\n13. מדעי\n14. רובוטיקה\n15. הדמיה רפואית\n16. חזרה לתפריט הראשי"
 }
 # Declaring Specific Functions
 identifyDistro ()
@@ -120,6 +144,7 @@ if [[ -f "$OSRELEASE" ]]; then
     astronomyPackages="$astronomyPackages $astronomyPackagesRPM" # the purpose profile lists are appended for Fedora only, every name below was checked against the fedora and updates repositories and none of the enterprise rebuilds carries the full set
     compneuroPackages="$compneuroPackages $compneuroPackagesRPM"
     designPackages="$designPackages $designPackagesRPM"
+    imagenologyPackages="$imagenologyPackages $imagenologyPackagesRPM"
     musicPackages="$musicPackages $musicPackagesRPM"
     securityPackages="$securityPackages $securityPackagesRPM"
     forensicsPackages="$forensicsPackages $forensicsPackagesRPM"
@@ -135,7 +160,7 @@ if [[ -f "$OSRELEASE" ]]; then
     argInstall=install
     argUpdate=update
     preFlags=""
-    postFlags="--skip-broken -y"
+    postFlags="--skip-broken --setopt=strict=0 -y" # --skip-broken only resolves dependency problems, a package name that is in no enabled repository is still a hard "Unable to find a match" that aborts the entire transaction; strict=0 turns that into a warning, which is what this family needs because the shared lists are Fedora shaped and feh, yt-dlp, scrot, goverlay, xxd and @virtualization exist in none of the enterprise rebuilds
     updateFlags="-y"
     essentialPackages="$essentialPackages $essentialPackagesRPM"
     serverPackages="$serverPackagesRPM" # the shared list holds Debian names that resolve to nothing here
@@ -153,7 +178,7 @@ if [[ -f "$OSRELEASE" ]]; then
     argInstall=install
     argUpdate=update
     preFlags=""
-    postFlags="--skip-broken -y"
+    postFlags="--skip-broken --setopt=strict=0 -y" # Amazon Linux 2023 carries neither EPEL nor CRB and is missing 36 of the 78 names the shared lists ask for, so without this every install here was all-or-nothing and got nothing
     updateFlags="-y"
     essentialPackages="$essentialPackages $essentialPackagesRPM"
     serverPackages="$serverPackagesRPM" # the shared list holds Debian names that resolve to nothing here
@@ -171,7 +196,7 @@ if [[ -f "$OSRELEASE" ]]; then
     argInstall=install
     argUpdate=update
     preFlags=""
-    postFlags="--skip-broken -y"
+    postFlags="--skip-broken --setopt=strict=0 -y" # same reason as the RHEL arm above, verified on almalinux:9 and centos:stream10, both of which still run dnf 4
     updateFlags="-y"
     essentialPackages="$essentialPackages $essentialPackagesRPM"
     serverPackages="$serverPackagesRPM" # the shared list holds Debian names that resolve to nothing here
@@ -188,6 +213,7 @@ if [[ -f "$OSRELEASE" ]]; then
     pkgext=deb
     argInstall=install
     argUpdate=update
+    argUpgrade=upgrade # apt update only refreshes the index, the packages themselves move on the separate upgrade operation that updateSystem and serverSetup run after it
     preFlags="-f"
     postFlags="-y -m"
     updateFlags="-y"
@@ -195,11 +221,16 @@ if [[ -f "$OSRELEASE" ]]; then
     basicSystemPackages="$basicSystemPackages $basicSystemPackagesDebian"
     basicDesktopEnvironmentPackages="$basicDesktopEnvironmentPackagesDebian" # replaced, Debian has no package called fontawesome-fonts and apt -m does not forgive an unresolvable name
     amdPackages="$amdPackages $amdPackagesDebian"
-    nvidiaPackages="$nvidiaPackages $nvidiaPackagesDebian"
+    case "${ID:-} ${ID_LIKE:-} ${NAME:-}" in # Ubuntu is checked first on purpose, its ID_LIKE is debian while Mint, Pop!_OS, Zorin and elementary all carry ubuntu in theirs, so a debian first test would hand them Debian only package names
+    *ubuntu*|*Ubuntu*) nvidiaFlavour="ubuntu"; nvidiaPackages="$nvidiaPackagesUbuntu" ;;
+    *debian*|*Debian*) nvidiaFlavour="debian"; nvidiaPackages="$nvidiaPackagesDebian" ;;
+    *) nvidiaFlavour=""; nvidiaPackages="" ;; # nvidiaInstall refuses on an empty list rather than handing apt a name from the wrong archive
+    esac # replaced rather than appended, the shared value is Fedora shaped (xorg-x11-drv-nvidia-cuda, libva-utils, vulkan) and apt aborts with exit 100 on every one of those, which graphicDrivers then ignored while telling the user the drivers were installed
     virtconPackages="$virtconPackages $virtconPackagesDebian"
     astronomyPackages="$astronomyPackages $astronomyPackagesDebian" # every name below exists in both Debian trixie main and Ubuntu noble, nothing here needs contrib or non-free
     compneuroPackages="$compneuroPackages $compneuroPackagesDebian"
     designPackages="$designPackages $designPackagesDebian"
+    imagenologyPackages="$imagenologyPackages $imagenologyPackagesDebian"
     musicPackages="$musicPackages $musicPackagesDebian"
     securityPackages="$securityPackages $securityPackagesDebian"
     forensicsPackages="$forensicsPackages $forensicsPackagesDebian"
@@ -286,14 +317,21 @@ if [[ -f "$OSRELEASE" ]]; then
     pkgext=rpm
     argInstall=install
     argUpdate=refresh
+    case $NAME in *Tumbleweed*|*Slowroll*) argUpgrade="dup" ;; *) argUpgrade="update" ;; esac # zypper refresh only rewrites the repository metadata, so updateSystem and serverSetup reported success having upgraded nothing at all; the rolling releases have to be upgraded with dup, on Tumbleweed zypper update deliberately holds back every package whose dependencies changed, which is most of a snapshot
     preFlags="-n"
     postFlags=""
+    updatePreFlags="-n" # only zypper needs a pre-command flag on the refresh operation, this is deliberately separate from preFlags because apt rejects the debian family's -f there with exit 100 and refreshes nothing
     updateFlags="" # zypper refresh takes neither -y nor --skip-broken, preFlags -n already answers its prompts
-    essentialPackages="$essentialPackages $essentialPackagesOpenSUSE"
-    basicSystemPackages="$basicSystemPackages $basicSystemPackagesOpenSUSE" # the old self assignment appended nothing, openSUSE spells the tldr client tealdeer
+    essentialPackages="$essentialPackagesOpenSUSE" # replaced rather than appended: zypper has no --skip-broken and no strict=0, one unresolvable name aborts the whole transaction with exit 104 and installs nothing, and the shared list carries lm*sensors which matches no openSUSE package
+    basicUserPackages="$basicUserPackagesOpenSUSE" # ffmpeg* is the only difference, as a glob it pulls in ffmpeg-7-mini-devel whose dependencies cannot be satisfied and the whole purpose profile dies on it
+    basicSystemPackages="$basicSystemPackagesOpenSUSE" # replaced, the shared list carries libxdo-* which resolves to nothing here, so every purpose profile aborted before installing anything
+    supportPackages="$supportPackagesOpenSUSE" # xxd is its own package on Tumbleweed but not on Leap 15.6, where it ships inside vim
+    gamingPackages="$gamingPackagesOpenSUSE"
+    developmentPackages="$developmentPackagesOpenSUSE" # conda is packaged for no openSUSE release and ncurses-dev* matches nothing on Leap
     serverPackages="$serverPackagesOpenSUSE" # replaced, netcat-traditional and xserver-xorg-video-dummy are Debian names and zypper aborts on an unknown one
-    amdPackages="$amdPackages $amdPackagesOpenSUSE"
-    nvidiaPackages="$nvidiaPackages $nvidiaPackagesOpenSUSE"
+    amdPackages="$amdPackagesOpenSUSE" # replaced, the shared list carries rocm*, which resolves on Tumbleweed but matches nothing on Leap 16.0 and takes the whole transaction down with exit 104
+    nvidiaPackages="$nvidiaPackagesOpenSUSE" # replaced, appending an empty openSUSE list left zypper with the Fedora names and exit 104, verified on opensuse/tumbleweed
+    nvidiaInstallFlags="--auto-agree-with-licenses" # the G06 packages carry NVIDIA's licence and zypper stops with exit 4 asking for confirmation, which under -n it can never get; it sits after the install subcommand, so it cannot live in preFlags
     virtconPackages="$virtconPackages $virtconPackagesOpenSUSE"
     grubPath="/etc/default/grub"
     grubUpdate="sudo grub2-mkconfig -o /boot/grub2/grub.cfg"
@@ -304,6 +342,7 @@ if [[ -f "$OSRELEASE" ]]; then
     esac # identifyDistro detects only, detectArgument decides what runs next
 }
 load_dictionary() {
+    [[ "$NONINTERACTIVE" == 1 ]] && return 0 # a menu is a request for input, and under a plan the input is already known, so nothing is drawn
     case "$locale_language" in
         *en_US* | *en* | *en_*)
             printingDisplay="${phase}_en_US"
@@ -346,47 +385,53 @@ load_dictionary() {
 }
 displayMenu ()
 {
-  #clear
   phase=tech_setup
-  load_dictionary
-  read optionmenu
-  case $optionmenu in
-    1)
-        #clear
-        caution "Tech Setup is starting..."
-        techSetup
-        askReboot
-        displayMenu
-        ;;
-    2)
-        purposeMenu
-        ;;
-    3)
-        desktopenvironmentMenu && finalTweaks # the tweaks only run when a desktop was actually installed
-        ;;
-    4)
-        graphicDrivers
-        ;;
-    5)
-        caution "Updating the system"
-        updateSystem
-        ;;
-    6)
-        caution "Server Setup Runs"
-        serverSetup
-        ;;
-    7)
-        caution "Exit"
-        ;;
-    *)
-        error "Bad input"
-        ;;
+  while true; do
+    load_dictionary
+    if ! read -r -p "Enter a number [1-7]: " optionmenu; then
+        caution "There is no more input to read, so the menu is closing. Nothing further was run." # the menu is redrawn after every action now, so a piped stdin runs out and has to be handled rather than looping forever
+        return 0
+    fi
+    case $optionmenu in
+      1)
+          caution "Tech Setup is starting..."
+          techSetup
+          askReboot
+          ;; # the tail call to displayMenu that used to sit here is what the loop replaces, so a long session no longer nests one shell frame per menu visit
+      2)
+          purposeMenu
+          ;;
+      3)
+          desktopenvironmentMenu && finalTweaks # the tweaks only run when a desktop was actually installed
+          ;;
+      4)
+          graphicDrivers
+          ;;
+      5)
+          caution "Updating the system"
+          updateSystem
+          ;;
+      6)
+          caution "Server Setup Runs"
+          serverSetup
+          ;;
+      7)
+          caution "Exit"
+          return 0
+          ;;
+      *)
+          error "Bad input: '$optionmenu' is not one of 1-7. Please choose again."
+          ;;
     esac
+  done
 }
 desktopenvironment ()
 {
     if [[ -n $XDG_CURRENT_DESKTOP ]]; then
         success "You have $XDG_CURRENT_DESKTOP installed already, moving on"
+    elif [[ "$NONINTERACTIVE" == 1 ]]; then
+        caution "Non-interactive run: no desktop environment was chosen (default: none). Add desktop=<name> to CARINO_SETUP_PLAN to install one."
+        return 1 # the same status a declined menu returns, so the caller skips the tweaks for a desktop that was never installed
     else
         desktopenvironmentMenu || return 1 # XDG_CURRENT_DESKTOP is set by the session, never by a just-run install, so the old message here was always blank and was printed even when the user declined or the install failed
     fi
@@ -414,57 +459,145 @@ installDesktopEnvironment ()
 }
 desktopenvironmentMenu ()
 {
-  caution "What Desktop Environment you want?\n1. GNOME\n2. XFCE\n3. KDE\n4. LXQT\n5. CINNAMON\n6. MATE\n7. i3\n8. OPENBOX\n9. BUDGIE\n10. SWAY\n11. HYPRLAND\n12. NIRI\n13. NONE" # 12 is niri and 13 is none, the printed list now matches the case bodies
-  read option
-  case $option in
-    1)
-        installDesktopEnvironment gnome && success "You have GNOME installed, moving on"
+  if [[ "$NONINTERACTIVE" == 1 ]]; then
+      caution "Non-interactive run: no desktop menu is drawn and the default is taken, which is none. Add desktop=<name> to CARINO_SETUP_PLAN to install one."
+      return 1
+  fi
+  while true; do
+    caution "What Desktop Environment you want?\n1. GNOME\n2. XFCE\n3. KDE\n4. LXQT\n5. CINNAMON\n6. MATE\n7. i3\n8. OPENBOX\n9. BUDGIE\n10. SWAY\n11. HYPRLAND\n12. NIRI\n13. NONE" # 12 is niri and 13 is none, the printed list now matches the case bodies
+    if ! read -r -p "Enter a number [1-13]: " option; then
+        caution "There is no more input to read, so no desktop environment was chosen and none was installed. Run this step again from a terminal, or use desktop=<name> in CARINO_SETUP_PLAN." # a piped or closed stdin used to fall into the wildcard below and kill the whole run
+        return 1
+    fi
+    case $option in
+      1)
+          installDesktopEnvironment gnome && success "You have GNOME installed, moving on"
+          ;;
+      2)
+          installDesktopEnvironment xfce $basicDesktopEnvironmentPackages && success "You have XFCE installed, moving on"
+          ;;
+      3)
+          installDesktopEnvironment kde && success "You have KDE installed, moving on"
+          ;;
+      4)
+          installDesktopEnvironment lxqt && success "You have LXQT installed, moving on"
+          ;;
+      5)
+          installDesktopEnvironment cinnamon && success "You have CINNAMON installed, moving on"
+          ;;
+      6)
+          installDesktopEnvironment mate && success "You have MATE installed, moving on"
+          ;;
+      7)
+          installDesktopEnvironment i3 $i3RicingPackages $basicDesktopEnvironmentPackages && success "You have i3 installed, moving on"
+          ;;
+      8)
+          installDesktopEnvironment openbox && success "You have OPENBOX installed, moving on"
+          ;;
+      9)
+          installDesktopEnvironment budgie && success "You have BUDGIE installed, moving on"
+          ;;
+      10)
+          installDesktopEnvironment sway $basicDesktopEnvironmentPackages && success "You have SWAY installed, moving on"
+          ;;
+      11)
+          info "Still on the works"
+          installDesktopEnvironment hyprland $basicDesktopEnvironmentPackages && success "You have HYPRLAND installed, moving on"
+          ;;
+      12)
+          info "Still on the works"
+          niriRepo # niri lives in a copr on Fedora, the repo has to be enabled before installing
+          installDesktopEnvironment niri $basicDesktopEnvironmentPackages && success "You have NIRI installed, moving on"
+          ;;
+      13)
+          caution "No Desktop Environment will be installed"
+          return 1 # a non-zero status so the caller skips finalTweaks, which would otherwise rewrite the dotfiles of a desktop the user just declined
+          ;;
+      *)
+          error "Bad input: '$option' is not one of 1-13. Please choose again."
+          continue # this arm used to be a bare exit, the only one in the file, and techSetup reaches this menu automatically on any machine with an empty XDG_CURRENT_DESKTOP, so one mistyped character killed the run and skipped the drivers, the tweaks and the reboot offer
+          ;;
+    esac
+    return $? # the status of whichever arm ran, so a refused or failed install still tells the caller to skip finalTweaks
+  done
+}
+nvidiaRepoSetup ()
+{
+    case "$family" in
+    debian)
+        [[ "$nvidiaFlavour" == "ubuntu" ]] && return 0 # the driver metapackages are in the restricted component, which every stock Ubuntu install already enables, so there is nothing to add here
+        if [[ "${ID:-}" != "debian" ]]; then
+            caution "'${DISTRIBUTION:-this system}' is Debian based but is not Debian itself, so its own archive is left exactly as it is. If the install below fails, enable the contrib, non-free and non-free-firmware components the way your distribution documents and run this step again." # writing a deb.debian.org stanza onto Kali, Devuan or PureOS would mix two archives, which is worse than an honest failure
+            return 0
+        fi
+        if [[ -z "${VERSION_CODENAME:-}" ]]; then
+            error "Debian keeps the NVIDIA driver in contrib, non-free and non-free-firmware, and this system's os-release carries no VERSION_CODENAME, so the components cannot be enabled for the right suite. Enable them by hand as described at https://wiki.debian.org/NvidiaGraphicsDrivers and run this step again. Nothing was installed."
+            return 1
+        fi
+        info "Enabling the contrib, non-free and non-free-firmware components, the NVIDIA driver needs all three and Debian enables none of them by default." # a new deb822 drop-in rather than a sed over the dpkg managed debian.sources, and it reuses the stock keyring that already ships in the base system, so no key work is involved; add-apt-repository is not an option, software-properties-common exists in no component of trixie
+        sudo tee /etc/apt/sources.list.d/carino-nonfree.sources >/dev/null <<EOF
+Types: deb
+URIs: http://deb.debian.org/debian
+Suites: $VERSION_CODENAME $VERSION_CODENAME-updates
+Components: contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp
+
+Types: deb
+URIs: http://deb.debian.org/debian-security
+Suites: $VERSION_CODENAME-security
+Components: contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp
+EOF
+        sudo $pkgm $argUpdate || { error "The package index could not be refreshed after enabling the non-free components, so the driver names below would still be invisible. Nothing was installed."; return 1; }
         ;;
-    2)
-        installDesktopEnvironment xfce $basicDesktopEnvironmentPackages && success "You have XFCE installed, moving on"
+    opensuse)
+        case $NAME in
+        *Tumbleweed*) suseNvidiaRepo="openSUSE-repos-Tumbleweed-NVIDIA" ;;
+        *Slowroll*) suseNvidiaRepo="openSUSE-repos-Slowroll-NVIDIA" ;;
+        *Leap*) suseNvidiaRepo="openSUSE-repos-Leap-NVIDIA" ;;
+        *) error "The NVIDIA driver for '${DISTRIBUTION:-this system}' comes from SUSE's own channels rather than from an openSUSE-repos-* package, and guessing a repository URL here would be worse than saying so. See https://en.opensuse.org/SDB:NVIDIA_drivers and install it by hand. Nothing was installed."; return 1 ;;
+        esac
+        info "Adding NVIDIA's own repository through $suseNvidiaRepo, the OSS repository carries the signed kernel module but none of the userspace libraries."
+        sudo $pkgm $preFlags $argInstall $suseNvidiaRepo $postFlags || { error "$suseNvidiaRepo could not be installed, so NVIDIA's repository was never added and the driver packages do not exist yet. Nothing was installed."; return 1; }
+        sudo $pkgm $preFlags --gpg-auto-import-keys refresh || { error "NVIDIA's repository was added but could not be refreshed, so its packages are still invisible. Nothing was installed."; return 1; } # the repository is signed with NVIDIA's own key, which zypper would otherwise stop and ask about
         ;;
-    3)
-        installDesktopEnvironment kde && success "You have KDE installed, moving on"
+    rhel|centos)
+        error "akmod-nvidia and xorg-x11-drv-nvidia-cuda are Fedora spellings. RPM Fusion's enterprise branch publishes only version numbered variants of them, so no repository this script can enable provides the names in the list above, and pinning '${DISTRIBUTION:-this system}' to one driver series here would rot with the next release. Install the driver as https://elrepo.org/wiki/doku.php?id=nvidia-kmod describes and run the rest of this script afterwards. Nothing was installed." # verified on almalinux:9 with EPEL, CRB and both RPM Fusion el9 release packages enabled: akmod-nvidia and xorg-x11-drv-nvidia-cuda still resolve to nothing while akmod-nvidia-580xx, -470xx, -390xx and -340xx all exist, so enabling RPM Fusion here would leave the transaction reporting success having installed no driver at all
+        return 1
         ;;
-    4)
-        installDesktopEnvironment lxqt && success "You have LXQT installed, moving on"
-        ;;
-    5)
-        installDesktopEnvironment cinnamon && success "You have CINNAMON installed, moving on"
-        ;;
-    6)
-        installDesktopEnvironment mate && success "You have MATE installed, moving on"
-        ;;
-    7)
-        installDesktopEnvironment i3 $i3RicingPackages $basicDesktopEnvironmentPackages && success "You have i3 installed, moving on"
-        ;;
-    8)
-        installDesktopEnvironment openbox && success "You have OPENBOX installed, moving on"
-        ;;
-    9)
-        installDesktopEnvironment budgie && success "You have BUDGIE installed, moving on"
-        ;;
-    10)
-        installDesktopEnvironment sway $basicDesktopEnvironmentPackages && success "You have SWAY installed, moving on"
-        ;;
-    11)
-        info "Still on the works"
-        installDesktopEnvironment hyprland $basicDesktopEnvironmentPackages && success "You have HYPRLAND installed, moving on"
-        ;;
-    12)
-        info "Still on the works"
-        niriRepo # niri lives in a copr on Fedora, the repo has to be enabled before installing
-        installDesktopEnvironment niri $basicDesktopEnvironmentPackages && success "You have NIRI installed, moving on"
-        ;;
-    13)
-        caution "No Desktop Environment will be installed"
-        return 1 # a non-zero status so the caller skips finalTweaks, which would otherwise rewrite the dotfiles of a desktop the user just declined
-        ;;
-    *)
-        error "Wrong choice. Exiting script."
-        exit
+    fedora)
+        if [[ "$distroType" == "atomic" ]]; then
+            error "akmod-nvidia is built against the running kernel, which rpm-ostree cannot do while layering, so the driver cannot be installed from here on an atomic system. Rebase to the image variant that already ships it, or follow https://rpmfusion.org/Howto/NVIDIA. Nothing was installed." # the Universal Blue images publish an -nvidia variant for exactly this, layering the akmod on top of the stock image leaves a machine that boots into nouveau
+            return 1
+        fi
+        if [[ -f /etc/yum.repos.d/rpmfusion-free.repo && -f /etc/yum.repos.d/rpmfusion-nonfree.repo ]]; then
+            caution "RPM Fusion is enabled already, moving on"
+            return 0
+        fi
+        rpmfusionRelease=$(rpm -E %fedora 2>/dev/null) # RPM Fusion publishes one release package per Fedora major and the macro is the only thing that knows which one this is
+        [[ "$rpmfusionRelease" =~ ^[0-9]+$ ]] || rpmfusionRelease="${VERSION%%.*}" # Nobara, Ultramarine and Risi all keep the macro, this is the same os-release fallback techSetup uses for the RHEL EPEL release
+        if ! [[ "$rpmfusionRelease" =~ ^[0-9]+$ ]]; then
+            error "akmod-nvidia, xorg-x11-drv-nvidia-cuda and libva-nvidia-driver all live in RPM Fusion, and the Fedora release of '${DISTRIBUTION:-this system}' could not be determined, so the right release package cannot be named. Enable RPM Fusion as described at https://rpmfusion.org/Configuration and run this step again. Nothing was installed."
+            return 1
+        fi
+        info "Enabling RPM Fusion free and nonfree, the NVIDIA driver packages are in no repository a stock '${DISTRIBUTION:-this system}' has enabled." # verified on fedora:43, the driver list resolves to 519 packages once these two are installed and aborts the whole transaction with three "No match for argument" lines without them, which is what this step did on every Fedora that had not run Technical Setup first
+        sudo $pkgm $preFlags $argInstall https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$rpmfusionRelease.noarch.rpm https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$rpmfusionRelease.noarch.rpm $postFlags || { error "RPM Fusion could not be enabled, so the NVIDIA driver packages do not exist on this system yet. Follow https://rpmfusion.org/Configuration and run this step again. Nothing was installed."; return 1; }
         ;;
     esac
+    return 0
+}
+nvidiaInstall ()
+{
+    if [[ -z "$nvidiaPackages" ]]; then
+        error "No NVIDIA package list exists for '${DISTRIBUTION:-this system}', so nothing was installed. Follow your distribution's own NVIDIA documentation rather than letting this script guess a package name." # a guessed name aborts the whole transaction and installs nothing anyway, so refusing here is the same outcome said out loud
+        return 1
+    fi
+    nvidiaRepoSetup || return 1
+    sudo $pkgm $preFlags $argInstall $nvidiaInstallFlags $nvidiaPackages $postFlags || return 1 # the exit status used to be thrown away, so an aborted transaction still printed a success message and the user rebooted into nouveau
+    if [[ "$nvidiaFlavour" == "ubuntu" ]]; then
+        sudo ubuntu-drivers install || return 1 # ubuntu-drivers-common was installed by the line above, and this is the step that actually picks and installs the metapackage matching the card
+    fi
+    return 0
 }
 graphicDrivers ()
 {
@@ -487,10 +620,14 @@ graphicDrivers ()
             success "NVIDIA drivers are installed already."
         else
             caution "NVIDIA card detected. Would you like to install NVIDIA packages? (y/n)"
-            read -r option
+            if [[ "$NONINTERACTIVE" == 1 ]]; then option="y"; caution "Non-interactive run: answering yes (default), the drivers were asked for explicitly."; else read -r option; fi
             if [[ "$option" =~ ^[Yy]$ ]]; then
-                info "Installing NVIDIA drivers and CUDA support"
-                sudo $pkgm $preFlags $argInstall $nvidiaPackages $cudaPackages $postFlags # preFlags was dropped on all four GPU paths, which left zypper and every other pre-command family waiting on an interactive prompt
+                info "Installing the NVIDIA driver" # the message used to promise CUDA as well, and $cudaPackages is set nowhere in this file, so it always expanded to nothing; the runtime half of CUDA arrives with the driver on every family here and the developer toolkit is a 200 MB opt-in that does not belong in a driver step
+                if nvidiaInstall; then
+                    success "The NVIDIA driver was installed. Reboot before expecting it to be in use, the running kernel is still on the open source module."
+                else
+                    error "The NVIDIA driver install FAILED. Nothing usable was installed and this machine is still on nouveau, so do not treat the rest of this run as a working driver. The package manager's own message above says which step failed."
+                fi
             else
                 caution "NVIDIA packages will not be installed."
             fi
@@ -500,24 +637,25 @@ graphicDrivers ()
             success "AMD drivers are installed already."
         else
             caution "AMD GPU detected. Would you like to install ROCm/HIP packages? (y/n)"
-            read -r option
-            if [[ "$option" =~ ^[Yy]$ ]]; then
+            if [[ "$NONINTERACTIVE" == 1 ]]; then option="y"; caution "Non-interactive run: answering yes (default), the drivers were asked for explicitly."; else read -r option; fi
+            if [[ -z "$amdPackages" ]]; then
+                error "No AMD package list exists for '${DISTRIBUTION:-this system}', so nothing was installed."
+            elif [[ "$option" =~ ^[Yy]$ ]]; then
                 info "Installing AMD drivers and ROCm/HIP support"
-                sudo $pkgm $preFlags $argInstall $amdPackages $postFlags
+                sudo $pkgm $preFlags $argInstall $amdPackages $postFlags && success "The AMD packages were installed." || error "The AMD driver install FAILED, nothing was installed. Read the package manager's message above." # the status used to be discarded here too
             else
-                caution "AMD drivers without ROCm will be installed."
-                sudo $pkgm $preFlags $argInstall $amdPackages $postFlags
+                caution "The same list is installed either way, this script has no separate ROCm free AMD list to fall back to." # said plainly rather than the old claim that ROCm was being left out while the identical command ran
+                sudo $pkgm $preFlags $argInstall $amdPackages $postFlags && success "The AMD packages were installed." || error "The AMD driver install FAILED, nothing was installed. Read the package manager's message above."
             fi
         fi
     elif lspci | grep -E 'Intel' > /dev/null; then
         caution "Intel GPU detected. Would you like to install oneAPI packages? (y/n)"
-        read -r option
-        if [[ "$option" =~ ^[Yy]$ ]]; then
-            info "Installing Intel drivers and oneAPI support"
-            sudo $pkgm $preFlags $argInstall $intelPackages $postFlags
+        if [[ "$NONINTERACTIVE" == 1 ]]; then option="y"; caution "Non-interactive run: answering yes (default), the drivers were asked for explicitly."; else read -r option; fi
+        if [[ -z "$intelPackages" ]]; then
+            error "No Intel package list exists for '${DISTRIBUTION:-this system}', so nothing was installed."
         else
-            caution "Installing basic Intel GPU drivers."
-            sudo $pkgm $preFlags $argInstall $intelPackages $postFlags
+            [[ "$option" =~ ^[Yy]$ ]] && info "Installing the Intel media driver" || caution "The same list is installed either way, this script ships no separate oneAPI list." # the two arms always ran the identical command, only the message differed
+            sudo $pkgm $preFlags $argInstall $intelPackages $postFlags && success "The Intel packages were installed." || error "The Intel driver install FAILED, nothing was installed. Read the package manager's message above."
         fi
     #elif lspci | grep -E 'ASPEED' > /dev/null; then
     #    caution "ASPEED GPU detected. Installing ASPEED drivers."
@@ -542,6 +680,21 @@ flathubEnable ()
     fi
     sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo # one command for every family, the CentOS arm only differed by using flathub.org, which is a redirect to this same dl.flathub.org URL
     flatpakRepo="flathub"
+    flathubReady=1
+}
+flatpakInstall ()
+{
+    [[ $# -gt 0 ]] || return 0 # a profile with no Flatpaks of its own passes nothing, and "flatpak install flathub -y" with no application is an error rather than a no-op
+    if ! command -v flatpak >/dev/null 2>&1; then
+        caution "Flatpak is not installed, installing it before the Flatpak applications below." # basicUserPackages carries flatpak and every profile installs it on the line above this call, this covers the atomic family and a native transaction that failed
+        sudo $pkgm $preFlags $argInstall flatpak $postFlags
+    fi
+    if ! command -v flatpak >/dev/null 2>&1; then
+        error "Flatpak could not be installed on '${DISTRIBUTION:-this system}', so none of these applications were installed: $*" # saying so beats fourteen silent "error: no remote refs found" failures
+        return 1
+    fi
+    [[ "${flathubReady:-0}" == 1 ]] || flathubEnable # the single place the remote is guaranteed, called after the native package line has provided the binary rather than from fourteen profile arms; purposeMenu never called flathubEnable at all and techSetup's own call always hit its "command -v flatpak" guard because flatpak is not in essentialPackages
+    sudo flatpak install $flatpakRepo "$@" -y
 }
 updateGrub ()
 {
@@ -551,7 +704,7 @@ updateGrub ()
         return 0
     fi
     caution "This rewrites GRUB_TIMEOUT in $grubPath and regenerates the bootloader configuration. Continue? [y/N]" # nothing between the menu selection and the sed used to ask, so a user who only wanted the technical setup had their boot configuration changed
-    read -r option
+    if [[ "$NONINTERACTIVE" == 1 ]]; then option="n"; caution "Non-interactive run: taking the default [N], the bootloader configuration is left alone."; else read -r option; fi
     if [[ ! "$option" =~ ^[Yy]$ ]]; then
         caution "GRUB was left untouched."
         return 0
@@ -584,7 +737,7 @@ sharedFolder ()
 {
   #Mounting Windows Shared folder
         echo "Do you want to setup a Windows Shared Folder? [y/N]"
-        read -r option
+        if [[ "$NONINTERACTIVE" == 1 ]]; then option="n"; caution "Non-interactive run: taking the default [N], no share is mounted because a plan carries no server, folder or user to ask for."; else read -r option; fi
         if [[ "$option" =~ ^[Yy]$ ]]
         then
             echo "What is the server name you wish to connect to?"
@@ -700,7 +853,7 @@ EOF
     ;;
 
     *openSUSE*|*SUSE*|*SLES*|*SLED*)
-    cat > AnyDesk-OpenSUSE.repo << "EOF" 
+    tee AnyDesk-OpenSUSE.repo > /dev/null << "EOF" # written through tee rather than a shell redirect, a redirect is the one file creation in this file that the dry-run shims cannot intercept
 [anydesk]
 name=AnyDesk OpenSUSE - stable
 baseurl=http://rpm.anydesk.com/opensuse/$basearch/
@@ -742,7 +895,12 @@ librewolfRepo ()
 askReboot ()
 {
   caution "Would you like to reboot? (Recommended) [y/N]"
-  read -r option
+  if [[ "$NONINTERACTIVE" == 1 ]]; then
+      if [[ "${planReboot:-no}" == "yes" ]]; then option="y"; else option="n"; fi # reboot=yes|no in the plan answers this prompt, and the contract makes no the default
+      caution "Non-interactive run: reboot=${planReboot:-no} (default: no)."
+  else
+      read -r option
+  fi
     if [[ "$option" =~ ^[Yy]$ ]]
     then
         sudo reboot
@@ -771,112 +929,125 @@ purposeMenu ()
       return 1
   fi
   phase=purpose_setup
-  #clear
-  load_dictionary
-  read optionmenu
-  case $optionmenu in
-    #Basic
-    1) 
-        caution "Installing the Basic profile" # $1 inside a function is the function argument, not the script argument
-        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $postFlags
-        sudo flatpak install $flatpakRepo $basicFlatpak $googleFlatpak $microsoftFlatpak $supportFlatpak $remoteSupportFlatpak -y
-        ;;
-    #Gaming
-    2)
-        caution "Installing the Gaming profile"
-        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $gamingPackages $postFlags
-        sudo flatpak install $flatpakRepo $basicFlatpak $gamingFlatpak $googleFlatpak $microsoftFlatpak $supportFlatpak $remoteSupportFlatpak -y
-        ;;
-    #Corporate
-    3)
-        caution "Installing the Corporate profile"
-        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $ciscoPackages $postFlags
-        sudo flatpak install $flatpakRepo $googleFlatpak $microsoftFlatpak $supportFlatpak $remoteSupportFlatpak -y
-        ;;
-    #Corporate (just Microsoft)
-    4)
-        caution "Installing the Corporate (Microsoft only) profile"
-        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $postFlags
-        sudo flatpak install $flatpakRepo $basicFlatpak $microsoftFlatpak $supportFlatpak $remoteSupportFlatpak -y
-        ;;
-    #Corporate (just Google)
-    5)
-        caution "Installing the Corporate (Google only) profile"
-        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $postFlags
-        sudo flatpak install $flatpakRepo $basicFlatpak $googleFlatpak $supportFlatpak $remoteSupportFlatpak -y
-        ;;
-    #Development
-    6)
-        caution "Installing the Development profile"
-        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $developmentPackages $virtconPackages $postFlags
-        sudo flatpak install $flatpakRepo $basicFlatpak $googleFlatpak $developmentFlatpak $supportFlatpak $remoteSupportFlatpak -y
-        distroboxContainers
-        ;;
-    #Astronomy
-    7)
-        caution "Installing the Astronomy profile"
-        profileWarning "Astronomy" "$astronomyPackages"
-        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $astronomyPackages $postFlags
-        sudo flatpak install $flatpakRepo $basicFlatpak $googleFlatpak $astronomyFlatpak $supportFlatpak $remoteSupportFlatpak -y
-        ;;
-    #Comp-Neuro
-    8)
-        caution "Installing the Computational Neuroscience profile"
-        profileWarning "Computational Neuroscience" "$compneuroPackages"
-        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $compneuroPackages $postFlags
-        sudo flatpak install $flatpakRepo $basicFlatpak $compneuroFlatpak $supportFlatpak $remoteSupportFlatpak -y
-        ;;
-    #Design
-    9)
-        caution "Installing the Design profile"
-        profileWarning "Design" "$designPackages"
-        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $designPackages $postFlags
-        sudo flatpak install $flatpakRepo $basicFlatpak $designFlatpak $supportFlatpak $remoteSupportFlatpak -y
-        ;;
-    #Music Production
-    10)
-        caution "Installing the Music Production profile"
-        profileWarning "Music Production" "$musicPackages"
-        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $musicPackages $postFlags
-        sudo flatpak install $flatpakRepo $basicFlatpak $musicFlatpak $supportFlatpak $remoteSupportFlatpak -y
-        ;;
-    #Cybersecurity
-    11)
-        caution "Installing the Cybersecurity profile"
-        profileWarning "Cybersecurity" "$securityPackages"
-        caution "hydra, hashcat, aircrack-ng, masscan and sqlmap are dual use tools, only run them against systems you are authorised to test, and add yourself to the wireshark group for capture without root." # the packages install cleanly either way, the constraint is legal rather than technical
-        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $securityPackages $postFlags
-        sudo flatpak install $flatpakRepo $basicFlatpak $securityFlatpak $supportFlatpak $remoteSupportFlatpak -y
-        ;;
-    #Forensics
-    12)
-        caution "Installing the Forensics profile"
-        profileWarning "Forensics" "$forensicsPackages"
-        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $forensicsPackages $postFlags
-        sudo flatpak install $flatpakRepo $basicFlatpak $supportFlatpak $remoteSupportFlatpak -y # no forensics specific Flatpak is shipped, the imaging and carving tools above are all native
-        ;;
-    #Scientific
-    13)
-        caution "Installing the Scientific profile"
-        profileWarning "Scientific" "$scientificPackages"
-        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $scientificPackages $postFlags
-        sudo flatpak install $flatpakRepo $basicFlatpak $scientificFlatpak $supportFlatpak $remoteSupportFlatpak -y
-        ;;
-    #Robotics
-    14)
-        caution "Installing the Robotics profile"
-        profileWarning "Robotics" "$roboticsPackages"
-        sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $roboticsPackages $postFlags
-        sudo flatpak install $flatpakRepo $basicFlatpak $roboticsFlatpak $developmentFlatpak $supportFlatpak $remoteSupportFlatpak -y
-        ;;
-    #Back to main menu
-    15)
-        displayMenu
-        ;;
-    *)
-        error "Bad input"
-        ;;
+  while true; do
+    load_dictionary
+    if ! read -r -p "Enter a number [1-15]: " optionmenu; then
+        caution "There is no more input to read, so no purpose profile was chosen and none was installed. Run this step again from a terminal, or use purpose=<name> in CARINO_SETUP_PLAN." # runPlan feeds this read a single number on stdin, so the end of that input has to be a clean return rather than a wildcard
+        return 1
+    fi
+    case $optionmenu in
+      #Basic
+      1) 
+          caution "Installing the Basic profile" # $1 inside a function is the function argument, not the script argument
+          sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $postFlags
+          flatpakInstall $basicFlatpak $googleFlatpak $microsoftFlatpak $supportFlatpak $remoteSupportFlatpak
+          ;;
+      #Gaming
+      2)
+          caution "Installing the Gaming profile"
+          sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $gamingPackages $postFlags
+          flatpakInstall $basicFlatpak $gamingFlatpak $googleFlatpak $microsoftFlatpak $supportFlatpak $remoteSupportFlatpak
+          ;;
+      #Corporate
+      3)
+          caution "Installing the Corporate profile"
+          sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $ciscoPackages $postFlags
+          flatpakInstall $googleFlatpak $microsoftFlatpak $supportFlatpak $remoteSupportFlatpak
+          ;;
+      #Corporate (just Microsoft)
+      4)
+          caution "Installing the Corporate (Microsoft only) profile"
+          sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $postFlags
+          flatpakInstall $basicFlatpak $microsoftFlatpak $supportFlatpak $remoteSupportFlatpak
+          ;;
+      #Corporate (just Google)
+      5)
+          caution "Installing the Corporate (Google only) profile"
+          sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $postFlags
+          flatpakInstall $basicFlatpak $googleFlatpak $supportFlatpak $remoteSupportFlatpak
+          ;;
+      #Development
+      6)
+          caution "Installing the Development profile"
+          sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $developmentPackages $virtconPackages $postFlags
+          flatpakInstall $basicFlatpak $googleFlatpak $developmentFlatpak $supportFlatpak $remoteSupportFlatpak
+          distroboxContainers
+          ;;
+      #Astronomy
+      7)
+          caution "Installing the Astronomy profile"
+          profileWarning "Astronomy" "$astronomyPackages"
+          sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $astronomyPackages $postFlags
+          flatpakInstall $basicFlatpak $googleFlatpak $astronomyFlatpak $supportFlatpak $remoteSupportFlatpak
+          ;;
+      #Comp-Neuro
+      8)
+          caution "Installing the Computational Neuroscience profile"
+          profileWarning "Computational Neuroscience" "$compneuroPackages"
+          sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $compneuroPackages $postFlags
+          flatpakInstall $basicFlatpak $compneuroFlatpak $supportFlatpak $remoteSupportFlatpak
+          ;;
+      #Design
+      9)
+          caution "Installing the Design profile"
+          profileWarning "Design" "$designPackages"
+          sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $designPackages $postFlags
+          flatpakInstall $basicFlatpak $designFlatpak $supportFlatpak $remoteSupportFlatpak
+          ;;
+      #Music Production
+      10)
+          caution "Installing the Music Production profile"
+          profileWarning "Music Production" "$musicPackages"
+          sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $musicPackages $postFlags
+          flatpakInstall $basicFlatpak $musicFlatpak $supportFlatpak $remoteSupportFlatpak
+          ;;
+      #Cybersecurity
+      11)
+          caution "Installing the Cybersecurity profile"
+          profileWarning "Cybersecurity" "$securityPackages"
+          caution "hydra, hashcat, aircrack-ng, masscan and sqlmap are dual use tools, only run them against systems you are authorised to test, and add yourself to the wireshark group for capture without root." # the packages install cleanly either way, the constraint is legal rather than technical
+          sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $securityPackages $postFlags
+          flatpakInstall $basicFlatpak $securityFlatpak $supportFlatpak $remoteSupportFlatpak
+          ;;
+      #Forensics
+      12)
+          caution "Installing the Forensics profile"
+          profileWarning "Forensics" "$forensicsPackages"
+          sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $forensicsPackages $postFlags
+          flatpakInstall $basicFlatpak $supportFlatpak $remoteSupportFlatpak # no forensics specific Flatpak is shipped, the imaging and carving tools above are all native
+          ;;
+      #Scientific
+      13)
+          caution "Installing the Scientific profile"
+          profileWarning "Scientific" "$scientificPackages"
+          sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $scientificPackages $postFlags
+          flatpakInstall $basicFlatpak $scientificFlatpak $supportFlatpak $remoteSupportFlatpak
+          ;;
+      #Robotics
+      14)
+          caution "Installing the Robotics profile"
+          profileWarning "Robotics" "$roboticsPackages"
+          sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $roboticsPackages $postFlags
+          flatpakInstall $basicFlatpak $roboticsFlatpak $developmentFlatpak $supportFlatpak $remoteSupportFlatpak
+          ;;
+      #Medical Imaging
+      15)
+          caution "Installing the Medical Imaging profile"
+          profileWarning "Medical Imaging" "$imagenologyPackages"
+          sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $imagenologyPackages $postFlags
+          flatpakInstall $basicFlatpak $imagenologyFlatpak $supportFlatpak $remoteSupportFlatpak
+          ;;
+      #Back to main menu
+      16)
+          caution "Returning to the main menu"
+          ;; # displayMenu is the caller and it redraws itself now, so calling it back from here would nest one shell frame per round trip
+      *)
+          error "Bad input: '$optionmenu' is not one of 1-15. Please choose again."
+          continue
+          ;;
     esac # the printed list and the case bodies now line up one for one, picking a profile no longer reopens the main menu
+    return 0 # every arm but the wildcard leaves the loop, a profile is installed once and the caller decides what happens next
+  done
 }
 serverSetup ()
 {
@@ -884,8 +1055,8 @@ serverSetup ()
         error "No package manager was configured for '${DISTRIBUTION:-unknown}', the server setup cannot run here."
         return 1
     fi
-    sudo $pkgm $preFlags $argUpdate $updateFlags # the hardcoded "update -y && upgrade -y" was an apt-ism, pacman has no update operation and zypper rejects -y, and postFlags cannot be reused here because the atomic family puts an install-only option in it
-    if [[ "$family" == "debian" ]]; then sudo $pkgm $preFlags upgrade $postFlags; fi # only apt separates the index refresh from the package upgrade
+    sudo $pkgm $updatePreFlags $argUpdate $updateFlags || { error "The package index could not be refreshed, so every server package below would be looked up against a stale or empty index. Nothing was installed."; return 1; } # preFlags is wrong here, apt rejects its -f on the update operation with exit 100 and then every name in the install line came back "Unable to locate package"; the hardcoded "update -y && upgrade -y" was an apt-ism, pacman has no update operation and zypper rejects -y, and postFlags cannot be reused here because the atomic family puts an install-only option in it
+    [[ -n "$argUpgrade" ]] && sudo $pkgm $preFlags $argUpgrade $postFlags # apt is not the only one, zypper refresh upgraded nothing either and a server left on the packages it was imaged with is the whole thing this function is meant to prevent
     sudo $pkgm $preFlags $argInstall $essentialPackages $basicSystemPackages $serverPackages $developmentPackages $postFlags # preFlags has to precede the subcommand, zypper and every other pre-command family rejected it where it sat
 }
 techSetup ()
@@ -932,7 +1103,7 @@ techSetup ()
     info "Enabling CRB and EPEL"
     sudo $pkgm config-manager --set-enabled crb || sudo $pkgm config-manager --set-enabled powertools # crb on 9 and 10, powertools on 8; subscription-manager does not exist on the rebuilds
     sudo $pkgm $preFlags $argInstall epel-release $postFlags # without EPEL half of the desktop groups and fastfetch, i3, sway and budgie are in no enabled repository at all
-    sudo $pkgm $argUpdate -y && sudo $pkgm install $essentialPackages -y
+    sudo $pkgm $argUpdate -y && sudo $pkgm $preFlags $argInstall $essentialPackages $postFlags # a bare -y skipped the family's own flags, so a single name that EPEL and CRB do not carry aborted the essential install on the one family whose repository set varies most between rebuilds
     updateGrub
     ;;
     *"Red Hat"*)
@@ -960,7 +1131,7 @@ techSetup ()
     *openSUSE*|*SUSE*|*SLES*|*SLED*)
     caution "openSUSE"
     sudo $pkgm $preFlags $argUpdate $postFlags
-    sudo $pkgm $preFlags update $postFlags
+    sudo $pkgm $preFlags $argUpgrade $postFlags # the literal "update" was wrong on Tumbleweed and Slowroll, where zypper update holds back every package whose dependencies changed, which on a rolling snapshot is most of them; argUpgrade is dup there and update on Leap and SLE
     info "Installing Essential Packages"
     sudo $pkgm $preFlags $argInstall $essentialPackages $postFlags
     ;;
@@ -1028,7 +1199,7 @@ finalTweaks ()
     ;;
     *i3*)
     caution "This replaces ~/.config/i3, ~/.fonts and ~/.icons with a third party dotfiles repository. Continue? [y/N]" # it used to overwrite an existing i3 configuration with no prompt and no backup
-    read -r option
+    if [[ "$NONINTERACTIVE" == 1 ]]; then option="n"; caution "Non-interactive run: taking the default [N], your i3 configuration is left untouched."; else read -r option; fi
     if [[ "$option" =~ ^[Yy]$ ]]; then
         i3Dotfiles="$HOME/.cache/carino-i3-dotfiles" # cloned into a known directory, the old form landed in $PWD while the copies below read from $HOME, so they silently failed unless the script was run from there
         rm -rf "$i3Dotfiles" && git clone https://gitlab.com/dajhub/i3-dotfiles.git "$i3Dotfiles" || caution "The i3 dotfiles could not be fetched, the existing configuration was left alone"
@@ -1057,9 +1228,9 @@ updateSystem ()
       error "No package manager was configured for '${DISTRIBUTION:-unknown}', nothing was updated."
       return 1
   fi
-  sudo $pkgm $preFlags $argUpdate $updateFlags # the hardcoded -y meant --refresh to pacman and is not an option at all for zypper, and postFlags carries --allow-inactive on the atomic family, which rpm-ostree upgrade rejects
-  if [[ "$family" == "debian" ]]; then sudo $pkgm $preFlags upgrade $postFlags; fi # apt update only refreshes the index
-  success "Your system has been updated"
+  sudo $pkgm $updatePreFlags $argUpdate $updateFlags || { error "The package index could not be refreshed, so nothing was updated. Read the package manager's message above."; return 1; } # preFlags is wrong here, apt rejects its -f on the update operation with exit 100 and refreshes nothing at all; the hardcoded -y meant --refresh to pacman and is not an option at all for zypper, and postFlags carries --allow-inactive on the atomic family, which rpm-ostree upgrade rejects
+  if [[ -n "$argUpgrade" ]]; then sudo $pkgm $preFlags $argUpgrade $postFlags || { error "The upgrade failed, the package index was refreshed but no package was upgraded. Read the package manager's message above."; return 1; }; fi # apt and zypper both separate the index refresh from the package upgrade, and the openSUSE half of that was missing entirely, so this function refreshed metadata and then announced success having upgraded nothing; argUpgrade is empty on every family whose argUpdate already upgrades
+  success "Your system has been updated" # only reached when both operations above succeeded, it used to be printed unconditionally and told the user a failed run had worked
 }
 # Declaring Packages
 # Generic GNU/Linux Packages
@@ -1073,7 +1244,7 @@ serverPackagesOpenSUSE="netcat-openbsd xf86-video-dummy openssh cockpit expect f
 basicUserPackages="gedit yt-dlp ffmpeg* tumbler libreoffice pavucontrol vnstat feh flatpak" #fontawesome-fonts-all epiphany # Flatpak - clamav clamtk obs-studio transmission
 basicSystemPackages="wine xrdp htop powertop *gtkglext* libxdo-* ncdu scrot xclip" # tldr moved out of the shared base, it is packaged on Fedora only and neither Debian trixie nor openSUSE carries that name
 basicSystemPackagesRPM="tldr"
-basicSystemPackagesOpenSUSE="tealdeer"
+basicSystemPackagesOpenSUSE="wine xrdp htop powertop *gtkglext* xdotool ncdu scrot xclip tealdeer" # the shared list with libxdo-* spelled xdotool, and tealdeer is the tldr client here
 basicDesktopEnvironmentPackages="nautilus fontawesome-fonts" # fontawesome-fonts resolves through fontawesome4-fonts on Fedora and exists verbatim on openSUSE, Debian spells it fonts-font-awesome and gets the override below
 basicDesktopEnvironmentPackagesDebian="nautilus fonts-font-awesome"
 # Gaming packages will allow enduseres to play on the most popular platforms
@@ -1087,11 +1258,11 @@ virtconPackagesDebian="libvirt-daemon-system libvirt-clients virtinst"
 virtconPackagesOpenSUSE=""
 supportPackages="xxd" #stacer barrier bleachbit filezilla bless #Flatpak - remmina bless
 amdPackages="ocl-icd-dev* opencl-headers libdrm-dev* rocm*" #mesa-vdpau-drivers mesa-va-drivers
-nvidiaPackages="vdpauinfo libva-utils vulkan nvidia-xconfig xorg-x11-drv-nvidia-cuda libva-vdpau-driver" #libva-vdpau-driver kernel-headers kernel-devel xorg-x11-drv-nvidia xorg-x11-drv-nvidia-libs xorg-x11-drv-nvidia-libs.i686 xorg-x11-drv-nvidia-cuda xorg-x11-drv-nvidia-cuda-libs
+nvidiaPackages="vdpauinfo libva-utils vulkan nvidia-xconfig xorg-x11-drv-nvidia-cuda" # this list is RPM shaped and nothing but the rpm families reads it any more, debian, arch and opensuse all replace it; libva-vdpau-driver was dropped because it exists in no current Fedora and dnf5 aborts the entire transaction on an unmatched name even with --skip-broken (verified on fedora:44, "definitely-not-a-real-package" plus zsh installs neither), so the NVIDIA step got nothing at all on the one family this list is for #kernel-headers kernel-devel xorg-x11-drv-nvidia xorg-x11-drv-nvidia-libs xorg-x11-drv-nvidia-libs.i686 xorg-x11-drv-nvidia-cuda-libs
 nvidiaPackagesRPM="akmod-nvidia libva-nvidia-driver" # RPM Fusion renamed nvidia-vaapi-driver, the old name resolves to nothing and --skip-broken dropped it silently so VA-API was simply never installed
-nvidiaPackagesDebian="nvidia-driver* nvidia-opencl* nvidia-xconfig nvidia-vdpau-driver nvidia-vulkan*"
-nvidiaPackagesUbuntu="nvidia-driver-560"
-nvidiaPackagesOpenSUSE=""
+nvidiaPackagesDebian="nvidia-driver nvidia-open-kernel-dkms firmware-nvidia-gsp nvidia-settings nvidia-vaapi-driver nvidia-smi linux-headers-amd64 vainfo vdpau-driver-all va-driver-all vulkan-tools" # every one of these needs contrib, non-free and non-free-firmware, which nvidiaRepoSetup enables; the old value was Fedora glob shaped (nvidia-driver*, nvidia-vulkan*) and nvidia-xconfig plus nvidia-vdpau-driver do not exist in trixie main at all. nvidia-driver pulls nvidia-driver-libs, libcuda1, nvidia-vdpau-driver, nvidia-egl-icd and xserver-xorg-video-nvidia by itself, and the open kernel module is chosen because the legacy one is being retired; verified with apt-get install -s on debian:trixie, zero E: lines
+nvidiaPackagesUbuntu="ubuntu-drivers-common linux-headers-generic nvidia-vaapi-driver vainfo vdpau-driver-all va-driver-all vulkan-tools" # read by the ubuntu branch of the debian arm, it used to be read nowhere at all; Ubuntu spells the driver as version numbered metapackages (nvidia-driver-610 today, nvidia-driver-560 when the old value here was written) so a literal name here rots with every release, ubuntu-drivers install picks the one that matches the card instead
+nvidiaPackagesOpenSUSE="nvidia-video-G06 nvidia-gl-G06 nvidia-compute-G06 nvidia-open-driver-G06-signed-kmp-default" # the OSS repository carries the signed kernel module only, the userspace libraries come from NVIDIA's own repository that nvidiaRepoSetup adds; verified to resolve on both opensuse/tumbleweed and opensuse/leap:16.0 with --auto-agree-with-licenses, which the G06 packages require
 
 # Desktop Environment variables (I'm too drunk and lazy to setup arrays, sorry) Also, some packages will be repeating between variables. This solution could be way better. Once I integrate more distros will look into it.
 fedoraxfcePackages="@xfce-desktop-environment"
@@ -1180,8 +1351,12 @@ i3RicingPackagesArch="rofi i3blocks picom kitty lxappearance" # nitrogen is AUR 
 intelPackages="intel-media-*driver"
 basicSystemPackagesDebian="tealdeer" # neofetch is gone from Debian trixie and sid, and fastfetch is absent from Ubuntu noble, so neither replacement is safe across this family; tealdeer exists in both and provides the tldr command
 essentialPackagesRPM="NetworkManager-tui NetworkManager xkill tigervnc-server dhcp-server fastfetch" # NetworkManager moved out of the shared list, Debian spells it network-manager in lowercase and the capitalised name resolves to nothing there
-essentialPackagesDebian="software-properties-common network-manager build-essential manpages-dev net-tools x11-utils tigervnc-standalone-server tigervnc-common tightvncserver isc-dhcp-server" #libncurses5-dev libncursesw5-dev libgtkglext1 linux-headers-amd64 linux-image-amd64
-essentialPackagesOpenSUSE=""
+essentialPackagesDebian="network-manager build-essential manpages-dev net-tools x11-utils tigervnc-standalone-server tigervnc-common tightvncserver isc-dhcp-server" # software-properties-common was the first name in this list and it does not exist in Debian 13 trixie, so apt aborted the whole transaction with exit 100 and installed nothing, invisibly on Ubuntu where the name still resolves; add-apt-repository is called nowhere in this file so the name is simply gone rather than moved to an Ubuntu list. Every remaining name was checked to resolve in both debian:trixie and ubuntu:24.04 #libncurses5-dev libncursesw5-dev libgtkglext1 linux-headers-amd64 linux-image-amd64
+essentialPackagesOpenSUSE="pciutils git cmake wget nano curl jq elinks nasm lshw sensors rsync rclone mediainfo cifs-utils ntfs-3g* lsof xinput procps git-lfs gnupg openssh-client* blktrace iotop smartmontools" # the shared list with lm*sensors spelled sensors, every name verified to resolve in both opensuse/tumbleweed and opensuse/leap:15.6
+basicUserPackagesOpenSUSE="gedit yt-dlp ffmpeg tumbler libreoffice pavucontrol vnstat feh flatpak"
+supportPackagesOpenSUSE="vim"
+gamingPackagesOpenSUSE="" # goverlay is in Tumbleweed but not in Leap 15.6, so the Gaming profile here is the base packages plus the gaming Flatpaks
+developmentPackagesOpenSUSE="gcc cargo npm python3-pip nodejs golang make"
 essentialPackagesArch="pciutils git cmake wget nano curl jq nasm lshw rsync rclone mediainfo cifs-utils lsof git-lfs gnupg iotop smartmontools lm_sensors ntfs-3g openssh procps-ng networkmanager xorg-xinput xorg-xkill tigervnc fastfetch" # spelled out because pacman expands no wildcards, and it is a replacement rather than an addition: lm*sensors, ntfs-3g*, openssh-client*, procps, xinput and NetworkManager are all Debian or RPM spellings, and blktrace is AUR only so it is dropped rather than left to abort the single transaction serverSetup uses
 basicUserPackagesArch="gedit yt-dlp ffmpeg tumbler libreoffice-fresh pavucontrol vnstat feh flatpak" # libreoffice itself is not a package on Arch, only libreoffice-fresh and libreoffice-still are
 basicSystemPackagesArch="wine htop powertop tealdeer ncdu scrot xclip" # tldr is tealdeer here, and xrdp is AUR only so it is dropped rather than guessed at
@@ -1193,7 +1368,7 @@ intelPackagesArch="mesa vulkan-intel intel-media-driver libva-intel-driver"
 virtconPackagesArch="podman distrobox virt-manager libvirt virt-install qemu-full qemu-img" # bridge-utils is AUR only on Arch and pacman aborts the whole transaction on an unknown target
 amdPackagesRPM="xorg-x11-drv-amdgpu systemd-devel" #xorg-x11-dr*
 amdPackagesDebian="xserver-xorg-video-amdgpu libsystemd-dev"
-amdPackagesOpenSUSE=""
+amdPackagesOpenSUSE="Mesa-dri libdrm_amdgpu1 Mesa-libva libvulkan_radeon xf86-video-amdgpu ocl-icd-devel opencl-headers vulkan-tools libva-utils" # this was empty and appended to the shared RPM list, so zypper received rocm*, which matches nothing on Leap 16.0 and aborts the whole transaction with exit 104; these nine names were verified to resolve on both opensuse/tumbleweed and opensuse/leap:16.0
 amdPackagesArch="mesa vulkan-radeon xf86-video-amdgpu ocl-icd opencl-headers" # rocm* is a glob and the ROCm stack is split across a dozen real names, so the OpenCL loader and headers are installed instead
 nvidiaPackagesArch="nvidia-open-dkms nvidia-utils nvidia-settings egl-wayland libva-nvidia-driver vulkan-icd-loader" # the dkms variant is used because Manjaro, CachyOS and Garuda ship kernels the plain nvidia package does not build against, and nvidia-dkms no longer exists in the repositories, extra ships nvidia-open-dkms in its place
 fedoraPackages="mesa-va-drivers-freeworld mesa-vdpau-drivers-freeworld libavcodec-freeworld dnf-plugin-system-upgrade"
@@ -1249,16 +1424,115 @@ designFlatpak="org.gimp.GIMP org.inkscape.Inkscape org.kde.krita org.blender.Ble
 musicFlatpak="org.ardour.Ardour org.musescore.MuseScore"
 securityFlatpak="org.zaproxy.ZAP org.ghidra_sre.Ghidra"
 scientificFlatpak="org.spyder_ide.spyder org.scilab.Scilab"
+imagenologyPackages="dcmtk xmedcon dcm2niix python3-gdcm python3-pydicom python3-nibabel" # verified in fedora:latest and debian:trixie containers, the two names that differ per family are appended by identifyDistro
+imagenologyPackagesRPM="gdcm python3-pynetdicom" # python3-pynetdicom has no Debian package and gdcm is spelled libgdcm-tools there
+imagenologyPackagesDebian="libgdcm-tools"
+imagenologyFlatpak="io.github.nroduit.Weasis com.github.AlizaMedicalImaging.AlizaMS br.gov.cti.invesalius" # Weasis is the reference open source DICOM viewer, Aliza MS is a lighter one, InVesalius does 3D reconstruction from CT and MR
 roboticsFlatpak="org.freecad.FreeCAD cc.arduino.IDE2" # freecad is in no Fedora repository and the packaged Arduino IDE is the deprecated 1.x, and the Flathub id is cc.arduino.IDE2 rather than io.github.arduino.IDE2
 # Pending packages for review
 # libadwaita-devel libXtst-devel libX11-devel samba samba-client samba-common minigalaxy
+planPurposeNames="basic gaming corporate corporate-microsoft corporate-google development astronomy compneuro design music cybersecurity forensics scientific robotics"
+planDesktopNames="gnome xfce kde lxqt cinnamon mate i3 openbox budgie sway hyprland niri none"
+planDirectiveNames="technical, purpose=<name>, desktop=<name>, drivers, update, server, reboot=yes|no"
+planPurposeNumber ()
+{
+    case "$1" in # the plan speaks names only, this is the single place where a name becomes the number purposeMenu reads, so renumbering that menu means editing this map and nothing else
+        basic) echo 1 ;;
+        gaming) echo 2 ;;
+        corporate) echo 3 ;;
+        corporate-microsoft) echo 4 ;;
+        corporate-google) echo 5 ;;
+        development) echo 6 ;;
+        astronomy) echo 7 ;;
+        compneuro) echo 8 ;;
+        design) echo 9 ;;
+        music) echo 10 ;;
+        cybersecurity) echo 11 ;;
+        forensics) echo 12 ;;
+        scientific) echo 13 ;;
+        robotics) echo 14 ;;
+        imagenology) echo 15 ;;
+        *) return 1 ;;
+    esac
+}
+planDesktopKnown ()
+{
+    case " $planDesktopNames " in *" $1 "*) return 0 ;; *) return 1 ;; esac # installDesktopEnvironment is already keyed by name, so the desktop half of a plan needs no number at all
+}
+planInstallDesktop ()
+{
+    case "$1" in # the extra package arguments mirror the arms of desktopenvironmentMenu one for one, the menu is bypassed rather than fed because a plan draws no menu and reads no input
+        none) caution "Plan step: desktop none, no desktop environment will be installed."; return 1 ;;
+        xfce|sway|hyprland) installDesktopEnvironment "$1" $basicDesktopEnvironmentPackages ;;
+        i3) installDesktopEnvironment i3 $i3RicingPackages $basicDesktopEnvironmentPackages ;;
+        niri) niriRepo; installDesktopEnvironment niri $basicDesktopEnvironmentPackages ;; # niri lives in a copr on Fedora, the repo has to be enabled before installing
+        *) installDesktopEnvironment "$1" ;;
+    esac
+}
+planValidate ()
+{
+    local directive name
+    planReboot="no" # the contract's default, an absent reboot= directive is not a reboot
+    planSteps=()
+    IFS=',' read -ra planTokens <<< "${CARINO_SETUP_PLAN//$'\n'/,}" # read stops at the first newline, so a plan wrapped across lines by a mail client or a copy out of the builder page silently lost every directive after the first one, including an invalid name P2 has to refuse; newlines become separators rather than terminators
+    for directive in "${planTokens[@]}"; do
+        directive="${directive//[[:space:]]/}" # a plan pasted out of a browser can carry stray spaces, no directive or name contains one
+        [[ -z "$directive" ]] && continue
+        case "$directive" in
+            technical|drivers|update|server) planSteps+=("$directive") ;;
+            purpose=*)
+                name="${directive#purpose=}"
+                planPurposeNumber "$name" >/dev/null || { error "CARINO_SETUP_PLAN: '$name' is not a purpose name. Valid purposes: $planPurposeNames"; return 1; }
+                planSteps+=("$directive")
+                ;;
+            desktop=*)
+                name="${directive#desktop=}"
+                planDesktopKnown "$name" || { error "CARINO_SETUP_PLAN: '$name' is not a desktop name. Valid desktops: $planDesktopNames"; return 1; }
+                planSteps+=("$directive")
+                ;;
+            reboot=yes|reboot=no) planReboot="${directive#reboot=}" ;;
+            reboot=*) error "CARINO_SETUP_PLAN: '$directive' is not valid, reboot takes yes or no."; return 1 ;;
+            *) error "CARINO_SETUP_PLAN: '$directive' is not a directive. Valid directives: $planDirectiveNames"; return 1 ;;
+        esac
+    done
+    if [[ ${#planSteps[@]} -eq 0 ]]; then
+        error "CARINO_SETUP_PLAN names no action to take. Valid directives: $planDirectiveNames"
+        return 1
+    fi
+    return 0
+}
+runPlan ()
+{
+    local directive
+    NONINTERACTIVE=1 # set before anything else so a refusal, a prompt or a menu below can never block on stdin
+    identifyDistro # detection first, exactly as the menu does it, a plan is a request rather than an override
+    if [[ -z "$pkgm" ]]; then
+        error "'${DISTRIBUTION:-unknown}' ${VERSION:-} is not supported, so CARINO_SETUP_PLAN was refused and nothing was installed."
+        return 1
+    fi
+    planValidate || return 1 # the whole plan is parsed and checked before the first package is installed, so a typo in the third directive cannot leave a half configured machine
+    info "Plan accepted, running non-interactively: $CARINO_SETUP_PLAN"
+    for directive in "${planSteps[@]}"; do
+        case "$directive" in
+            technical) caution "Plan step: technical"; techSetup ;;
+            purpose=*) caution "Plan step: purpose ${directive#purpose=}"; purposeMenu <<< "$(planPurposeNumber "${directive#purpose=}")" ;; # the selection is fed to the menu's own read, so the profile that runs is the one the menu defines and nothing is duplicated here
+            desktop=*) caution "Plan step: desktop ${directive#desktop=}"; planInstallDesktop "${directive#desktop=}" && finalTweaks ;; # the tweaks follow an installed desktop, exactly as menu option 3 does
+            drivers) caution "Plan step: drivers"; graphicDrivers ;;
+            update) caution "Plan step: update"; updateSystem ;;
+            server) caution "Plan step: server"; serverSetup ;;
+        esac
+    done
+    success "CARINO_SETUP_PLAN has finished."
+    askReboot # honours reboot=yes|no, and prints which default it took
+    return 0
+}
 detectArgument() {
     identifyDistro # detection has to run for every branch, otherwise $pkgm, $family and $postFlags stay empty
     case "$1" in
         quick)
             techSetup || return 1 # techSetup returns 1 on a distribution it declined, without this the install below runs as "sudo  gedit ..."
             sudo $pkgm $preFlags $argInstall $basicUserPackages $basicSystemPackages $supportPackages $postFlags
-            sudo flatpak install $flatpakRepo $basicFlatpak $googleFlatpak -y
+            flatpakInstall $basicFlatpak $googleFlatpak
             ;;
         nvidia)
             graphicDrivers
@@ -1279,15 +1553,17 @@ detectArgument() {
             serverSetup # the README states the server setup deliberately skips the full technical setup
             ;;
         distrobox)
+            [[ -z "$pkgm" ]] && { error "No package manager was configured for '${DISTRIBUTION:-unknown}', the distrobox containers were not created here."; return 1; } # the same refusal every other arm inherits from the function it calls, distroboxContainers had none of its own
             distroboxContainers
             ;;
         desktop)
             desktopenvironmentMenu
             ;;
         anydesk)
+            [[ -z "$pkgm" ]] && { error "No package manager was configured for '${DISTRIBUTION:-unknown}', AnyDesk cannot be installed here."; return 1; } # without it the line below runs as "sudo  install flatpak -y"
             sudo $pkgm $argInstall flatpak -y # flatpak has to exist before flathubEnable can add a remote with it
             flathubEnable
-            sudo flatpak install $flatpakRepo $remoteSupportFlatpak -y
+            flatpakInstall $remoteSupportFlatpak
             ;;
         anydesk-repo)
             anydeskRepo
@@ -1311,10 +1587,17 @@ detectArgument() {
 enableDryRun ()
 {
     dryBin=$(mktemp -d) # a PATH shim rather than shell function overrides, because distrobox-create and mount.cifs are not portable function names
-    trap 'rm -rf "$dryBin"' EXIT
-    for cmd in sudo flatpak wget git gsettings xdg-mime distrobox-create usermod modprobe hostnamectl mount.cifs subscription-manager; do printf '#!/bin/bash\necho "DRY-RUN: %s $*"\nexit 0\n' "$cmd" > "$dryBin/$cmd"; chmod +x "$dryBin/$cmd"; done # rpm-ostree and systemctl are deliberately absent, both are only ever reached through sudo and rpm-ostree is command -v probed to detect an atomic system, so shimming it would make every Fedora look like Silverblue
-    PATH="$dryBin:$PATH" # detection commands such as lspci and uname are deliberately left real, only the privileged and mutating calls are intercepted
+    dryChmod=$(command -v chmod); dryRm=$(command -v rm) # resolved to absolute paths while chmod and rm are still the real ones, the loop has to make its own shims executable and the trap has to delete the shim directory afterwards, and both of those names are shimmed below
+    trap '"$dryRm" -rf "$dryBin"' EXIT
+    for cmd in sudo flatpak wget git gsettings xdg-mime distrobox-create usermod modprobe hostnamectl mount.cifs subscription-manager mkdir rm cp mv ln tar bunzip2 chmod tee sed; do printf '#!/bin/bash\necho "DRY-RUN: %s $*"\nexit 0\n' "$cmd" > "$dryBin/$cmd"; "$dryChmod" +x "$dryBin/$cmd"; done # the mutating coreutils are shimmed too, without them a rehearsal really created ~/.steam/root/compatibilitytools.d and ~/WinFiles and really ran rm against a glob in the working directory; rpm-ostree and systemctl stay absent, both are only ever reached through sudo and rpm-ostree is command -v probed to detect an atomic system, so shimming it would make every Fedora look like Silverblue
+    PATH="$dryBin:$PATH" # detection commands such as lspci, uname, curl and grep are deliberately left real, only the privileged and mutating calls are intercepted
+    unset -f sudo # setupPrivilege may have defined sudo as a function for a root, doas or run0 system, and a function would take precedence over the shim above
     caution "DRY RUN: nothing below will actually run. Every privileged or system-modifying command is printed instead."
 }
+if ! setupPrivilege && [[ "$DRYRUN" != 1 ]]; then exit 1; fi # a real run that cannot elevate stops here rather than failing line by line while printing progress, a rehearsal is still allowed because the shim below provides sudo
 [[ "$DRYRUN" == 1 ]] && enableDryRun
+if [[ -n "$CARINO_SETUP_PLAN" ]]; then
+    if [[ -n "$1" ]]; then error "CARINO_SETUP_PLAN and the argument '$1' were both given. Run one or the other, they are two ways of asking for the same work."; exit 1; fi
+    runPlan; exit $? # the plan runs instead of the menu and the script ends here, it never falls through into displayMenu
+fi
 detectArgument "$1"

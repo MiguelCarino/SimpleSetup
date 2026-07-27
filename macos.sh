@@ -1,5 +1,5 @@
 #!/bin/bash
-# macOS Setup Script
+# Carino Setup - macOS - https://setup.carino.systems
 # Run with: bash macos.sh
 
 RED="\e[31m"; BLUE="\e[94m"; GREEN="\e[32m"; YELLOW="\e[33m"; ENDCOLOR="\e[0m"
@@ -97,7 +97,7 @@ install_homebrew
 
 echo ""
 echo "-------------------------------------"
-echo " macOS Setup Script"
+echo " Carino Setup - macOS"
 echo "-------------------------------------"
 echo "Now you must choose for a use case profile"
 echo "Please select an option:"

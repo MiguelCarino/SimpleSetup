@@ -1,5 +1,5 @@
 #!/bin/bash
-# SimpleSetup test harness. Run from the repository root: ./test.sh [--network]
+# Carino Setup test harness. Run from the repository root: ./test.sh [--network]
 # Exits non-zero on the first failing category, so CI can gate a push on it.
 cd "$(dirname "$0")" || exit 1
 RED="\e[31m"; GREEN="\e[32m"; YELLOW="\e[33m"; BLUE="\e[94m"; ENDCOLOR="\e[0m"
@@ -11,7 +11,7 @@ WORK=$(mktemp -d); trap 'rm -rf "$WORK"' EXIT
 NETWORK=0; [[ "$1" == "--network" ]] && NETWORK=1
 
 head2 "1. Syntax"
-for f in setup.sh macos.sh test.sh; do
+for f in setup.sh macos.sh test.sh tools/check-packages.sh; do
     if bash -n "$f" 2>/dev/null; then ok "$f parses"; else bad "$f does not parse"; bash -n "$f"; fi
 done
 
@@ -32,31 +32,55 @@ printed=$(deNumbers); dispatched=$(caseNumbers desktopenvironmentMenu)
 if [[ "$printed" == "$dispatched" ]]; then ok "desktop menu prints [$printed] and dispatches the same"
 else bad "desktop menu prints [$printed] but dispatches [$dispatched]"; fi
 
-head2 "3. Supported distributions produce a real install command"
-runFake() { printf 'NAME="%s"\nVERSION_ID="%s"\n' "$1" "${2:-1}" > "$WORK/osr"; printf '2\n1\n7\n' | SIMPLESETUP_OSRELEASE="$WORK/osr" SIMPLESETUP_LOG="$WORK/log" timeout 60 bash setup.sh dry-run 2>&1; }
-while IFS='|' read -r name expect; do
+osr()        { printf 'NAME="%s"\nVERSION_ID="%s"\n' "$1" "${2:-1}" > "$WORK/osr"; }
+runFake()    { osr "$1" "$2"; printf '2\n1\n7\n' | CARINO_SETUP_OSRELEASE="$WORK/osr" CARINO_SETUP_LOG="$WORK/log" timeout 90 bash setup.sh dry-run 2>&1; }
+runArg()     { osr "$1"; CARINO_SETUP_OSRELEASE="$WORK/osr" CARINO_SETUP_LOG="$WORK/log" timeout 90 bash setup.sh dry-run "$2" </dev/null 2>&1; } # stdin is closed on purpose, an argument that still reads a prompt has to end rather than hang
+runPlanned() { osr "$1"; CARINO_SETUP_PLAN="$2" CARINO_SETUP_OSRELEASE="$WORK/osr" CARINO_SETUP_LOG="$WORK/log" timeout 120 bash setup.sh dry-run </dev/null 2>&1; }
+installLine ()
+{
+    local pkgm=$1 verb=$2 best="" bestn=-1 line n x; local -a t # the longest "sudo <package manager>" command in the run is the package install, picking it by length rather than by the verb keeps a misspelled verb detectable instead of silently unmatched
+    while IFS= read -r line; do
+        [[ "$line" == *"DRY-RUN: sudo "* ]] || continue
+        line="${line#*DRY-RUN: sudo }"
+        read -r -a t <<< "$line"
+        [[ "${t[0]}" == "$pkgm" ]] || continue
+        n=0; for x in "${t[@]:1}"; do [[ "$x" == -* || "$x" == "$verb" ]] && continue; n=$((n+1)); done
+        [[ "$n" -gt "$bestn" ]] && { bestn=$n; best="$line"; }
+    done
+    echo "$bestn $best"
+}
+
+head2 "3. Supported distributions emit an install command of the right shape"
+while IFS='|' read -r name pkgm verb flag min; do
     [[ -z "$name" ]] && continue
-    out=$(runFake "$name")
-    if grep -q "DRY-RUN: sudo $expect" <<<"$out"; then ok "$name -> sudo $expect"
-    else bad "$name did not emit 'sudo $expect'"; grep -m2 'DRY-RUN\|not supported' <<<"$out" | sed 's/^/        /'; fi
+    res=$(runFake "$name" 1 | installLine "$pkgm" "$verb"); n="${res%% *}"; line="${res#* }"
+    why=""
+    [[ "$n" -lt 0 ]] && why=" it never ran 'sudo $pkgm' at all;"
+    if [[ "$n" -ge 0 ]]; then
+        [[ " $line " == *" $verb "* ]] || why="$why the install verb '$verb' is not in it;"
+        [[ " $line " == *" $flag "* ]] || why="$why '$flag' is missing, so the transaction would stop and ask;"
+        [[ "$n" -ge "$min" ]]          || why="$why only $n package operand(s), at least $min were expected;"
+    fi
+    if [[ -z "$why" ]]; then ok "$name -> sudo $pkgm ... $verb ... $flag, $n operands"
+    else bad "$name emitted a malformed install:$why"; [[ "$n" -ge 0 ]] && echo "        sudo $line" | cut -c1-160; fi
 done <<'FAMILIES'
-Fedora Linux|dnf
-Debian GNU/Linux|apt
-Ubuntu|apt
-Linux Mint|apt
-Arch Linux|pacman
-Manjaro Linux|pacman
-openSUSE Tumbleweed|zypper
-CentOS Stream|dnf
-Rocky Linux|dnf
-Red Hat Enterprise Linux|dnf
-Amazon Linux|dnf
+Fedora Linux|dnf|install|-y|12
+Debian GNU/Linux|apt|install|-y|12
+Ubuntu|apt|install|-y|12
+Linux Mint|apt|install|-y|12
+Arch Linux|pacman|-S|--noconfirm|10
+Manjaro Linux|pacman|-S|--noconfirm|10
+openSUSE Tumbleweed|zypper|install|-n|12
+CentOS Stream|dnf|install|-y|12
+Rocky Linux|dnf|install|-y|12
+Red Hat Enterprise Linux|dnf|install|-y|12
+Amazon Linux|dnf|install|-y|12
 FAMILIES
 
 head2 "4. Declined distributions run nothing at all"
 while read -r name; do
     [[ -z "$name" ]] && continue
-    out=$(runFake "$name")
+    out=$(runFake "$name" 1)
     n=$(grep -c 'DRY-RUN:' <<<"$out")
     if [[ "$n" -eq 0 ]] && grep -q 'not supported' <<<"$out"; then ok "$name refuses and runs 0 commands"
     elif [[ "$n" -ne 0 ]]; then bad "$name ran $n command(s) despite being unsupported"; grep -m2 'DRY-RUN:' <<<"$out" | sed 's/^/        /'
@@ -78,7 +102,7 @@ Mageia
 OpenMandriva Lx
 Chimera Linux
 DECLINED
-out=$(runFake "Definitely Not A Real Distro")
+out=$(runFake "Definitely Not A Real Distro" 1)
 if [[ $(grep -c 'DRY-RUN:' <<<"$out") -eq 0 ]]; then ok "an unknown distribution runs 0 commands"; else bad "an unknown distribution ran a command"; fi
 
 head2 "5. Documented arguments exist, and implemented ones are documented"
@@ -100,8 +124,122 @@ for f in $fams; do
     else echo -e "  ${YELLOW}note${ENDCOLOR}  $f has no list for:$miss (installDesktopEnvironment refuses by name, it does not install nothing silently)"; fi
 done
 
+ARGTABLE='quick|install
+nvidia|any
+amd|any
+intel|any
+svp|run
+simple|install
+server|install
+distrobox|run
+desktop|any
+anydesk|install
+anydesk-repo|any
+librewolf|run
+share|any
+proton|run' # "install" has to reach the package manager, "run" has to run something privileged or mutating, "any" only has to end and say something rather than hang or crash, because graphicDrivers reads the real lspci and the repo arms write through a redirect the shims cannot print past
+head2 "7. Every implemented argument runs to completion"
+for a in $impl; do grep -q "^$a|" <<<"$ARGTABLE" || bad "the argument '$a' is dispatched by setup.sh but nothing here drives it"; done
+while IFS='|' read -r arg expect; do
+    out=$(runArg "Fedora Linux" "$arg"); rc=$?
+    why=""
+    [[ "$rc" -eq 124 ]] && why="$why it never ended, something is still waiting on stdin;"
+    grep -qE 'command not found|syntax error|unbound variable|bad substitution|: line [0-9]+:' <<<"$out" && why="$why the shell reported an error;"
+    case "$expect" in
+        install) grep -qE 'DRY-RUN: sudo dnf (install|update|config-manager)' <<<"$out" || why="$why it never asked dnf for anything;" ;;
+        run)     grep -q 'DRY-RUN:' <<<"$out" || why="$why it ran no command at all;" ;;
+    esac
+    [[ -z "$why" ]] && ok "argument $arg ($expect)" || bad "argument $arg:$why"
+done <<<"$ARGTABLE"
+
+head2 "8. CARINO_SETUP_PLAN runs instead of the menu, by name, and refuses what it does not know"
+while IFS='|' read -r plan marker; do
+    [[ -z "$plan" ]] && continue
+    out=$(runPlanned "Fedora Linux" "$plan"); rc=$?
+    clean=$(sed 's/\x1b\[[0-9;]*m//g' <<<"$out")
+    why=""
+    [[ "$rc" -eq 0 ]] || why="$why it exited $rc;"
+    grep -q "$marker" <<<"$clean" || why="$why '$marker' never appeared;"
+    grep -qE '^[0-9]+\. ' <<<"$clean" && why="$why a numbered menu was drawn, the plan is supposed to replace it;" # P3 and P4, no menu is drawn and the run does not fall through into displayMenu afterwards
+    grep -q 'CARINO_SETUP_PLAN has finished' <<<"$clean" || why="$why the plan never reported finishing;"
+    [[ -z "$why" ]] && ok "PLAN=$plan" || bad "PLAN=$plan:$why"
+done <<'PLANS'
+technical|Plan step: technical
+desktop=xfce|Plan step: desktop xfce
+drivers|Plan step: drivers
+update|Plan step: update
+server|Plan step: server
+purpose=gaming|Plan step: purpose gaming
+purpose=corporate-microsoft|Plan step: purpose corporate-microsoft
+technical,desktop=kde,purpose=gaming|Plan step: purpose gaming
+PLANS
+out=$(sed 's/\x1b\[[0-9;]*m//g' <<<"$(runPlanned "Fedora Linux" "technical,desktop=kde,purpose=gaming")")
+order=$(grep -oE 'Plan step: (technical|desktop kde|purpose gaming)' <<<"$out" | sed 's/^Plan step: //' | tr '\n' '/')
+[[ "$order" == "technical/desktop kde/purpose gaming/" ]] && ok "a three directive plan runs strictly left to right" || bad "a three directive plan ran in the order [$order]"
+while IFS='|' read -r plan token valids; do
+    [[ -z "$plan" ]] && continue
+    out=$(runPlanned "Fedora Linux" "$plan"); rc=$?
+    clean=$(sed 's/\x1b\[[0-9;]*m//g' <<<"$out")
+    why=""
+    [[ "$rc" -eq 0 ]] && why="$why it exited 0 instead of refusing;"
+    [[ $(grep -c 'DRY-RUN:' <<<"$clean") -eq 0 ]] || why="$why it installed something before refusing;"
+    grep -qF "$token" <<<"$clean" || why="$why it never named the bad token '$token';"
+    grep -qF "$valids" <<<"$clean" || why="$why it never said what would have been accepted instead;"
+    [[ -z "$why" ]] && ok "PLAN=$plan is refused before anything is installed" || bad "PLAN=$plan:$why"
+done <<'BADPLANS'
+frobnicate|frobnicate|Valid directives:
+purpose=nope|nope|Valid purposes:
+desktop=nope|nope|Valid desktops:
+technical,purpose=gamming|gamming|Valid purposes:
+reboot=maybe|reboot=maybe|reboot takes yes or no
+reboot=yes|names no action|Valid directives:
+BADPLANS
+out=$(runPlanned "Fedora Linux" $'technical\npurpose=nope'); rc=$?
+clean=$(sed 's/\x1b\[[0-9;]*m//g' <<<"$out")
+if [[ "$rc" -ne 0 ]] && [[ $(grep -c 'DRY-RUN:' <<<"$clean") -eq 0 ]] && grep -qF "'nope' is not a purpose name" <<<"$clean"; then ok "a plan wrapped across lines is parsed whole, not truncated at the first newline"
+else bad "a newline in CARINO_SETUP_PLAN discarded everything after it (exit $rc, $(grep -c 'DRY-RUN:' <<<"$clean") commands)"; fi
+out=$(sed 's/\x1b\[[0-9;]*m//g' <<<"$(runPlanned "Fedora Linux" "update")")
+grep -q 'Non-interactive run: reboot=no (default: no)' <<<"$out" && ! grep -q 'DRY-RUN: sudo reboot' <<<"$out" && ok "askReboot takes its documented default and says so" || bad "askReboot did not take the no-reboot default out loud"
+out=$(sed 's/\x1b\[[0-9;]*m//g' <<<"$(runPlanned "Fedora Linux" "update,reboot=yes")")
+grep -q 'DRY-RUN: sudo reboot' <<<"$out" && ok "reboot=yes reboots at the end" || bad "reboot=yes did not reboot"
+osr "Fedora Linux"; out=$(CARINO_SETUP_DRYRUN=1 CARINO_SETUP_PLAN=purpose=basic CARINO_SETUP_OSRELEASE="$WORK/osr" CARINO_SETUP_LOG="$WORK/log" timeout 120 bash setup.sh </dev/null 2>&1)
+[[ $(grep -c 'DRY-RUN:' <<<"$out") -gt 0 ]] && ok "a plan composes with CARINO_SETUP_DRYRUN=1 and no dry-run argument" || bad "CARINO_SETUP_DRYRUN=1 did not intercept a plan"
+osr "Gentoo"; out=$(CARINO_SETUP_PLAN=technical CARINO_SETUP_OSRELEASE="$WORK/osr" CARINO_SETUP_LOG="$WORK/log" timeout 120 bash setup.sh dry-run </dev/null 2>&1); rc=$?
+if [[ "$rc" -ne 0 ]] && [[ $(grep -c 'DRY-RUN:' <<<"$out") -eq 0 ]] && grep -q 'was refused and nothing was installed' <<<"$out"; then ok "a declined distribution refuses the plan the same way it refuses the menu"
+else bad "a declined distribution did not refuse the plan (exit $rc, $(grep -c 'DRY-RUN:' <<<"$out") commands)"; fi
+osr "Fedora Linux"; out=$(CARINO_SETUP_PLAN=technical CARINO_SETUP_OSRELEASE="$WORK/osr" CARINO_SETUP_LOG="$WORK/log" timeout 120 bash setup.sh dry-run quick </dev/null 2>&1); rc=$?
+[[ "$rc" -ne 0 ]] && [[ $(grep -c 'DRY-RUN:' <<<"$out") -eq 0 ]] && ok "a plan and an argument together are refused rather than half run" || bad "a plan plus an argument ran anyway (exit $rc)"
+for name in basic gaming corporate corporate-microsoft corporate-google development astronomy compneuro design music cybersecurity forensics scientific robotics; do
+    awk '/^planPurposeNumber/,/^}/' setup.sh | grep -qE "^\s*$name\)" || bad "the purpose name '$name' in the frozen contract has no entry in planPurposeNumber"
+done
+for name in gnome xfce kde lxqt cinnamon mate i3 openbox budgie sway hyprland niri none; do
+    grep -m1 '^planDesktopNames=' setup.sh | grep -qw "$name" || bad "the desktop name '$name' in the frozen contract is not in planDesktopNames"
+done
+ok "every purpose and desktop name in the frozen contract is still spelled the same in setup.sh"
+
+head2 "9. The index refresh in updateSystem uses flags its own package manager accepts"
+while IFS='|' read -r name pkgm refresh want unwanted; do
+    [[ -z "$name" ]] && continue
+    out=$(sed 's/\x1b\[[0-9;]*m//g' <<<"$(runPlanned "$name" update)")
+    line=$(grep -m1 -E "DRY-RUN: sudo $pkgm( .*)? $refresh( |$)" <<<"$out"); line="${line#*DRY-RUN: sudo }"
+    why=""
+    [[ -n "$line" ]] || why="$why it never refreshed with 'sudo $pkgm ... $refresh';"
+    [[ -z "$line" || "$want" == "-" || " $line " == *" $want "* ]] || why="$why '$want' is missing, so the refresh would stop and ask;"
+    [[ -n "$line" && "$unwanted" != "-" && " $line " == *" $unwanted "* ]] && why="$why it passed '$unwanted' to $refresh, which $pkgm rejects outright, so the index is never refreshed;"
+    [[ -z "$why" ]] && ok "$name refreshes with 'sudo $line'" || bad "$name refresh is malformed:$why"
+done <<'REFRESH'
+Fedora Linux|dnf|update|-y|-
+Debian GNU/Linux|apt|update|-y|-f
+Ubuntu|apt|update|-y|-f
+Linux Mint|apt|update|-y|-f
+Arch Linux|pacman|-Syu|--noconfirm|-
+openSUSE Tumbleweed|zypper|refresh|-n|-y
+CentOS Stream|dnf|update|-y|-
+Red Hat Enterprise Linux|dnf|update|-y|-
+REFRESH
+
 if [[ "$NETWORK" == 1 ]]; then
-    head2 "7. Network: published URLs and Flathub identifiers"
+    head2 "10. Network: published URLs and Flathub identifiers"
     for u in $(grep -ohE 'https?://[a-zA-Z0-9./_-]+' README.md index.html | sort -u); do
         c=$(curl -s -o /dev/null -w '%{http_code}' -L --max-time 15 "$u")
         [[ "$c" == 200 ]] && ok "$c $u" || bad "$c $u"

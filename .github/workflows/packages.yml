@@ -1,19 +1,42 @@
 name: package names
 
 on:
+  pull_request:
+    paths:
+      - setup.sh                        # the file every package list lives in
+      - tools/check-packages.sh
+      - .github/workflows/packages.yml
+  push:
+    branches: [main]
+    paths:
+      - setup.sh
+      - tools/check-packages.sh
   schedule:
     - cron: "0 6 1 * *"   # the first of each month, package renames are slow and a monthly report is enough to catch them before a user does
   workflow_dispatch:
 
 jobs:
-  check:
+  cheap:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Verify every package name still resolves upstream
-        run: ./tools/check-packages.sh all
+      - name: Coverage, Flathub identifiers and the Arch repositories
+        run: ./tools/check-packages.sh cheap   # HTTP and text only, no images to pull, so it is affordable on every pull request that touches a package list; a rename used to be able to sit in main for 31 days waiting for the cron
+
+  containers:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve every name in a container of the distribution that has to provide it
+        run: ./tools/check-packages.sh containers   # five images and five package managers, minutes rather than seconds, which is why this half stays on the cron
+
+  issue:
+    needs: [cheap, containers]
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
       - name: Open an issue when a name has gone
-        if: failure()
         uses: actions/github-script@v7
         with:
           script: |

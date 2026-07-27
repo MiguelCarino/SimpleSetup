@@ -1,99 +1,205 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="icon" type="image/webp" href="logo.webp">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SimpleSetup | Universal OS Automation</title>
+    <link rel="icon" type="image/webp" href="logo.webp">
+    <title>Carino Setup — Universal OS Automation</title>
+    <meta name="description" content="One command that configures Linux, Windows or macOS: hardware and distribution detection, drivers, and 15 purpose profiles. Nothing to install first.">
     <link rel="stylesheet" href="fonts/carino-fonts.css">
     <style>
         :root {
-            --bg: #050505;
-            --card: #0d0d0d;
-            --accent: #eab308;
-            --text-main: #fff;
-            --text-dim: #a3a3a3;
-            --border: #262626;
-            --terminal-bg: #050505;
-            --success: #22c55e;
-            --beta: #eab308;
+            --bg:            #050505;
+            --bg-elev:       #0d0d0d;
+            --bg-card:       #0b0b0b;
+            --accent:        #eab308;
+            --accent-faint:  rgba(234,179,8,0.05);
+            --accent-glow:   rgba(234,179,8,0.15);
+            --accent-dim:    rgba(234,179,8,0.30);
+            --border:        #262626;
+            --border-hv:     #eab308;
+            --text:          #ffffff;
+            --text-sec:      #a3a3a3;
+            --text-muted:    #666666;
+            --ok:            #22c55e;
+            --warn:          #eab308;
+            --err:           #ef4444;
+            --stage-grad:    radial-gradient(1200px 520px at 50% -12%, rgba(234,179,8,0.08) 0%, transparent 60%), linear-gradient(180deg,#0b0b0b 0%,#050505 100%);
+            --gold-text:     linear-gradient(130deg,#fef08a 0%,#eab308 50%,#b45309 100%);
+            --sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+            --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+            --display: 'Red Hat Display', var(--sans);
+            --radius: 10px;
+            --i18n: 'Noto Sans JP', 'Noto Sans CJK JP', 'Hiragino Sans', 'Yu Gothic UI', 'Noto Sans SC', 'Noto Sans CJK SC', 'PingFang SC', 'Microsoft YaHei UI', 'Noto Sans KR', 'Noto Sans CJK KR', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans Hebrew', 'Arial Hebrew'; /* fonts/carino-fonts.css ships latin + latin-ext only, so the ja/zh/ko/he/ru strings below can never be Plex; these are the real system faces they land on instead of a generic */
+            --sans-i18n: 'IBM Plex Sans', var(--i18n), system-ui, -apple-system, sans-serif; /* brand face first, so latin text in a translated string still renders in Plex */
+            --mono-i18n: 'IBM Plex Mono', var(--i18n), ui-monospace, SFMono-Regular, Menlo, monospace;
+            --display-i18n: 'Red Hat Display', var(--sans-i18n);
         }
+
+        :root { scrollbar-width: thin; scrollbar-color: #3a3a3a transparent; } /* Firefox has no scrollbar pseudo-elements, only these two inherited properties */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-dim); }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        [hidden] { display: none !important; }
         body {
-            font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg);
-            color: var(--text-main);
+            font-family: var(--sans);
+            background: var(--bg);
+            color: var(--text);
             line-height: 1.6;
-            padding-bottom: 5rem;
+            -webkit-font-smoothing: antialiased;
         }
+        a { color: var(--accent); }
+        code, .mono { font-family: var(--mono); }
+        button { font-family: inherit; }
 
-        .container { max-width: 900px; margin: 0 auto; padding: 0 1.5rem; }
+        .container { max-width: 1080px; margin: 0 auto; padding: 0 1.5rem; }
+
+        .hero { background: var(--stage-grad); border-bottom: 1px solid var(--border); padding: 34px 0 30px; text-align: center; }
+        .hero .kicker { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.32em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+        .hero h1 {
+            font-family: var(--display); font-weight: 900; font-size: clamp(2.1rem, 5vw, 3.2rem);
+            line-height: 0.95; text-transform: uppercase; letter-spacing: 1px;
+            background: var(--gold-text); -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero p { max-width: 660px; margin: 12px auto 0; color: var(--text-sec); font-family: var(--mono-i18n); font-size: 0.85rem; line-height: 1.7; }
 
         #locale-banner {
-            background: rgba(234, 179, 8, 0.10);
-            border: 1px solid var(--border);
-            color: var(--accent);
-            padding: 0.75rem;
-            text-align: center;
-            border-radius: 8px;
-            margin-top: 1.5rem;
-            font-weight: 600;
-            display: none;
+            margin-top: 1.5rem; padding: 0.7rem 1rem; text-align: center;
+            border: 1px solid var(--border); border-radius: 8px; background: var(--accent-faint);
+            color: var(--accent); font-family: var(--mono-i18n); font-size: 0.7rem;
+            text-transform: uppercase; letter-spacing: 0.08em;
         }
 
-        .hero { text-align: center; padding: 3.5rem 0 2rem; }
-        .hero h1 { font-family: 'Red Hat Display', 'IBM Plex Sans', sans-serif; font-size: 3.5rem; font-weight: 900; letter-spacing: -1px; margin-bottom: 1rem; background: linear-gradient(130deg, #fef08a 0%, #eab308 50%, #b45309 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-        .hero p { font-size: 1.2rem; color: var(--text-dim); max-width: 600px; margin: 0 auto; }
-
-        .tabs-container { margin: 2.5rem 0 1rem; text-align: center; }
-        .tabs { display: inline-flex; background: var(--card); padding: 0.4rem; border-radius: 12px; gap: 5px; flex-wrap: wrap; justify-content: center; border: 1px solid var(--border); }
-        .tab-btn {
-            background: transparent; border: none; color: var(--text-dim);
-            padding: 0.8rem 1.5rem; cursor: pointer; border-radius: 8px;
-            font-weight: 600; transition: all 0.2s; font-size: 1rem;
-            display: flex; align-items: center; gap: 8px;
+        .os-picker { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 1.5rem 0 1.25rem; }
+        .os-btn {
+            position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px;
+            min-width: 160px; padding: 10px 20px; border-radius: 11px; cursor: pointer; text-align: center;
+            border: 1px solid var(--border); background: linear-gradient(180deg, var(--bg-elev), #0a0a0a);
+            color: var(--text); transition: 0.16s;
         }
-        .tab-btn:hover { color: var(--text-main); }
-        .tab-btn.active { background: var(--accent); color: #050505; box-shadow: 0 6px 18px rgba(234, 179, 8, 0.28); }
+        .os-btn:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .os-btn.detected:not(.active) { border-color: var(--accent-dim); } /* the platform we detected stays marked after you click away from it, without a label */
+        .os-btn b { font-family: var(--display); font-size: 1.02rem; letter-spacing: 0.02em; }
+        .os-btn .fmt { font-family: var(--mono); font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+        .os-btn.active { border-color: var(--accent); background: var(--accent); color: #050505; box-shadow: 0 10px 30px var(--accent-glow); }
+        .os-btn.active .fmt { color: #3a2c00; }
+        .fold { border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-card); margin-top: 1.25rem; }
+        .fold > summary { cursor: pointer; padding: 0.85rem 1.1rem; font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-sec); list-style: none; }
+        .fold > summary::-webkit-details-marker { display: none; }
+        .fold > summary::before { content: '+ '; color: var(--accent); }
+        .fold[open] > summary::before { content: '\2212 '; }
+        .fold > summary:hover { color: var(--accent); }
+        .fold .fold-body { padding: 0 1.1rem 1.1rem; }
+        .tabpane { padding: 18px 2px 2px; color: var(--text-sec); font-size: 0.9rem; }
 
-        .beta-badge { font-size: 0.65rem; background: var(--beta); color: #050505; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; font-weight: 700; }
-
-        .terminal-wrapper { position: relative; margin-bottom: 3rem; }
-        .terminal {
-            background: var(--terminal-bg); border-radius: 12px; padding: 2rem;
-            border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            font-family: 'IBM Plex Mono', ui-monospace, monospace; position: relative; overflow-x: auto;
-        }
-        .terminal code { color: var(--success); font-size: 1.05rem; white-space: nowrap; }
+        .terminal-wrapper { position: relative; }
+        .terminal { background: #000; border: 1px solid var(--border); border-radius: 12px; padding: 1.4rem 1.6rem; overflow-x: auto; } /* no position:relative — the copy button anchors to the wrapper so it cannot scroll away with the command */
+        .terminal code { display: block; font-family: var(--mono); font-size: 0.8rem; line-height: 1.7; color: var(--ok); white-space: pre; }
+        .terminal .prompt { color: var(--accent); user-select: none; }
         .copy-btn {
-            position: absolute; right: 1rem; top: 1rem;
-            background: var(--card); color: var(--text-main); border: 1px solid var(--border);
-            padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer;
-            font-size: 0.8rem; font-weight: 600; transition: 0.2s;
+            flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px;
+            font-family: var(--mono); font-size: 0.62rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.08em;
+            padding: 7px 11px; border-radius: 6px; cursor: pointer; white-space: nowrap;
+            border: 1px solid var(--border); background: transparent; color: var(--text-sec); transition: 0.18s;
         }
-        .copy-btn:hover { background: var(--accent); color: #050505; border-color: var(--accent); }
+        .copy-btn:hover { border-color: var(--border-hv); color: var(--accent); background: var(--accent-faint); }
+        .copy-btn.done { border-color: var(--ok); color: var(--ok); background: rgba(34,197,94,0.08); }
+        .term-copy { position: absolute; top: 10px; right: 10px; background: rgba(5,5,5,0.85); }
 
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 4rem; }
-        .card { background: var(--card); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); transition: .2s; }
-        .card:hover { border-color: var(--accent); }
-        .card h3 { margin-bottom: 0.5rem; color: var(--accent); }
-        .card p { font-size: 0.95rem; color: var(--text-dim); }
+        .note { font-family: var(--mono); font-size: 0.7rem; color: var(--text-muted); margin-top: 10px; line-height: 1.6; }
 
-        .args-section { margin-top: 4rem; }
-        .args-section h2 { font-family: 'Red Hat Display', sans-serif; }
-        table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
-        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
-        tr:last-child td { border-bottom: none; }
-        th { background: rgba(255,255,255,0.03); color: var(--accent); font-weight: 600; }
-        code.arg { background: var(--bg); color: var(--accent); padding: 0.2rem 0.5rem; border-radius: 4px; font-family: 'IBM Plex Mono', monospace; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-top: 1.75rem; }
+        .card {
+            display: flex; flex-direction: column; background: var(--bg-card);
+            border: 1px solid var(--border); padding: 22px; border-radius: 12px; transition: 0.22s;
+        }
+        .card:hover { border-color: var(--border-hv); background: linear-gradient(145deg,#17120a 0%,#0b0b0b 100%); transform: translateY(-4px); box-shadow: 0 14px 28px rgba(0,0,0,0.6), 0 0 22px var(--accent-glow); }
+        .c-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; }
+        .c-desc { font-size: 0.85rem; color: var(--text-sec); line-height: 1.6; flex: 1; }
 
-        .hidden { display: none; }
+        .args-section { margin-top: 1.5rem; }
+        .args-section h2 { font-family: var(--display-i18n); font-weight: 900; font-size: 1.9rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .table-wrap { overflow-x: auto; margin-top: 1rem; }
+        table.data { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 0.76rem; }
+        table.data th { text-align: left; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.62rem; font-weight: 700; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+        table.data td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--text-sec); }
+        table.data tr:hover td { background: var(--accent-faint); color: var(--text); }
+        .kbd {
+            display: inline-block; font-family: var(--mono); font-size: 0.66rem; font-weight: 700;
+            color: var(--text-sec); background: var(--bg-elev);
+            border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; padding: 2px 7px;
+        }
+        .kbd.accent { color: var(--accent); border-color: var(--accent-dim); }
+
+        .footer { text-align: center; padding: 26px 24px; border-top: 1px solid var(--border); color: var(--text-muted); font-family: var(--mono); font-size: 0.7rem; margin-top: 5rem; }
+
+        .modebar { display: flex; gap: 6px; margin-bottom: 18px; } /* a sub-tab strip inside the Linux pane, not a peer of the OS tabs: CARINO_SETUP_PLAN is read by setup.sh alone */
+        .modebtn {
+            font-family: var(--mono); font-size: 0.62rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.08em;
+            padding: 8px 14px; border-radius: 6px; cursor: pointer;
+            color: var(--text-sec); background: transparent; border: 1px solid var(--border); transition: 0.15s;
+        }
+        .modebtn:hover { color: var(--text); border-color: var(--border-hv); }
+        .modebtn.active { color: var(--accent); border-color: var(--accent-dim); background: var(--accent-faint); }
+
+        .build-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-top: 18px; }
+        .field { display: flex; flex-direction: column; gap: 7px; }
+        .field-label { font-family: var(--mono); font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+        .field select {
+            font-family: var(--mono); font-size: 0.76rem; color: var(--text);
+            background: var(--bg-elev); border: 1px solid var(--border);
+            border-radius: 6px; padding: 9px 10px; cursor: pointer; width: 100%;
+        }
+        .field select:hover:not(:disabled) { border-color: var(--border-hv); }
+        .field select:disabled { color: var(--text-muted); cursor: not-allowed; opacity: 0.6; }
+        select:focus-visible, input:focus-visible, button:focus-visible { outline: 2px solid var(--accent-dim); outline-offset: 2px; }
+
+        .toggles { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+        .toggle {
+            display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+            font-family: var(--mono); font-size: 0.7rem; color: var(--text-sec);
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; transition: 0.15s;
+        }
+        .toggle:hover { border-color: var(--border-hv); color: var(--text); }
+        .toggle input { accent-color: var(--accent); cursor: pointer; }
+        .toggle.locked { opacity: 0.45; cursor: not-allowed; }
+        .toggle.locked:hover { border-color: var(--border); color: var(--text-sec); }
+        .toggle.locked input { cursor: not-allowed; }
+
+        .panel { margin-top: 18px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-card); padding: 16px 18px; }
+        .panel h4 { font-family: var(--mono); font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 9px; }
+        .panel h4 + .panel-sub { margin-top: -4px; margin-bottom: 9px; }
+        .panel p { font-size: 0.78rem; color: var(--text-sec); line-height: 1.7; }
+        .panel .group { margin-top: 14px; }
+        .panel .group:first-of-type { margin-top: 0; }
+        .group-label { font-family: var(--mono); font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); display: block; margin-bottom: 7px; }
+        .pk {
+            display: inline-block; font-family: var(--mono); font-size: 0.66rem; line-height: 1.5;
+            color: var(--text-sec); background: var(--bg-elev);
+            border: 1px solid var(--border); border-radius: 4px; padding: 3px 7px; margin: 0 5px 5px 0;
+        }
+        .pk b { color: var(--text); font-weight: 600; }
+        .pk i { font-style: normal; color: var(--text-muted); }
+
+        .refusal { margin-top: 18px; border: 1px solid rgba(239,68,68,0.35); border-left: 3px solid var(--err); border-radius: var(--radius); background: rgba(239,68,68,0.06); padding: 16px 18px; }
+        .refusal h4 { font-family: var(--mono); font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--err); margin-bottom: 9px; }
+        .refusal p { font-size: 0.8rem; color: var(--text-sec); line-height: 1.75; }
+
+        .caution-line { margin-top: 14px; padding-left: 12px; border-left: 2px solid var(--accent-dim); font-family: var(--mono); font-size: 0.68rem; color: var(--warn); line-height: 1.7; }
+        .out-label { font-family: var(--mono); font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin: 24px 0 9px; }
 
         @media (max-width: 600px) {
-            .hero h1 { font-size: 2.5rem; }
-            .terminal { padding: 1.5rem 1rem; }
-            .terminal code { font-size: 0.85rem; }
+            .hero { padding: 44px 0 38px; }
+            .terminal { padding: 1.1rem 1rem; }
+            .term-copy { top: 6px; right: 6px; }
+            .build-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -101,144 +207,519 @@
 <!-- Carino navbar self-injects at the top of <body> (loads carino-clock.js locally) -->
 <script src="carino-navbar.js" data-app="Setup" defer></script>
 
-<div class="container">
-    <div id="locale-banner"></div>
+<header class="hero">
+    <div class="container">
+        <div class="kicker">Carino Systems · Universal OS Automation</div>
+        <h1>Setup</h1>
+        <p id="txt-tagline">One command turns a fresh install into a usable machine. Linux, Windows and macOS.</p>
+    </div>
+</header>
 
-    <header class="hero">
-        <h1 id="txt-title">SimpleSetup</h1>
-        <p id="txt-tagline">Automated system configuration for Linux, Windows, and macOS. One command, zero stress.</p>
-    </header>
+<main class="container">
+    <div id="locale-banner" hidden></div>
 
-    <div class="tabs-container">
-        <div class="tabs">
-            <button class="tab-btn active" onclick="showOS('linux', this)">🐧 Linux</button>
-            <button class="tab-btn" onclick="showOS('windows', this)">🪟 Windows</button>
-            <button class="tab-btn" onclick="showOS('mac', this)">🍎 macOS</button>
-        </div>
+    <div class="os-picker" role="tablist" aria-label="Operating system">
+        <button type="button" class="os-btn active" role="tab" id="tab-linux" data-os="linux" aria-controls="linux-section" aria-selected="true"><b>🐧 Linux</b><span class="fmt">Fedora · Debian · Arch</span></button>
+        <button type="button" class="os-btn" role="tab" id="tab-windows" data-os="windows" aria-controls="windows-section" aria-selected="false"><b>🪟 Windows</b><span class="fmt">10 · 11</span></button>
+        <button type="button" class="os-btn" role="tab" id="tab-mac" data-os="mac" aria-controls="mac-section" aria-selected="false"><b> macOS</b><span class="fmt">Apple Silicon · Intel</span></button>
     </div>
 
-    <div id="linux-section" class="os-content">
+    <section id="linux-section" class="tabpane os-content" role="tabpanel" aria-labelledby="tab-linux">
+        <div class="modebar" id="linux-modebar" role="tablist" aria-label="Linux command mode" hidden> <!-- hidden in the markup and unhidden by script, so a visitor without JavaScript is never shown a control that cannot work -->
+            <button type="button" class="modebtn active" role="tab" id="mode-standard" data-mode="standard" aria-controls="linux-standard" aria-selected="true">One Command</button>
+            <button type="button" class="modebtn" role="tab" id="mode-builder" data-mode="builder" aria-controls="builder-mount" aria-selected="false">Plan Builder</button>
+        </div>
+
+        <div id="linux-standard" class="linux-mode" role="tabpanel" aria-labelledby="mode-standard">
         <div class="terminal-wrapper">
-            <div class="terminal">
-                <button class="copy-btn" onclick="copyText('linux-cmd')">Copy</button>
-                <code id="linux-cmd">bash <(curl -s https://setup.carino.systems/setup.sh)</code>
-            </div>
+            <div class="terminal"><code id="linux-cmd"><span class="prompt">$</span> <span class="cmd">bash &lt;(curl -s https://setup.carino.systems/setup.sh)</span></code></div>
+            <button type="button" class="copy-btn term-copy" data-copy="linux-cmd" aria-label="Copy the Linux command"><span>Copy</span></button>
         </div>
-        <p style="text-align: center; color: var(--text-dim);">Supports the Debian family (Debian, Ubuntu and its flavours, Mint, LMDE, Pop!_OS, Zorin, elementary, Kali, Parrot, Devuan, Raspberry Pi OS, MX, Deepin, KDE neon and more), the Fedora family (Fedora, Nobara, Risi, Ultramarine, plus the atomic variants Silverblue, Kinoite, Bazzite, Bluefin, Aurora and Universal Blue), RHEL, CentOS Stream and the RHEL rebuilds (Rocky, AlmaLinux, Oracle Linux and others), the Arch family (Arch, Manjaro, EndeavourOS, Garuda, CachyOS, ArcoLinux, RebornOS, Archcraft) via pacman, and Amazon Linux headless only. openSUSE is still under test. Some distributions are refused by design, among them SteamOS, Artix, Gentoo, Slackware, NixOS, Guix, Alpine, Void, Solus, Qubes and the transactional openSUSE variants; the script explains why for each.</p>
-    </div>
+        <p class="note">Built and tested on <b>Fedora</b>, including the atomic variants. Debian, Ubuntu, Arch, RHEL, CentOS and their derivatives are supported too.</p>
 
-    <div id="windows-section" class="os-content hidden">
+        <details class="fold">
+            <summary>Every distribution it knows about</summary>
+            <div class="fold-body">
+                <p class="note"><b>Fedora family</b> — Fedora, Nobara, Risi, Ultramarine, and the atomic variants Silverblue, Kinoite, Bazzite, Bluefin, Aurora and Universal Blue.</p>
+                <p class="note"><b>Debian family</b> — Debian, Ubuntu and its flavours, Mint, LMDE, Pop!_OS, Zorin, elementary, Kali, Parrot, Devuan, Raspberry Pi OS, MX, Deepin, KDE neon and more.</p>
+                <p class="note"><b>Enterprise</b> — RHEL, CentOS Stream and the rebuilds: Rocky, AlmaLinux, Oracle Linux and others. <b>Arch family</b> — Arch, Manjaro, EndeavourOS, Garuda, CachyOS, ArcoLinux, RebornOS, Archcraft. <b>Amazon Linux</b>, headless only. <b>openSUSE</b> is still under test.</p>
+                <p class="note">Refused by design, each with a reason the script prints: SteamOS, Artix, Parabola, Gentoo, Slackware, NixOS, Guix, Alpine, Void, Clear Linux, Solus, Qubes, Mageia, OpenMandriva, Chimera and the transactional openSUSE variants.</p>
+            </div>
+        </details>
+        </div>
+
+        <section id="builder-mount" class="linux-mode" role="tabpanel" aria-labelledby="mode-builder" hidden>
+            <p class="note">Choose what you want and this page writes the command. Nothing runs here and nothing leaves your browser.</p>
+
+            <div class="build-grid">
+                <label class="field" for="b-distro"><span class="field-label">Your distribution</span><select id="b-distro"></select></label>
+                <label class="field" for="b-purpose"><span class="field-label">Purpose profile</span><select id="b-purpose"></select></label>
+                <label class="field" for="b-desktop"><span class="field-label">Desktop environment</span><select id="b-desktop"></select></label>
+            </div>
+
+            <div class="toggles">
+                <label class="toggle" id="b-technical-wrap"><input type="checkbox" id="b-technical" checked> Technical Setup</label>
+                <label class="toggle" id="b-drivers-wrap"><input type="checkbox" id="b-drivers"> Graphic drivers<span id="b-drivers-hint"></span></label>
+                <label class="toggle"><input type="checkbox" id="b-update"> System update</label>
+                <label class="toggle"><input type="checkbox" id="b-server"> Server setup</label>
+                <label class="toggle"><input type="checkbox" id="b-reboot"> Reboot at the end</label>
+            </div>
+
+            <div id="b-distro-note" class="caution-line" hidden></div>
+            <div id="b-refusal" class="refusal" hidden><h4>This distribution is refused by design</h4><p id="b-refusal-text"></p></div>
+
+            <div id="b-result">
+                <div id="b-purpose-panel" class="panel" hidden></div>
+                <div id="b-desktop-note" class="caution-line" hidden></div>
+
+                <p class="out-label">Your command</p>
+                <div class="terminal-wrapper">
+                    <div class="terminal"><code id="b-cmd"><span class="prompt">$</span> <span class="cmd"></span></code></div>
+                    <button type="button" class="copy-btn term-copy" data-copy="b-cmd" aria-label="Copy the built command"><span>Copy</span></button>
+                </div>
+                <p class="note" id="b-cmd-note"></p>
+
+                <p class="out-label">Rehearse it first</p>
+                <div class="terminal-wrapper">
+                    <div class="terminal"><code id="b-dry"><span class="prompt">$</span> <span class="cmd"></span></code></div>
+                    <button type="button" class="copy-btn term-copy" data-copy="b-dry" aria-label="Copy the dry-run command"><span>Copy</span></button>
+                </div>
+                <p class="note">Prints every privileged command instead of running it. Nothing is installed and nothing is changed.</p>
+
+                <p class="note" id="b-share"></p>
+            </div>
+        </section>
+    </section>
+
+    <section id="windows-section" class="tabpane os-content" role="tabpanel" aria-labelledby="tab-windows" hidden>
         <div class="terminal-wrapper">
-            <div class="terminal">
-                <button class="copy-btn" onclick="copyText('win-cmd')">Copy</button>
-                <code id="win-cmd">iwr -useb https://setup.carino.systems/setup.ps1 | iex</code>
-            </div>
+            <div class="terminal"><code id="win-cmd"><span class="prompt">PS&gt;</span> <span class="cmd">iwr -useb https://setup.carino.systems/setup.ps1 | iex</span></code></div>
+            <button type="button" class="copy-btn term-copy" data-copy="win-cmd" aria-label="Copy the Windows command"><span>Copy</span></button>
         </div>
-        <p style="text-align: center; color: var(--text-dim);">Optimized for Windows 10 and 11 via PowerShell.</p>
-    </div>
+        <p class="note"><b>Run Terminal as Administrator</b> — the script stops without it. It detects your build, applies the Windows 10 or 11 tweaks, then asks which profile to install and installs it with winget.</p>
+    </section>
 
-    <div id="mac-section" class="os-content hidden">
+    <section id="mac-section" class="tabpane os-content" role="tabpanel" aria-labelledby="tab-mac" hidden>
         <div class="terminal-wrapper">
-            <div class="terminal">
-                <button class="copy-btn" onclick="copyText('mac-cmd')">Copy</button>
-                <code id="mac-cmd">bash <(curl -s https://setup.carino.systems/macos.sh)</code>
+            <div class="terminal"><code id="mac-cmd"><span class="prompt">$</span> <span class="cmd">bash &lt;(curl -s https://setup.carino.systems/macos.sh)</span></code></div>
+            <button type="button" class="copy-btn term-copy" data-copy="mac-cmd" aria-label="Copy the macOS command"><span>Copy</span></button>
+        </div>
+        <p class="note">Installs Homebrew if missing, then a Basic, Gaming, Corporate or FOSS profile. Apple Silicon and Intel.</p>
+    </section>
+
+    <div class="card-grid">
+        <div class="card">
+            <h3 class="c-title">Smart Detection</h3>
+            <p class="c-desc">Identifies your OS, distribution and hardware, then installs what matches.</p>
+        </div>
+        <div class="card">
+            <h3 class="c-title">Eight Languages</h3>
+            <p class="c-desc">Installer menus in English, Japanese, Russian, Spanish, Finnish, Chinese, Korean and Hebrew.</p>
+        </div>
+        <div class="card">
+            <h3 class="c-title">Purpose-Built</h3>
+            <p class="c-desc">15 profiles — Gaming, Corporate, Development, Design, Cybersecurity, Medical Imaging and more.</p>
+        </div>
+    </div>
+
+    <section class="args-section">
+        <details class="fold">
+            <summary id="txt-args-title">Available Arguments</summary>
+            <div class="fold-body">
+        <div class="table-wrap">
+            <table class="data">
+                <thead>
+                    <tr>
+                        <th scope="col">Flag</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><span class="kbd accent">quick</span></td><td>Technical Setup, then the basic user, system and support packages plus the basic and Google flatpaks.</td></tr>
+                    <tr><td><span class="kbd accent">simple</span></td><td>Runs the Technical Setup only.</td></tr>
+                    <tr><td><span class="kbd accent">server</span></td><td>Minimal server setup with essential dev tools. Skips the full Technical Setup.</td></tr>
+                    <tr><td><span class="kbd accent">nvidia/amd/intel</span></td><td>Forces specific graphic driver installation.</td></tr>
+                    <tr><td><span class="kbd accent">desktop</span></td><td>Opens a menu to select a new Desktop Environment.</td></tr>
+                    <tr><td><span class="kbd accent">svp</span></td><td>Installs Smooth Video Project for frame-interpolated playback.</td></tr>
+                    <tr><td><span class="kbd accent">distrobox</span></td><td>Installs Distrobox containers for other distros.</td></tr>
+                    <tr><td><span class="kbd accent">proton</span></td><td>Installs the latest ProtonGE release.</td></tr>
+                    <tr><td><span class="kbd accent">librewolf</span></td><td>Adds the LibreWolf repository and installs it. Fedora and Debian families only.</td></tr>
+                    <tr><td><span class="kbd accent">anydesk</span></td><td>Enables Flathub and installs the AnyDesk and RustDesk flatpaks.</td></tr>
+                    <tr><td><span class="kbd accent">anydesk-repo</span></td><td>Adds the official AnyDesk repository and installs it natively.</td></tr>
+                    <tr><td><span class="kbd accent">share</span></td><td>Mounts a Windows/CIFS share at <span class="kbd">~/WinFiles</span>.</td></tr>
+                    <tr><td><em>no argument</em></td><td>Opens the interactive menu, where option 5 updates the system.</td></tr>
+                </tbody>
+            </table>
+        </div>
             </div>
-        </div>
-        <p style="text-align: center; color: var(--text-dim);">Installs Homebrew if missing, then a Basic, Gaming, Corporate or FOSS profile. The FOSS profile installs open source applications only, for general use cases &mdash; no Steam and no proprietary browsers. Apple Silicon and Intel.</p>
-    </div>
+        </details>
+    </section>
+</main>
 
-    <div class="grid">
-        <div class="card">
-            <h3>Smart Detection</h3>
-            <p>Automatically identifies your OS, distribution, and hardware to install the right components.</p>
-        </div>
-        <div class="card">
-            <h3>Fully Localized</h3>
-            <p>Menus available in English, Japanese, Russian, Spanish, Finnish, Chinese, Korean, and Hebrew.</p>
-        </div>
-        <div class="card">
-            <h3>Purpose-Built</h3>
-            <p>Quick or Server setups, plus 14 purpose profiles: Gaming, Corporate, Development, Astronomy, Neuroscience, Design, Music, Cybersecurity, Forensics, Scientific, Robotics and more.</p>
-        </div>
-    </div>
-
-    <div class="args-section">
-        <h2 id="txt-args-title">Available Arguments</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Flag</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr><td><code class="arg">quick</code></td><td>Technical Setup, then the basic user, system and support packages plus the basic and Google flatpaks.</td></tr>
-                <tr><td><code class="arg">simple</code></td><td>Runs the Technical Setup only.</td></tr>
-                <tr><td><code class="arg">server</code></td><td>Minimal server setup with essential dev tools. Skips the full Technical Setup.</td></tr>
-                <tr><td><code class="arg">nvidia/amd/intel</code></td><td>Forces specific graphic driver installation.</td></tr>
-                <tr><td><code class="arg">desktop</code></td><td>Opens a menu to select a new Desktop Environment.</td></tr>
-                <tr><td><code class="arg">svp</code></td><td>Installs Smooth Video Project for frame-interpolated playback.</td></tr>
-                <tr><td><code class="arg">distrobox</code></td><td>Installs Distrobox containers for other distros.</td></tr>
-                <tr><td><code class="arg">proton</code></td><td>Installs the latest ProtonGE release.</td></tr>
-                <tr><td><code class="arg">librewolf</code></td><td>Adds the LibreWolf repository and installs it. Fedora and Debian families only.</td></tr>
-                <tr><td><code class="arg">anydesk</code></td><td>Enables Flathub and installs the AnyDesk and RustDesk flatpaks.</td></tr>
-                <tr><td><code class="arg">anydesk-repo</code></td><td>Adds the official AnyDesk repository and installs it natively.</td></tr>
-                <tr><td><code class="arg">share</code></td><td>Mounts a Windows/CIFS share at <code class="arg">~/WinFiles</code>.</td></tr>
-                <tr><td><em>no argument</em></td><td>Opens the interactive menu, where option 5 updates the system.</td></tr>
-            </tbody>
-        </table>
-    </div>
-
-    <footer style="margin-top: 5rem; text-align: center; color: var(--text-dim); font-size: 0.9rem;">
-        <p>This project is open source. <a href="https://github.com/MiguelCarino/SimpleSetup" style="color: var(--accent);">Improve this page on GitHub</a>.</p>
-    </footer>
-</div>
+<footer class="footer">
+    <p>Carino Setup is open source. <a href="https://github.com/MiguelCarino/SimpleSetup">Improve this page on GitHub</a>.</p> <!-- the repository is still literally named SimpleSetup; only the owner can rename it, so this URL stays until then -->
+</footer>
 
 <script>
     const translations = {
-        en: { title: "SimpleSetup", tagline: "Automated system configuration for Linux, Windows, and macOS. One command, zero stress.", banner: "Language: English", args: "Available Arguments" },
-        es: { title: "SimpleSetup", tagline: "Configuración automatizada para Linux, Windows y macOS. Un comando, cero estrés.", banner: "Idioma: Español", args: "Argumentos Disponibles" },
-        ja: { title: "SimpleSetup", tagline: "Linux、Windows、macOS向けの自動セットアップ。1つのコマンドでストレスゼロ。", banner: "言語: 日本語", args: "利用可能な引数" },
-        ru: { title: "SimpleSetup", tagline: "Автоматическая настройка для Linux, Windows и macOS. Одна команда, ноль стресса.", banner: "Язык: Русский", args: "Доступные аргументы" },
-        zh: { title: "SimpleSetup", tagline: "适用于 Linux、Windows 和 macOS 的自动系统配置。一个命令，零压力。", banner: "语言: 中文", args: "可用参数" },
-        ko: { title: "SimpleSetup", tagline: "Linux, Windows 및 macOS용 자동 시스템 구성. 하나의 명령으로 스트레스 제로.", banner: "언어: 한국어", args: "사용 가능한 인수" },
-        fi: { title: "SimpleSetup", tagline: "Automatisoitu järjestelmän asennus Linuxille, Windowsille ja macOS:lle. Yksi komento, nolla stressiä.", banner: "Kieli: Suomi", args: "Saatavilla olevat argumentit" },
-        he: { title: "SimpleSetup", tagline: "הגדרה אוטומטית עבור Linux, Windows ו-macOS. פקודה אחת, אפס מאמץ.", banner: "שפה: עברית", args: "ארגומנטים זמינים" }
+        en: { tagline: "One command turns a fresh install into a usable machine. Linux, Windows and macOS.", banner: "Language: English", args: "Available Arguments" },
+        es: { tagline: "Un comando convierte una instalación nueva en una máquina lista. Linux, Windows y macOS.", banner: "Idioma: Español", args: "Argumentos Disponibles" },
+        ja: { tagline: "Linux、Windows、macOS向けの自動セットアップ。1つのコマンドでストレスゼロ。", banner: "言語: 日本語", args: "利用可能な引数" },
+        ru: { tagline: "Автоматическая настройка для Linux, Windows и macOS. Одна команда, ноль стресса.", banner: "Язык: Русский", args: "Доступные аргументы" },
+        zh: { tagline: "适用于 Linux、Windows 和 macOS 的自动系统配置。一个命令，零压力。", banner: "语言: 中文", args: "可用参数" },
+        ko: { tagline: "Linux, Windows 및 macOS용 자동 시스템 구성. 하나의 명령으로 스트레스 제로.", banner: "언어: 한국어", args: "사용 가능한 인수" },
+        fi: { tagline: "Automatisoitu järjestelmän asennus Linuxille, Windowsille ja macOS:lle. Yksi komento, nolla stressiä.", banner: "Kieli: Suomi", args: "Saatavilla olevat argumentit" },
+        he: { tagline: "הגדרה אוטומטית עבור Linux, Windows ו-macOS. פקודה אחת, אפס מאמץ.", banner: "שפה: עברית", args: "ארגומנטים זמינים" }
     };
 
-    const userLang = navigator.language.split('-')[0];
+    const userLang = (navigator.language || 'en').split('-')[0];
     const content = translations[userLang] || translations.en;
 
-    document.getElementById('txt-title').innerText = content.title;
-    document.getElementById('txt-tagline').innerText = content.tagline;
-    document.getElementById('txt-args-title').innerText = content.args;
-    
+    document.getElementById('txt-tagline').textContent = content.tagline; /* the brand "Setup" is a proper noun and is never translated */
+    document.getElementById('txt-args-title').textContent = content.args;
+
     if (userLang !== 'en' && translations[userLang]) {
+        document.documentElement.lang = userLang;
         const banner = document.getElementById('locale-banner');
-        banner.innerText = content.banner;
-        banner.style.display = 'block';
+        banner.textContent = content.banner;
+        banner.hidden = false;
+        if (userLang === 'he') ['txt-tagline', 'txt-args-title', 'locale-banner'].forEach(id => { document.getElementById(id).dir = 'rtl'; }); /* only the translated strings flip; mirroring <html> would reorder the LTR shell commands and the flag table */
     }
 
-    function showOS(os, btn) {
-        document.querySelectorAll('.os-content').forEach(el => el.classList.add('hidden'));
-        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        document.getElementById(os + '-section').classList.remove('hidden');
+    const detectedOS = (() => { const p = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || ''; /* userAgentData first, navigator.platform is frozen in newer browsers but is still the only thing older ones expose */
+        if (/win/i.test(p)) return 'windows';
+        if (/mac|iphone|ipad/i.test(p)) return 'mac';
+        if (/linux|x11|cros/i.test(p)) return 'linux';
+        return null; })();
+    document.querySelectorAll('.os-btn').forEach(btn => btn.addEventListener('click', () => {
+        document.querySelectorAll('.os-content').forEach(el => { el.hidden = true; });
+        document.querySelectorAll('.os-btn').forEach(el => { el.classList.remove('active'); el.setAttribute('aria-selected', 'false'); });
+        document.getElementById(btn.dataset.os + '-section').hidden = false;
         btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+    }));
+
+    if (detectedOS) {
+        const hit = document.querySelector('.os-btn[data-os="' + detectedOS + '"]');
+        if (hit) { hit.classList.add('detected'); hit.click(); } /* after the listener is attached, otherwise the click fires into nothing; clicking rather than setting classes keeps one switching path so panels and aria stay in step */
     }
 
-    function copyText(id) {
-        const text = document.getElementById(id).innerText;
-        navigator.clipboard.writeText(text).then(() => {
-            const btn = document.querySelector(`#${id}`).parentElement.querySelector('.copy-btn');
-            const originalText = btn.innerText;
-            btn.innerText = "✓ Copied";
-            btn.style.background = "#22c55e";
-            setTimeout(() => {
-                btn.innerText = originalText;
-                btn.style.background = "";
-            }, 2000);
-        });
+    document.querySelectorAll('.copy-btn[data-copy]').forEach(btn => btn.addEventListener('click', () => {
+        const cmd = document.getElementById(btn.dataset.copy).querySelector('.cmd').textContent; /* .cmd only, so the shell prompt never lands in the clipboard */
+        const label = btn.firstElementChild;
+        navigator.clipboard.writeText(cmd).then(() => {
+            btn.classList.add('done');
+            label.textContent = 'Copied';
+            setTimeout(() => { btn.classList.remove('done'); label.textContent = 'Copy'; }, 2000);
+        }).catch(() => { label.textContent = 'Press Ctrl+C'; setTimeout(() => { label.textContent = 'Copy'; }, 2000); }); /* clipboard API is unavailable on insecure origins and when permission is denied */
+    }));
+
+    const DESKTOPS = [['gnome','GNOME'],['xfce','XFCE'],['kde','KDE Plasma'],['lxqt','LXQt'],['cinnamon','Cinnamon'],['mate','MATE'],['i3','i3'],['openbox','Openbox'],['budgie','Budgie'],['sway','Sway'],['hyprland','Hyprland'],['niri','Niri']];
+    const ALLDESKTOPS = DESKTOPS.map(d => d[0]); /* Amazon Linux defines no ${family}${name}Packages variable at all, so every desktop is dropped there rather than listed and then refused */
+
+    const FAMILIES = { /* drop[] is every desktop this family cannot actually get: usually a ${family}${name}Packages variable that setup.sh defines but leaves empty, which installDesktopEnvironment refuses on, and on CentOS also the four whose lists are non-empty but name packages that no enabled repository carries; dropwhy replaces the default explanation where that second reason applies */
+        fedora:   { label: 'Fedora and derivatives', pkgm: 'dnf', special: true, drop: [],
+                    covers: 'Fedora, Nobara, Risi and Ultramarine, plus the atomic images Silverblue, Kinoite, Sericea, Onyx, Bazzite, Bluefin, Aurora and Universal Blue.',
+                    note: 'On an atomic (rpm-ostree) system the Technical Setup layers only the essential packages: RPM Fusion, the codec swap and the -y flag do not apply there, and niri cannot be installed because rpm-ostree has no copr subcommand.' },
+        debian:   { label: 'Debian, Ubuntu and derivatives', pkgm: 'apt', special: true, drop: ['hyprland','niri'],
+                    covers: 'Debian, Ubuntu and every Ubuntu flavour, Pop!_OS, Linux Mint, LMDE, Zorin, elementary, Kali, Parrot, Devuan, Raspberry Pi OS, MX, antiX, Deepin, KDE neon, Trisquel, PureOS, TUXEDO, PikaOS, Armbian, SparkyLinux and Q4OS.' },
+        arch:     { label: 'Arch and derivatives', pkgm: 'pacman', special: false, drop: [],
+                    covers: 'Arch, Manjaro, EndeavourOS, Garuda, CachyOS, ArcoLinux, RebornOS and Archcraft.',
+                    note: 'Most shared package lists are replaced rather than appended here, because pacman expands no wildcards in an install target. The essential packages are installed one at a time so that an unknown name cannot abort the whole transaction.' },
+        centos:   { label: 'CentOS Stream and the RHEL rebuilds', pkgm: 'dnf', special: false, drop: ['budgie','sway','hyprland','niri'], /* the centos lists for these four are non-empty so installDesktopEnvironment does not refuse them, but sway, waybar, budgie-desktop, hyprland and niri are in no EPEL release, and the CentOS arm's --skip-broken --setopt=strict=0 makes dnf exit 0 having installed nothing and the run then set graphical.target and reported success */
+                    covers: 'CentOS Stream, Rocky, AlmaLinux, Oracle Linux, EuroLinux, Circle Linux, Springdale, Anolis, OpenCloudOS, TencentOS, Alibaba Cloud Linux and CloudLinux.',
+                    dropwhy: 'no EPEL release ships the packages, so dnf resolves nothing, exits 0 under --skip-broken and leaves you with graphical.target set and no session installed',
+                    note: 'The Technical Setup enables CRB (or PowerTools on 8) and EPEL first; without EPEL half the desktop groups, and fastfetch, i3 and openbox, are in no enabled repository at all. i3 and openbox are in EPEL 9 only, they are absent from EPEL 10.' },
+        rhel:     { label: 'Red Hat Enterprise Linux', pkgm: 'dnf', special: false, drop: ['lxqt','cinnamon','mate','i3','openbox','budgie','sway','hyprland','niri'],
+                    covers: 'RHEL 9 and 10.',
+                    note: 'The Technical Setup enables codeready-builder through subscription-manager and installs the matching EPEL release. Only GNOME, XFCE and KDE have a package list on RHEL.' },
+        opensuse: { label: 'openSUSE and SUSE', pkgm: 'zypper', special: false, drop: ['hyprland','niri'],
+                    covers: 'openSUSE Leap and Tumbleweed, SLES and SLED.',
+                    note: 'openSUSE is being tested.' },
+        amazon:   { label: 'Amazon Linux', pkgm: 'dnf', special: false, drop: ALLDESKTOPS,
+                    covers: 'Amazon Linux 2023 and later.',
+                    note: 'Amazon Linux is headless only: it carries no EPEL, no CRB and no desktop environment groups, so only the essential and server paths are supported here.' }
+    };
+
+    const DECLINED = { /* verbatim from identifyDistro in setup.sh; these are the script's own words and are not paraphrased */
+        steamos:  ['SteamOS', 'SteamOS is not supported: pacman is present but / is a read only A/B image, so anything installed here needs steamos-readonly disable and is destroyed by the next system image update.'],
+        artix:    ['Artix', 'Artix is not supported: the packages match Arch but the init does not, it runs OpenRC, runit, s6 or dinit depending on the edition, so the systemctl calls this script chains onto every desktop install cannot enable your session.'],
+        parabola: ['Parabola', 'Parabola is not supported: it is a libre only Arch derivative, so the proprietary NVIDIA driver, Steam and the codec packages this script installs are absent by policy rather than renamed.'],
+        gentoo:   ['Gentoo', 'Gentoo is not supported: it is source based, so installing a desktop is not one emerge but a profile switch that changes global USE flags and forces a full emerge -uDN @world rebuild, package atoms are category qualified (x11-wm/i3, not i3) so no shared name list survives, and USE flag or licence conflicts are resolved interactively with --autounmask-write plus dispatch-conf, which no flag can automate away.'],
+        slackware:['Slackware', 'Slackware is not supported: installpkg, upgradepkg and slackpkg resolve no dependencies at all, so a script whose premise is \'name twenty five packages and let the manager sort out the rest\' would leave half linked, unusable software behind. Anything outside the official tree comes from SlackBuilds.org source scripts that compile locally.'],
+        nixos:    ['NixOS', 'NixOS is not supported: the system is declared in /etc/nixos/configuration.nix and realised with nixos-rebuild switch, there is no imperative system wide install. nix-env writes to a per user profile that the next rebuild ignores, desktops are options rather than packages, and the bootloader is boot.loader.* instead of /etc/default/grub. Supporting it would mean emitting Nix expressions, which is a different tool.'],
+        guix:     ['Guix System', 'Guix System is not supported: like NixOS it is declarative (an operating-system declaration plus guix system reconfigure) and guix install only touches a profile. It is also FSF endorsed, so the NVIDIA driver, Steam and the freeworld codecs are absent by policy, not renamed.'],
+        alpine:   ['Alpine', 'Alpine is not supported: musl libc rules out the proprietary NVIDIA driver and every glibc-only tarball this script downloads, OpenRC means the systemctl calls are hard errors, and the base image has neither GRUB nor sudo.'],
+        void:     ['Void', 'Void is not supported: xbps would fit, but runit means a desktop install needs ln -s /etc/sv/gdm /var/service instead of systemctl, and the same NAME covers both the glibc and the musl package sets, so /etc/os-release cannot tell which one is valid.'],
+        clear:    ['Clear Linux', 'Clear Linux is not supported: swupd manages curated bundles rather than packages, so there is no per package mapping to write, and Intel has discontinued the distribution.'],
+        solus:    ['Solus', 'Solus is not supported yet: it is mid migration off the classic eopkg format and the desktop component names the menu would depend on are exactly what is in flux. It also boots with clr-boot-manager and systemd-boot, so the GRUB paths do not apply.'],
+        qubes:    ['Qubes', 'Qubes is not supported: dom0 has no network by design, updates arrive through qubes-dom0-update, and installing user applications into dom0 is contrary to the security model. Run this script inside a Fedora or Debian template instead, both are already supported.'],
+        mageia:   ['Mageia and OpenMandriva', 'Mageia and OpenMandriva are not supported yet: library packages carry lib64 prefixes that match nothing in the shared lists and the task-* desktop metapackages are renamed between releases, so any mapping written from memory would fail on your machine rather than here.'],
+        chimera:  ['Chimera', 'Chimera is not supported: it combines apk with musl, dinit and a FreeBSD derived userland, so the libc, the init calls and the coreutils all differ at once.'],
+        microos:  ['Transactional openSUSE (MicroOS, Aeon, Kalpa, Leap Micro, SLE Micro, SL Micro)', 'Transactional openSUSE is not supported: transactional-update takes its options before the subcommand and each call branches a fresh snapshot off the running system, so the several sequential installs this script performs would keep only the last one and none of them would be visible until reboot.']
+    };
+
+    const PKG = { /* a bare string is shared by every family, a "+" prefixed override is appended to it, and any other override replaces it outright, exactly as the arms of identifyDistro do */
+        basicUser:   { _: 'gedit yt-dlp ffmpeg* tumbler libreoffice pavucontrol vnstat feh flatpak',
+                       opensuse: 'gedit yt-dlp ffmpeg tumbler libreoffice pavucontrol vnstat feh flatpak', /* basicUserPackagesOpenSUSE replaces the shared list outright, ffmpeg* is a glob that pulls in an unsatisfiable ffmpeg-7-mini-devel here */
+                       arch: 'gedit yt-dlp ffmpeg tumbler libreoffice-fresh pavucontrol vnstat feh flatpak' },
+        basicSystem: { _: 'wine xrdp htop powertop *gtkglext* libxdo-* ncdu scrot xclip',
+                       fedora: '+tldr', debian: '+tealdeer',
+                       opensuse: 'wine xrdp htop powertop *gtkglext* xdotool ncdu scrot xclip tealdeer', /* basicSystemPackagesOpenSUSE replaces rather than appends: libxdo-* resolves to nothing here and is spelled xdotool */
+                       arch: 'wine htop powertop tealdeer ncdu scrot xclip' },
+        support:     { _: 'xxd', opensuse: 'vim', arch: '' }, /* supportPackagesOpenSUSE, xxd ships inside vim on Leap 15.6 */
+        gaming:      { _: 'goverlay', opensuse: '' }, /* gamingPackagesOpenSUSE is empty, goverlay is in Tumbleweed but not in Leap 15.6 */
+        cisco:       { _: 'https://binaries.webex.com/WebexDesktop-CentOS-Official-Package/Webex.rpm vpnc', arch: 'vpnc' },
+        development: { _: 'gcc cargo npm python3-pip nodejs golang conda* ncurses-dev*',
+                       opensuse: 'gcc cargo npm python3-pip nodejs golang make', /* developmentPackagesOpenSUSE, conda is packaged for no openSUSE release and ncurses-dev* matches nothing on Leap */
+                       arch: 'gcc rust npm python-pip nodejs go ncurses' },
+        virtcon:     { _: 'podman distrobox bridge-utils virt-manager virt-top',
+                       fedora: '+@virtualization libvirt libvirt-devel virt-install qemu-kvm qemu-img',
+                       rhel: '+@virtualization libvirt libvirt-devel virt-install qemu-kvm qemu-img',
+                       centos: '+@virtualization libvirt libvirt-devel virt-install qemu-kvm qemu-img',
+                       amazon: '+@virtualization libvirt libvirt-devel virt-install qemu-kvm qemu-img',
+                       debian: '+libvirt-daemon-system libvirt-clients virtinst',
+                       arch: 'podman distrobox virt-manager libvirt virt-install qemu-full qemu-img' },
+        astronomy:   { _: '', fedora: 'python3-astropy', debian: 'python3-astropy' },
+        compneuro:   { _: '', fedora: 'nest python3-nest python3-nibabel python3-networkx python3-numpy python3-scipy python3-matplotlib python3-pandas python3-scikit-learn python3-h5py jupyterlab',
+                       debian: 'neuron python3-brian python3-nibabel python3-networkx python3-numpy python3-scipy python3-matplotlib python3-pandas python3-sklearn python3-h5py jupyter-notebook' },
+        design:      { _: '', fedora: 'ImageMagick GraphicsMagick optipng fontforge gmic', debian: 'imagemagick graphicsmagick optipng fontforge gmic' },
+        music:       { _: '', fedora: 'audacity lmms hydrogen mixxx qjackctl a2jmidid calf lsp-plugins guitarix fluidsynth qsynth',
+                       debian: 'audacity lmms hydrogen mixxx qjackctl a2jmidid calf-plugins lsp-plugins x42-plugins guitarix fluidsynth qsynth' },
+        security:    { _: '', fedora: 'nmap wireshark tcpdump nmap-ncat john hydra aircrack-ng hashcat masscan binwalk yara whois bind-utils',
+                       debian: 'nmap zenmap wireshark tshark tcpdump netcat-openbsd john hydra aircrack-ng hashcat masscan binwalk yara whois bind9-dnsutils sqlmap' },
+        forensics:   { _: '', fedora: 'sleuthkit testdisk foremost ewftools dc3dd ddrescue chkrootkit rkhunter perl-Image-ExifTool binwalk yara',
+                       debian: 'sleuthkit autopsy testdisk foremost ewf-tools afflib-tools scalpel safecopy hashdeep dc3dd gddrescue chkrootkit rkhunter libimage-exiftool-perl binwalk yara' },
+        scientific:  { _: '', fedora: 'octave gnuplot maxima wxMaxima R-core python3-numpy python3-scipy python3-matplotlib python3-pandas python3-sympy python3-scikit-learn python3-h5py jupyterlab paraview gmsh texlive-collection-latexrecommended',
+                       debian: 'octave gnuplot-qt maxima wxmaxima r-base python3-numpy python3-scipy python3-matplotlib python3-pandas python3-sympy python3-sklearn python3-h5py jupyter-notebook paraview gmsh texlive-latex-recommended' },
+        robotics:    { _: '', fedora: 'avr-gcc avr-libc avrdude stlink dfu-util minicom picocom python3-pyserial esptool openscad kicad platformio',
+                       debian: 'gcc-avr avr-libc avrdude stlink-tools dfu-util minicom picocom python3-serial esptool openscad kicad' },
+        imagenology: { _: 'dcmtk xmedcon dcm2niix python3-gdcm python3-pydicom python3-nibabel', fedora: '+gdcm python3-pynetdicom',
+                       debian: '+libgdcm-tools' } /* python3-pynetdicom has no Debian package and gdcm is spelled libgdcm-tools there, both verified in containers */
+    };
+
+    const FLAT = {
+        basic: 'org.mozilla.Thunderbird io.mpv.Mpv com.gitlab.davem.ClamTk com.obsproject.Studio com.transmissionbt.Transmission',
+        gaming: 'com.valvesoftware.Steam net.davidotek.pupgui2 com.heroicgameslauncher.hgl com.discordapp.Discord net.lutris.Lutris',
+        google: 'com.google.Chrome',
+        microsoft: 'com.microsoft.Edge com.visualstudio.code com.github.IsmaelMartinez.teams_for_linux',
+        development: 'io.podman_desktop.PodmanDesktop',
+        support: 'com.github.tchx84.Flatseal org.keepassxc.KeePassXC org.remmina.Remmina com.github.afrantzis.Bless',
+        remote: 'com.anydesk.Anydesk com.rustdesk.RustDesk',
+        astronomy: 'org.kde.kstars org.siril.Siril org.stellarium.Stellarium',
+        compneuro: 'io.github.nest_desktop.nest-desktop org.spyder_ide.spyder',
+        design: 'org.gimp.GIMP org.inkscape.Inkscape org.kde.krita org.blender.Blender net.scribus.Scribus org.darktable.Darktable',
+        music: 'org.ardour.Ardour org.musescore.MuseScore',
+        security: 'org.zaproxy.ZAP org.ghidra_sre.Ghidra',
+        scientific: 'org.spyder_ide.spyder org.scilab.Scilab',
+        robotics: 'org.freecad.FreeCAD cc.arduino.IDE2',
+        imagenology: 'io.github.nroduit.Weasis com.github.AlizaMedicalImaging.AlizaMS br.gov.cti.invesalius'
+    };
+
+    const APPS = { /* the Flathub id is what actually gets installed, the label is only so a visitor can tell what it is without searching for it */
+        'org.mozilla.Thunderbird': 'Thunderbird', 'io.mpv.Mpv': 'mpv', 'com.gitlab.davem.ClamTk': 'ClamTk',
+        'com.obsproject.Studio': 'OBS Studio', 'com.transmissionbt.Transmission': 'Transmission',
+        'com.valvesoftware.Steam': 'Steam', 'net.davidotek.pupgui2': 'ProtonUp-Qt', 'com.heroicgameslauncher.hgl': 'Heroic Games Launcher',
+        'com.discordapp.Discord': 'Discord', 'net.lutris.Lutris': 'Lutris', 'com.google.Chrome': 'Google Chrome',
+        'com.microsoft.Edge': 'Microsoft Edge', 'com.visualstudio.code': 'Visual Studio Code',
+        'com.github.IsmaelMartinez.teams_for_linux': 'Microsoft Teams', 'io.podman_desktop.PodmanDesktop': 'Podman Desktop',
+        'com.github.tchx84.Flatseal': 'Flatseal', 'org.keepassxc.KeePassXC': 'KeePassXC', 'org.remmina.Remmina': 'Remmina',
+        'com.github.afrantzis.Bless': 'Bless', 'com.anydesk.Anydesk': 'AnyDesk', 'com.rustdesk.RustDesk': 'RustDesk',
+        'org.kde.kstars': 'KStars', 'org.siril.Siril': 'Siril', 'org.stellarium.Stellarium': 'Stellarium',
+        'io.github.nest_desktop.nest-desktop': 'NEST Desktop', 'org.spyder_ide.spyder': 'Spyder', 'org.gimp.GIMP': 'GIMP',
+        'org.inkscape.Inkscape': 'Inkscape', 'org.kde.krita': 'Krita', 'org.blender.Blender': 'Blender',
+        'net.scribus.Scribus': 'Scribus', 'org.darktable.Darktable': 'darktable', 'org.ardour.Ardour': 'Ardour',
+        'org.musescore.MuseScore': 'MuseScore', 'org.zaproxy.ZAP': 'OWASP ZAP', 'org.ghidra_sre.Ghidra': 'Ghidra',
+        'org.scilab.Scilab': 'Scilab', 'org.freecad.FreeCAD': 'FreeCAD', 'cc.arduino.IDE2': 'Arduino IDE 2'
+    };
+
+    const BASE = ['basicUser','basicSystem','support']; /* every profile in purposeMenu starts from these three lists */
+    const PURPOSES = {
+        basic:                 { label: 'Basic', native: BASE, flat: ['basic','google','microsoft','support','remote'] },
+        gaming:                { label: 'Gaming', native: BASE.concat('gaming'), flat: ['basic','gaming','google','microsoft','support','remote'] },
+        corporate:             { label: 'Corporate', native: BASE.concat('cisco'), flat: ['google','microsoft','support','remote'],
+                                 extra: 'This is the one profile that does not install the basic Flatpaks (Thunderbird, mpv, ClamTk, OBS Studio, Transmission).' },
+        'corporate-microsoft': { label: 'Corporate, Microsoft only', native: BASE, flat: ['basic','microsoft','support','remote'] },
+        'corporate-google':    { label: 'Corporate, Google only', native: BASE, flat: ['basic','google','support','remote'] },
+        development:           { label: 'Development', native: BASE.concat('development','virtcon'), flat: ['basic','google','development','support','remote'],
+                                 extra: 'Also creates the Distrobox containers for Fedora, Debian, Ubuntu and Alpine.' },
+        astronomy:             { label: 'Astronomy', native: BASE.concat('astronomy'), flat: ['basic','google','astronomy','support','remote'], warn: 'astronomy' },
+        compneuro:             { label: 'Computational Neuroscience', native: BASE.concat('compneuro'), flat: ['basic','compneuro','support','remote'], warn: 'compneuro' },
+        design:                { label: 'Design', native: BASE.concat('design'), flat: ['basic','design','support','remote'], warn: 'design' },
+        music:                 { label: 'Music Production', native: BASE.concat('music'), flat: ['basic','music','support','remote'], warn: 'music' },
+        cybersecurity:         { label: 'Cybersecurity', native: BASE.concat('security'), flat: ['basic','security','support','remote'], warn: 'security',
+                                 extra: 'hydra, hashcat, aircrack-ng, masscan and sqlmap are dual use tools. Only run them against systems you are authorised to test, and add yourself to the wireshark group for capture without root.' },
+        forensics:             { label: 'Forensics', native: BASE.concat('forensics'), flat: ['basic','support','remote'], warn: 'forensics',
+                                 extra: 'No forensics specific Flatpak is shipped; the imaging and carving tools are all native packages.' },
+        scientific:            { label: 'Scientific', native: BASE.concat('scientific'), flat: ['basic','scientific','support','remote'], warn: 'scientific',
+                                 extra: 'ParaView and the TeX Live collection dominate the download size of this profile.' },
+        robotics:              { label: 'Robotics', native: BASE.concat('robotics'), flat: ['basic','robotics','development','support','remote'], warn: 'robotics' },
+        imagenology:           { label: 'Medical Imaging', native: BASE.concat('imagenology'), flat: ['basic','imagenology','support','remote'], warn: 'Medical Imaging',
+                                 extra: 'Viewers and conversion tools only. Nothing here is a medical device and none of it is cleared for diagnosis.' }
+    };
+
+    const el = id => document.getElementById(id);
+    const B = { distro: el('b-distro'), purpose: el('b-purpose'), desktop: el('b-desktop'), technical: el('b-technical'),
+                drivers: el('b-drivers'), update: el('b-update'), server: el('b-server'), reboot: el('b-reboot') };
+
+    function pkgList(key, fam) {
+        const entry = PKG[key];
+        if (!entry) return [];
+        const override = entry[fam];
+        let value = entry._ || '';
+        if (override !== undefined) value = override.charAt(0) === '+' ? (value + ' ' + override.slice(1)).trim() : override;
+        return value ? value.split(' ') : [];
     }
+
+    function chips(items, asApps) {
+        return items.map(n => asApps && APPS[n] ? '<span class="pk"><b>' + APPS[n] + '</b> <i>' + n + '</i></span>' : '<span class="pk">' + n + '</span>').join('');
+    }
+
+    function fillSelect(select, entries) {
+        select.innerHTML = entries.map(e => e.group
+            ? '<optgroup label="' + e.group + '">' + e.items.map(i => '<option value="' + i[0] + '">' + i[1] + '</option>').join('') + '</optgroup>'
+            : '<option value="' + e[0] + '">' + e[1] + '</option>').join('');
+    }
+
+    function setHash(value) { try { history.replaceState(null, '', '#' + value); } catch (e) { location.hash = value; } } /* replaceState rather than assignment so smooth scroll-behavior does not jump the page on every keystroke, with the assignment kept as the fallback for origins that reject it */
+
+    fillSelect(B.distro, [
+        { group: 'Supported', items: Object.keys(FAMILIES).filter(k => k !== 'opensuse' && k !== 'amazon').map(k => [k, FAMILIES[k].label]) },
+        { group: 'Supported with a caveat', items: [['opensuse', FAMILIES.opensuse.label + ' (under test)'], ['amazon', FAMILIES.amazon.label + ' (headless only)']] },
+        { group: 'Refused by design', items: Object.keys(DECLINED).map(k => ['!' + k, DECLINED[k][0]]) }
+    ]);
+    fillSelect(B.purpose, [['none', 'None']].concat(Object.keys(PURPOSES).map(k => [k, PURPOSES[k].label])));
+
+    function dropReason(fam) { return FAMILIES[fam].dropwhy || 'setup.sh defines no package list there'; } /* the default reason is an empty ${family}${name}Packages variable, CentOS overrides it because there the lists exist and the packages do not */
+
+    function refreshDesktops(fam, want) {
+        const allowed = DESKTOPS.filter(d => FAMILIES[fam].drop.indexOf(d[0]) === -1);
+        fillSelect(B.desktop, [['none', 'None']].concat(allowed));
+        B.desktop.disabled = allowed.length === 0;
+        const lost = want && want !== 'none' && !B.desktop.querySelector('option[value="' + want + '"]');
+        if (want && !lost) B.desktop.value = want;
+        const note = el('b-desktop-note');
+        if (allowed.length === 0) {
+            note.textContent = 'No desktop environment can be installed on ' + FAMILIES[fam].label + ': the script defines no package list for any of them here, so desktop=<name> would be refused before anything was installed.';
+            note.hidden = false;
+        } else if (lost) {
+            note.textContent = want + ' is not offered on ' + FAMILIES[fam].label + ' and the selection was reset to none, because ' + dropReason(fam) + '. Available on this family: ' + allowed.map(d => d[0]).join(', ') + '.';
+            note.hidden = false;
+        } else if (FAMILIES[fam].drop.length) {
+            note.textContent = 'Not offered on ' + FAMILIES[fam].label + ', because ' + dropReason(fam) + ': ' + FAMILIES[fam].drop.join(', ') + '.';
+            note.hidden = false;
+        } else { note.hidden = true; }
+    }
+
+    function renderPurpose(fam) {
+        const panel = el('b-purpose-panel');
+        const p = PURPOSES[B.purpose.value];
+        if (!p) { panel.hidden = true; return; }
+        const native = p.native.reduce((acc, k) => acc.concat(pkgList(k, fam)), []);
+        const flat = p.flat.reduce((acc, k) => acc.concat(FLAT[k].split(' ')), []);
+        const unique = list => list.filter((v, i) => list.indexOf(v) === i);
+        let html = '<h4>' + p.label + ' installs this on ' + FAMILIES[fam].label + '</h4>';
+        html += '<p class="panel-sub">Nothing below is installed by looking at it. Change the profile freely and read what it does before you run anything.</p>';
+        if (p.extra) html += '<p>' + p.extra + '</p>';
+        if (p.warn && !FAMILIES[fam].special) html += '<p>The specialised ' + p.label + ' package list exists for the Fedora and Debian families only. On ' + FAMILIES[fam].label + ' the script says so and installs the shared base packages and the Flatpaks below instead.</p>';
+        html += '<div class="group"><span class="group-label">Native packages via ' + FAMILIES[fam].pkgm + '</span>' + (native.length ? chips(unique(native), false) : '<span class="pk">none</span>') + '</div>';
+        html += '<div class="group"><span class="group-label">Flatpaks from Flathub</span>' + chips(unique(flat), true) + '</div>';
+        panel.innerHTML = html;
+        panel.hidden = false;
+    }
+
+    function planTokens() {
+        const t = [];
+        if (B.technical.checked) t.push('technical');
+        if (!B.desktop.disabled && B.desktop.value !== 'none') t.push('desktop=' + B.desktop.value);
+        if (B.purpose.value !== 'none') t.push('purpose=' + B.purpose.value);
+        if (B.drivers.checked && !B.technical.checked) t.push('drivers'); /* techSetup already chains graphicDrivers, so the token is redundant whenever technical is in the plan */
+        if (B.update.checked) t.push('update');
+        if (B.server.checked) t.push('server');
+        if (B.reboot.checked) t.push('reboot=yes'); /* reboot=no is the documented default, so it is left out rather than spelled out */
+        return t;
+    }
+
+    function build() {
+        const raw = B.distro.value;
+        const declined = raw.charAt(0) === '!';
+        const fam = declined ? null : raw;
+        el('b-refusal').hidden = !declined;
+        el('b-result').hidden = declined;
+        [B.purpose, B.desktop, B.technical, B.drivers, B.update, B.server, B.reboot].forEach(c => { c.disabled = declined; });
+        el('b-distro-note').hidden = true;
+
+        if (declined) {
+            el('b-refusal-text').textContent = DECLINED[raw.slice(1)][1];
+            setHash('distro=' + raw.slice(1));
+            return;
+        }
+
+        el('b-drivers-wrap').classList.toggle('locked', B.technical.checked);
+        B.drivers.disabled = B.technical.checked;
+        el('b-drivers-hint').textContent = B.technical.checked ? ' — already run by the Technical Setup' : ''; /* techSetup chains graphicDrivers itself, so offering the token as well would only install the drivers twice */
+
+        refreshDesktops(fam, linkDesktop || B.desktop.value);
+        linkDesktop = ''; /* consumed once, so the explanation belongs to the link that asked for it and not to every later edit */
+        renderPurpose(fam);
+
+        if (FAMILIES[fam].note) { el('b-distro-note').textContent = FAMILIES[fam].note; el('b-distro-note').hidden = false; }
+
+        const tokens = planTokens();
+        const actions = tokens.filter(t => t.indexOf('reboot=') !== 0); /* reboot is a modifier on a plan rather than a step in one: planValidate collects it into planReboot and never into planSteps, so a plan whose only token is reboot=yes is refused with "names no action to take" and nothing is installed */
+        const tail = 'bash <(curl -s https://setup.carino.systems/setup.sh)';
+        const plan = actions.length ? 'CARINO_SETUP_PLAN=' + tokens.join(',') + ' ' : '';
+        el('b-cmd').querySelector('.cmd').textContent = plan + tail;
+        el('b-dry').querySelector('.cmd').textContent = plan + 'CARINO_SETUP_DRYRUN=1 ' + tail;
+        el('b-cmd-note').textContent = actions.length
+            ? 'Runs instead of the menu, then exits. Nothing prompts you: every question takes its documented default and says so.'
+            : tokens.length
+                ? 'Reboot needs a step to follow. Tick something else, or use the plain command below.'
+                : 'Nothing is selected, so this is the plain command and it opens the interactive menu.'
+        el('b-share').textContent = 'This page address encodes the selection by name. Copy it from the address bar to share this exact plan.';
+        setHash('distro=' + fam + (tokens.length ? '&plan=' + tokens.join(',') : ''));
+    }
+
+    let linkDesktop = ''; /* a desktop asked for by a shared link, kept aside so build() can name it if this family has no package list for it */
+
+    function readHash() {
+        const hash = location.hash.replace(/^#/, '');
+        if (!hash) return false;
+        const params = {};
+        hash.split('&').forEach(pair => { const i = pair.indexOf('='); if (i > 0) params[pair.slice(0, i)] = pair.slice(i + 1); });
+        if (!params.distro) return false;
+        const known = FAMILIES[params.distro] ? params.distro : (DECLINED[params.distro] ? '!' + params.distro : null);
+        if (!known) return false;
+        B.distro.value = known;
+        if (known.charAt(0) !== '!') {
+            B.technical.checked = false;
+            refreshDesktops(known, 'none');
+            (params.plan || '').split(',').filter(Boolean).forEach(token => {
+                const key = token.split('=')[0], value = token.slice(key.length + 1);
+                if (key === 'technical') B.technical.checked = true;
+                else if (key === 'drivers') B.drivers.checked = true;
+                else if (key === 'update') B.update.checked = true;
+                else if (key === 'server') B.server.checked = true;
+                else if (key === 'reboot') B.reboot.checked = value === 'yes';
+                else if (key === 'purpose' && PURPOSES[value]) B.purpose.value = value;
+                else if (key === 'desktop') { linkDesktop = value; if (B.desktop.querySelector('option[value="' + value + '"]')) B.desktop.value = value; }
+            }); /* an unknown token is dropped here rather than pasted through, because the script treats one as a hard error and the page must not hand anyone a command it knows will abort */
+        }
+        return true;
+    }
+
+    Object.keys(B).forEach(k => B[k].addEventListener('change', build));
+    document.querySelectorAll('.modebtn').forEach(btn => btn.addEventListener('click', () => {
+        document.querySelectorAll('.linux-mode').forEach(m => { m.hidden = m.id !== (btn.dataset.mode === 'builder' ? 'builder-mount' : 'linux-standard'); });
+        document.querySelectorAll('.modebtn').forEach(m => { m.classList.remove('active'); m.setAttribute('aria-selected', 'false'); });
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+    }));
+
+    el('linux-modebar').hidden = false; /* the builder only becomes reachable once the script that drives it has run */
+    const deepLinked = readHash();
+    build();
+    if (deepLinked) { el('tab-linux').click(); el('mode-builder').click(); } /* a shared plan link lands a Windows or macOS visitor on the Linux tab with the builder already open, rather than on a pane that never mentions it */
 </script>
 
 </body>
