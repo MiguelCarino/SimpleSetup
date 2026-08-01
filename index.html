@@ -68,13 +68,6 @@
         }
         .hero p { max-width: 660px; margin: 12px auto 0; color: var(--text-sec); font-family: var(--mono-i18n); font-size: 0.85rem; line-height: 1.7; }
 
-        #locale-banner {
-            margin-top: 1.5rem; padding: 0.7rem 1rem; text-align: center;
-            border: 1px solid var(--border); border-radius: 8px; background: var(--accent-faint);
-            color: var(--accent); font-family: var(--mono-i18n); font-size: 0.7rem;
-            text-transform: uppercase; letter-spacing: 0.08em;
-        }
-
         .os-picker { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 1.5rem 0 1.25rem; }
         .os-btn {
             position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px;
@@ -207,18 +200,17 @@
 <!-- Carino navbar self-injects at the top of <body> (loads carino-clock.js locally) -->
 <script src="carino-navbar.js" data-app="Setup" defer></script>
 <script src="carino-lang.js" defer></script>
+<script src="i18n.js" defer></script>
 
 <header class="hero">
     <div class="container">
-        <div class="kicker">Carino Systems · Universal OS Automation</div>
+        <div class="kicker" data-i18n>Carino Systems · Universal OS Automation</div>
         <h1>Setup</h1>
-        <p id="txt-tagline">One command turns a fresh install into a usable machine. Linux, Windows and macOS.</p>
+        <p id="txt-tagline" data-i18n>One command turns a fresh install into a usable machine. Linux, Windows and macOS.</p>
     </div>
 </header>
 
 <main class="container">
-    <div id="locale-banner" hidden></div>
-
     <div class="os-picker" role="tablist" aria-label="Operating system">
         <button type="button" class="os-btn active" role="tab" id="tab-linux" data-os="linux" aria-controls="linux-section" aria-selected="true"><b>🐧 Linux</b><span class="fmt">Fedora · Debian · Arch</span></button>
         <button type="button" class="os-btn" role="tab" id="tab-windows" data-os="windows" aria-controls="windows-section" aria-selected="false"><b>🪟 Windows</b><span class="fmt">10 · 11</span></button>
@@ -227,19 +219,19 @@
 
     <section id="linux-section" class="tabpane os-content" role="tabpanel" aria-labelledby="tab-linux">
         <div class="modebar" id="linux-modebar" role="tablist" aria-label="Linux command mode" hidden> <!-- hidden in the markup and unhidden by script, so a visitor without JavaScript is never shown a control that cannot work -->
-            <button type="button" class="modebtn active" role="tab" id="mode-standard" data-mode="standard" aria-controls="linux-standard" aria-selected="true">One Command</button>
-            <button type="button" class="modebtn" role="tab" id="mode-builder" data-mode="builder" aria-controls="builder-mount" aria-selected="false">Plan Builder</button>
+            <button type="button" class="modebtn active" role="tab" id="mode-standard" data-mode="standard" aria-controls="linux-standard" aria-selected="true" data-i18n>One Command</button>
+            <button type="button" class="modebtn" role="tab" id="mode-builder" data-mode="builder" aria-controls="builder-mount" aria-selected="false" data-i18n>Plan Builder</button>
         </div>
 
         <div id="linux-standard" class="linux-mode" role="tabpanel" aria-labelledby="mode-standard">
         <div class="terminal-wrapper">
             <div class="terminal"><code id="linux-cmd"><span class="prompt">$</span> <span class="cmd">bash &lt;(curl -s https://setup.carino.systems/setup.sh)</span></code></div>
-            <button type="button" class="copy-btn term-copy" data-copy="linux-cmd" aria-label="Copy the Linux command"><span>Copy</span></button>
+            <button type="button" class="copy-btn term-copy" data-copy="linux-cmd" aria-label="Copy the Linux command"><span data-i18n>Copy</span></button>
         </div>
         <p class="note">Built and tested on <b>Fedora</b>, including the atomic variants. Debian, Ubuntu, Arch, RHEL, CentOS and their derivatives are supported too.</p>
 
         <details class="fold">
-            <summary>Every distribution it knows about</summary>
+            <summary data-i18n>Every distribution it knows about</summary>
             <div class="fold-body">
                 <p class="note"><b>Fedora family</b> — Fedora, Nobara, Risi, Ultramarine, and the atomic variants Silverblue, Kinoite, Bazzite, Bluefin, Aurora and Universal Blue.</p>
                 <p class="note"><b>Debian family</b> — Debian, Ubuntu and its flavours, Mint, LMDE, Pop!_OS, Zorin, elementary, Kali, Parrot, Devuan, Raspberry Pi OS, MX, Deepin, KDE neon and more.</p>
@@ -250,42 +242,42 @@
         </div>
 
         <section id="builder-mount" class="linux-mode" role="tabpanel" aria-labelledby="mode-builder" hidden>
-            <p class="note">Choose what you want and this page writes the command. Nothing runs here and nothing leaves your browser.</p>
+            <p class="note" data-i18n>Choose what you want and this page writes the command. Nothing runs here and nothing leaves your browser.</p>
 
             <div class="build-grid">
-                <label class="field" for="b-distro"><span class="field-label">Your distribution</span><select id="b-distro"></select></label>
-                <label class="field" for="b-purpose"><span class="field-label">Purpose profile</span><select id="b-purpose"></select></label>
-                <label class="field" for="b-desktop"><span class="field-label">Desktop environment</span><select id="b-desktop"></select></label>
+                <label class="field" for="b-distro"><span class="field-label" data-i18n>Your distribution</span><select id="b-distro"></select></label>
+                <label class="field" for="b-purpose"><span class="field-label" data-i18n>Purpose profile</span><select id="b-purpose"></select></label>
+                <label class="field" for="b-desktop"><span class="field-label" data-i18n>Desktop environment</span><select id="b-desktop"></select></label>
             </div>
 
             <div class="toggles">
-                <label class="toggle" id="b-technical-wrap"><input type="checkbox" id="b-technical" checked> Technical Setup</label>
-                <label class="toggle" id="b-drivers-wrap"><input type="checkbox" id="b-drivers"> Graphic drivers<span id="b-drivers-hint"></span></label>
-                <label class="toggle"><input type="checkbox" id="b-update"> System update</label>
-                <label class="toggle"><input type="checkbox" id="b-server"> Server setup</label>
-                <label class="toggle"><input type="checkbox" id="b-reboot"> Reboot at the end</label>
+                <label class="toggle" id="b-technical-wrap"><input type="checkbox" id="b-technical" checked> <span data-i18n>Technical Setup</span></label>
+                <label class="toggle" id="b-drivers-wrap"><input type="checkbox" id="b-drivers"> <span data-i18n>Graphic drivers</span><span id="b-drivers-hint"></span></label>
+                <label class="toggle"><input type="checkbox" id="b-update"> <span data-i18n>System update</span></label>
+                <label class="toggle"><input type="checkbox" id="b-server"> <span data-i18n>Server setup</span></label>
+                <label class="toggle"><input type="checkbox" id="b-reboot"> <span data-i18n>Reboot at the end</span></label>
             </div>
 
             <div id="b-distro-note" class="caution-line" hidden></div>
-            <div id="b-refusal" class="refusal" hidden><h4>This distribution is refused by design</h4><p id="b-refusal-text"></p></div>
+            <div id="b-refusal" class="refusal" hidden><h4 data-i18n>This distribution is refused by design</h4><p id="b-refusal-text"></p></div>
 
             <div id="b-result">
                 <div id="b-purpose-panel" class="panel" hidden></div>
                 <div id="b-desktop-note" class="caution-line" hidden></div>
 
-                <p class="out-label">Your command</p>
+                <p class="out-label" data-i18n>Your command</p>
                 <div class="terminal-wrapper">
                     <div class="terminal"><code id="b-cmd"><span class="prompt">$</span> <span class="cmd"></span></code></div>
-                    <button type="button" class="copy-btn term-copy" data-copy="b-cmd" aria-label="Copy the built command"><span>Copy</span></button>
+                    <button type="button" class="copy-btn term-copy" data-copy="b-cmd" aria-label="Copy the built command"><span data-i18n>Copy</span></button>
                 </div>
                 <p class="note" id="b-cmd-note"></p>
 
-                <p class="out-label">Rehearse it first</p>
+                <p class="out-label" data-i18n>Rehearse it first</p>
                 <div class="terminal-wrapper">
                     <div class="terminal"><code id="b-dry"><span class="prompt">$</span> <span class="cmd"></span></code></div>
-                    <button type="button" class="copy-btn term-copy" data-copy="b-dry" aria-label="Copy the dry-run command"><span>Copy</span></button>
+                    <button type="button" class="copy-btn term-copy" data-copy="b-dry" aria-label="Copy the dry-run command"><span data-i18n>Copy</span></button>
                 </div>
-                <p class="note">Prints every privileged command instead of running it. Nothing is installed and nothing is changed.</p>
+                <p class="note" data-i18n>Prints every privileged command instead of running it. Nothing is installed and nothing is changed.</p>
 
                 <p class="note" id="b-share"></p>
             </div>
@@ -295,60 +287,60 @@
     <section id="windows-section" class="tabpane os-content" role="tabpanel" aria-labelledby="tab-windows" hidden>
         <div class="terminal-wrapper">
             <div class="terminal"><code id="win-cmd"><span class="prompt">PS&gt;</span> <span class="cmd">iwr -useb https://setup.carino.systems/setup.ps1 | iex</span></code></div>
-            <button type="button" class="copy-btn term-copy" data-copy="win-cmd" aria-label="Copy the Windows command"><span>Copy</span></button>
+            <button type="button" class="copy-btn term-copy" data-copy="win-cmd" aria-label="Copy the Windows command"><span data-i18n>Copy</span></button>
         </div>
-        <p class="note"><b>Run Terminal as Administrator</b> — the script stops without it. It detects your build, applies the Windows 10 or 11 tweaks, then asks which profile to install and installs it with winget.</p>
+        <p class="note"><b data-i18n>Run Terminal as Administrator</b> <span data-i18n>— the script stops without it. It detects your build, applies the Windows 10 or 11 tweaks, then asks which profile to install and installs it with winget.</span></p>
     </section>
 
     <section id="mac-section" class="tabpane os-content" role="tabpanel" aria-labelledby="tab-mac" hidden>
         <div class="terminal-wrapper">
             <div class="terminal"><code id="mac-cmd"><span class="prompt">$</span> <span class="cmd">bash &lt;(curl -s https://setup.carino.systems/macos.sh)</span></code></div>
-            <button type="button" class="copy-btn term-copy" data-copy="mac-cmd" aria-label="Copy the macOS command"><span>Copy</span></button>
+            <button type="button" class="copy-btn term-copy" data-copy="mac-cmd" aria-label="Copy the macOS command"><span data-i18n>Copy</span></button>
         </div>
-        <p class="note">Installs Homebrew if missing, then a Basic, Gaming, Corporate or FOSS profile. Apple Silicon and Intel.</p>
+        <p class="note" data-i18n>Installs Homebrew if missing, then a Basic, Gaming, Corporate or FOSS profile. Apple Silicon and Intel.</p>
     </section>
 
     <div class="card-grid">
         <div class="card">
-            <h3 class="c-title">Smart Detection</h3>
-            <p class="c-desc">Identifies your OS, distribution and hardware, then installs what matches.</p>
+            <h3 class="c-title" data-i18n>Smart Detection</h3>
+            <p class="c-desc" data-i18n>Identifies your OS, distribution and hardware, then installs what matches.</p>
         </div>
         <div class="card">
-            <h3 class="c-title">Eight Languages</h3>
-            <p class="c-desc">Installer menus in English, Japanese, Russian, Spanish, Finnish, Chinese, Korean and Hebrew.</p>
+            <h3 class="c-title" data-i18n>Eight Languages</h3>
+            <p class="c-desc" data-i18n>Installer menus in English, Japanese, Russian, Spanish, Finnish, Chinese, Korean and Hebrew.</p>
         </div>
         <div class="card">
-            <h3 class="c-title">Purpose-Built</h3>
-            <p class="c-desc">15 profiles — Gaming, Corporate, Development, Design, Cybersecurity, Medical Imaging and more.</p>
+            <h3 class="c-title" data-i18n>Purpose-Built</h3>
+            <p class="c-desc" data-i18n>15 profiles — Gaming, Corporate, Development, Design, Cybersecurity, Medical Imaging and more.</p>
         </div>
     </div>
 
     <section class="args-section">
         <details class="fold">
-            <summary id="txt-args-title">Available Arguments</summary>
+            <summary id="txt-args-title" data-i18n>Available Arguments</summary>
             <div class="fold-body">
         <div class="table-wrap">
             <table class="data">
                 <thead>
                     <tr>
-                        <th scope="col">Flag</th>
-                        <th scope="col">Action</th>
+                        <th scope="col" data-i18n>Flag</th>
+                        <th scope="col" data-i18n>Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td><span class="kbd accent">quick</span></td><td>Technical Setup, then the basic user, system and support packages plus the basic and Google flatpaks.</td></tr>
-                    <tr><td><span class="kbd accent">simple</span></td><td>Runs the Technical Setup only.</td></tr>
-                    <tr><td><span class="kbd accent">server</span></td><td>Minimal server setup with essential dev tools. Skips the full Technical Setup.</td></tr>
-                    <tr><td><span class="kbd accent">nvidia/amd/intel</span></td><td>Forces specific graphic driver installation.</td></tr>
-                    <tr><td><span class="kbd accent">desktop</span></td><td>Opens a menu to select a new Desktop Environment.</td></tr>
-                    <tr><td><span class="kbd accent">svp</span></td><td>Installs Smooth Video Project for frame-interpolated playback.</td></tr>
-                    <tr><td><span class="kbd accent">distrobox</span></td><td>Installs Distrobox containers for other distros.</td></tr>
-                    <tr><td><span class="kbd accent">proton</span></td><td>Installs the latest ProtonGE release.</td></tr>
-                    <tr><td><span class="kbd accent">librewolf</span></td><td>Adds the LibreWolf repository and installs it. Fedora and Debian families only.</td></tr>
-                    <tr><td><span class="kbd accent">anydesk</span></td><td>Enables Flathub and installs the AnyDesk and RustDesk flatpaks.</td></tr>
-                    <tr><td><span class="kbd accent">anydesk-repo</span></td><td>Adds the official AnyDesk repository and installs it natively.</td></tr>
-                    <tr><td><span class="kbd accent">share</span></td><td>Mounts a Windows/CIFS share at <span class="kbd">~/WinFiles</span>.</td></tr>
-                    <tr><td><em>no argument</em></td><td>Opens the interactive menu, where option 5 updates the system.</td></tr>
+                    <tr><td><span class="kbd accent">quick</span></td><td data-i18n>Technical Setup, then the basic user, system and support packages plus the basic and Google flatpaks.</td></tr>
+                    <tr><td><span class="kbd accent">simple</span></td><td data-i18n>Runs the Technical Setup only.</td></tr>
+                    <tr><td><span class="kbd accent">server</span></td><td data-i18n>Minimal server setup with essential dev tools. Skips the full Technical Setup.</td></tr>
+                    <tr><td><span class="kbd accent">nvidia/amd/intel</span></td><td data-i18n>Forces specific graphic driver installation.</td></tr>
+                    <tr><td><span class="kbd accent">desktop</span></td><td data-i18n>Opens a menu to select a new Desktop Environment.</td></tr>
+                    <tr><td><span class="kbd accent">svp</span></td><td data-i18n>Installs Smooth Video Project for frame-interpolated playback.</td></tr>
+                    <tr><td><span class="kbd accent">distrobox</span></td><td data-i18n>Installs Distrobox containers for other distros.</td></tr>
+                    <tr><td><span class="kbd accent">proton</span></td><td data-i18n>Installs the latest ProtonGE release.</td></tr>
+                    <tr><td><span class="kbd accent">librewolf</span></td><td data-i18n>Adds the LibreWolf repository and installs it. Fedora and Debian families only.</td></tr>
+                    <tr><td><span class="kbd accent">anydesk</span></td><td data-i18n>Enables Flathub and installs the AnyDesk and RustDesk flatpaks.</td></tr>
+                    <tr><td><span class="kbd accent">anydesk-repo</span></td><td data-i18n>Adds the official AnyDesk repository and installs it natively.</td></tr>
+                    <tr><td><span class="kbd accent">share</span></td><td><span data-i18n>Mounts a Windows/CIFS share at</span> <span class="kbd">~/WinFiles</span>.</td></tr>
+                    <tr><td><em data-i18n>no argument</em></td><td data-i18n>Opens the interactive menu, where option 5 updates the system.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -358,34 +350,14 @@
 </main>
 
 <footer class="footer">
-    <p>Carino Setup is open source. <a href="https://github.com/MiguelCarino/SimpleSetup">Improve this page on GitHub</a>.</p> <!-- the repository is still literally named SimpleSetup; only the owner can rename it, so this URL stays until then -->
+    <p><span data-i18n>Carino Setup is open source.</span> <a href="https://github.com/MiguelCarino/SimpleSetup" data-i18n>Improve this page on GitHub</a>.</p> <!-- the repository is still literally named SimpleSetup; only the owner can rename it, so this URL stays until then -->
 </footer>
 
 <script>
-    const translations = {
-        en: { tagline: "One command turns a fresh install into a usable machine. Linux, Windows and macOS.", banner: "Language: English", args: "Available Arguments" },
-        es: { tagline: "Un comando convierte una instalación nueva en una máquina lista. Linux, Windows y macOS.", banner: "Idioma: Español", args: "Argumentos Disponibles" },
-        ja: { tagline: "Linux、Windows、macOS向けの自動セットアップ。1つのコマンドでストレスゼロ。", banner: "言語: 日本語", args: "利用可能な引数" },
-        ru: { tagline: "Автоматическая настройка для Linux, Windows и macOS. Одна команда, ноль стресса.", banner: "Язык: Русский", args: "Доступные аргументы" },
-        zh: { tagline: "适用于 Linux、Windows 和 macOS 的自动系统配置。一个命令，零压力。", banner: "语言: 中文", args: "可用参数" },
-        ko: { tagline: "Linux, Windows 및 macOS용 자동 시스템 구성. 하나의 명령으로 스트레스 제로.", banner: "언어: 한국어", args: "사용 가능한 인수" },
-        fi: { tagline: "Automatisoitu järjestelmän asennus Linuxille, Windowsille ja macOS:lle. Yksi komento, nolla stressiä.", banner: "Kieli: Suomi", args: "Saatavilla olevat argumentit" },
-        he: { tagline: "הגדרה אוטומטית עבור Linux, Windows ו-macOS. פקודה אחת, אפס מאמץ.", banner: "שפה: עברית", args: "ארגומנטים זמינים" }
-    };
-
-    const userLang = (navigator.language || 'en').split('-')[0];
-    const content = translations[userLang] || translations.en;
-
-    document.getElementById('txt-tagline').textContent = content.tagline; /* the brand "Setup" is a proper noun and is never translated */
-    document.getElementById('txt-args-title').textContent = content.args;
-
-    if (userLang !== 'en' && translations[userLang]) {
-        document.documentElement.lang = userLang;
-        const banner = document.getElementById('locale-banner');
-        banner.textContent = content.banner;
-        banner.hidden = false;
-        if (userLang === 'he') ['txt-tagline', 'txt-args-title', 'locale-banner'].forEach(id => { document.getElementById(id).dir = 'rtl'; }); /* only the translated strings flip; mirroring <html> would reorder the LTR shell commands and the flag table */
-    }
+    /* Localization lives in the deferred dictionary script and follows the fleet
+       language resolver. Deferred scripts run after this inline one, so T() resolves
+       at call time and falls back to English until the dictionaries exist. */
+    const T = k => (window.t ? window.t(k) : k);
 
     const detectedOS = (() => { const p = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || ''; /* userAgentData first, navigator.platform is frozen in newer browsers but is still the only thing older ones expose */
         if (/win/i.test(p)) return 'windows';
@@ -410,9 +382,9 @@
         const label = btn.firstElementChild;
         navigator.clipboard.writeText(cmd).then(() => {
             btn.classList.add('done');
-            label.textContent = 'Copied';
-            setTimeout(() => { btn.classList.remove('done'); label.textContent = 'Copy'; }, 2000);
-        }).catch(() => { label.textContent = 'Press Ctrl+C'; setTimeout(() => { label.textContent = 'Copy'; }, 2000); }); /* clipboard API is unavailable on insecure origins and when permission is denied */
+            label.textContent = T('Copied');
+            setTimeout(() => { btn.classList.remove('done'); label.textContent = T('Copy'); }, 2000);
+        }).catch(() => { label.textContent = T('Press Ctrl+C'); setTimeout(() => { label.textContent = T('Copy'); }, 2000); }); /* clipboard API is unavailable on insecure origins and when permission is denied */
     }));
 
     const DESKTOPS = [['gnome','GNOME'],['xfce','XFCE'],['kde','KDE Plasma'],['lxqt','LXQt'],['cinnamon','Cinnamon'],['mate','MATE'],['i3','i3'],['openbox','Openbox'],['budgie','Budgie'],['sway','Sway'],['hyprland','Hyprland'],['niri','Niri']];
@@ -589,13 +561,13 @@
         { group: 'Supported with a caveat', items: [['opensuse', FAMILIES.opensuse.label + ' (under test)'], ['amazon', FAMILIES.amazon.label + ' (headless only)']] },
         { group: 'Refused by design', items: Object.keys(DECLINED).map(k => ['!' + k, DECLINED[k][0]]) }
     ]);
-    fillSelect(B.purpose, [['none', 'None']].concat(Object.keys(PURPOSES).map(k => [k, PURPOSES[k].label])));
+    fillSelect(B.purpose, [['none', T('None')]].concat(Object.keys(PURPOSES).map(k => [k, PURPOSES[k].label])));
 
     function dropReason(fam) { return FAMILIES[fam].dropwhy || 'setup.sh defines no package list there'; } /* the default reason is an empty ${family}${name}Packages variable, CentOS overrides it because there the lists exist and the packages do not */
 
     function refreshDesktops(fam, want) {
         const allowed = DESKTOPS.filter(d => FAMILIES[fam].drop.indexOf(d[0]) === -1);
-        fillSelect(B.desktop, [['none', 'None']].concat(allowed));
+        fillSelect(B.desktop, [['none', T('None')]].concat(allowed));
         B.desktop.disabled = allowed.length === 0;
         const lost = want && want !== 'none' && !B.desktop.querySelector('option[value="' + want + '"]');
         if (want && !lost) B.desktop.value = want;
@@ -658,7 +630,7 @@
 
         el('b-drivers-wrap').classList.toggle('locked', B.technical.checked);
         B.drivers.disabled = B.technical.checked;
-        el('b-drivers-hint').textContent = B.technical.checked ? ' — already run by the Technical Setup' : ''; /* techSetup chains graphicDrivers itself, so offering the token as well would only install the drivers twice */
+        el('b-drivers-hint').textContent = B.technical.checked ? ' ' + T('— already run by the Technical Setup') : ''; /* techSetup chains graphicDrivers itself, so offering the token as well would only install the drivers twice */
 
         refreshDesktops(fam, linkDesktop || B.desktop.value);
         linkDesktop = ''; /* consumed once, so the explanation belongs to the link that asked for it and not to every later edit */
@@ -673,11 +645,11 @@
         el('b-cmd').querySelector('.cmd').textContent = plan + tail;
         el('b-dry').querySelector('.cmd').textContent = plan + 'CARINO_SETUP_DRYRUN=1 ' + tail;
         el('b-cmd-note').textContent = actions.length
-            ? 'Runs instead of the menu, then exits. Nothing prompts you: every question takes its documented default and says so.'
+            ? T('Runs instead of the menu, then exits. Nothing prompts you: every question takes its documented default and says so.')
             : tokens.length
-                ? 'Reboot needs a step to follow. Tick something else, or use the plain command below.'
-                : 'Nothing is selected, so this is the plain command and it opens the interactive menu.'
-        el('b-share').textContent = 'This page address encodes the selection by name. Copy it from the address bar to share this exact plan.';
+                ? T('Reboot needs a step to follow. Tick something else, or use the plain command below.')
+                : T('Nothing is selected, so this is the plain command and it opens the interactive menu.')
+        el('b-share').textContent = T('This page address encodes the selection by name. Copy it from the address bar to share this exact plan.');
         setHash('distro=' + fam + (tokens.length ? '&plan=' + tokens.join(',') : ''));
     }
 
