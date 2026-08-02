@@ -89,10 +89,20 @@
   function set(id, v) { var el = document.getElementById(id); if (el) el.textContent = v; }
 
   // Greeting stays local to the navbar; the clock is owned by carino-clock.js.
+  // Routed through window.t so the greeting follows the fleet language.
+  // i18n.js is deferred and may not have run yet, hence the guard; the
+  // langchange listener re-renders it when the visitor switches language.
   function greet() {
     var h = new Date().getHours();
-    set('cnGreeting', h < 5 ? 'Late shift.' : h < 12 ? 'Good morning.' : h < 18 ? 'Good afternoon.' : 'Good evening.');
+    var s = h < 5 ? 'Late shift.' : h < 12 ? 'Good morning.' : h < 18 ? 'Good afternoon.' : 'Good evening.';
+    set('cnGreeting', (typeof window.t === 'function') ? window.t(s) : s);
   }
+  window.addEventListener('carino:langchange', greet);
+  // carino-navbar.js is deferred and executes BEFORE i18n.js, so window.t does
+  // not exist yet when inject() first calls greet(). Each site's i18n.js adopts
+  // the fleet locale in its own DOMContentLoaded handler, registered after this
+  // one — so re-render on a timeout, once every handler has finished.
+  document.addEventListener('DOMContentLoaded', function () { setTimeout(greet, 0); });
 
   function loadClockModule() {
     if (document.querySelector('script[data-carino-clock]')) return;

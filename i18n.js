@@ -9,6 +9,10 @@
 
 const I18N = {
     es: {
+        'Late shift.': 'Turno nocturno.',
+        'Good morning.': 'Buenos días.',
+        'Good afternoon.': 'Buenas tardes.',
+        'Good evening.': 'Buenas noches.',
         // Hero
         'Carino Systems · Universal OS Automation': 'Carino Systems · Automatización universal de SO',
         'One command turns a fresh install into a usable machine. Linux, Windows and macOS.': 'Un comando convierte una instalación recién hecha en una máquina lista para usar. Linux, Windows y macOS.',
@@ -73,6 +77,10 @@ const I18N = {
         'Improve this page on GitHub': 'Mejora esta página en GitHub',
     },
     'pt-BR': {
+        'Late shift.': 'Turno da noite.',
+        'Good morning.': 'Bom dia.',
+        'Good afternoon.': 'Boa tarde.',
+        'Good evening.': 'Boa noite.',
         'Carino Systems · Universal OS Automation': 'Carino Systems · Automação universal de SO',
         'One command turns a fresh install into a usable machine. Linux, Windows and macOS.': 'Um comando transforma uma instalação recém-feita em uma máquina pronta para usar. Linux, Windows e macOS.',
         'One Command': 'Um comando',
@@ -130,6 +138,10 @@ const I18N = {
         'Improve this page on GitHub': 'Melhore esta página no GitHub',
     },
     ja: {
+        'Late shift.': '夜勤お疲れさま。',
+        'Good morning.': 'おはようございます。',
+        'Good afternoon.': 'こんにちは。',
+        'Good evening.': 'こんばんは。',
         'Carino Systems · Universal OS Automation': 'Carino Systems · ユニバーサルOS自動化',
         'One command turns a fresh install into a usable machine. Linux, Windows and macOS.': '1つのコマンドで、インストールしたばかりのOSをすぐ使えるPCに。Linux、Windows、macOS対応。',
         'One Command': 'ワンコマンド',
@@ -187,6 +199,10 @@ const I18N = {
         'Improve this page on GitHub': 'GitHubでこのページを改善',
     },
     ru: {
+        'Late shift.': 'Ночная смена.',
+        'Good morning.': 'Доброе утро.',
+        'Good afternoon.': 'Добрый день.',
+        'Good evening.': 'Добрый вечер.',
         'Carino Systems · Universal OS Automation': 'Carino Systems · Универсальная автоматизация ОС',
         'One command turns a fresh install into a usable machine. Linux, Windows and macOS.': 'Одна команда превращает свежеустановленную систему в готовую к работе машину. Linux, Windows и macOS.',
         'One Command': 'Одна команда',
