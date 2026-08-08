@@ -72,9 +72,6 @@ const I18N = {
         'Mounts a Windows/CIFS share at': 'Monta un recurso compartido Windows/CIFS en',
         'no argument': 'sin argumento',
         'Opens the interactive menu, where option 5 updates the system.': 'Abre el menú interactivo, donde la opción 5 actualiza el sistema.',
-        // Footer
-        'Carino Setup is open source.': 'Carino Setup es de código abierto.',
-        'Improve this page on GitHub': 'Mejora esta página en GitHub',
     },
     'pt-BR': {
         'Late shift.': 'Turno da noite.',
@@ -134,8 +131,6 @@ const I18N = {
         'Mounts a Windows/CIFS share at': 'Monta um compartilhamento Windows/CIFS em',
         'no argument': 'sem argumento',
         'Opens the interactive menu, where option 5 updates the system.': 'Abre o menu interativo, onde a opção 5 atualiza o sistema.',
-        'Carino Setup is open source.': 'O Carino Setup é de código aberto.',
-        'Improve this page on GitHub': 'Melhore esta página no GitHub',
     },
     ja: {
         'Late shift.': '夜勤お疲れさま。',
@@ -195,8 +190,6 @@ const I18N = {
         'Mounts a Windows/CIFS share at': 'Windows/CIFS共有のマウント先:',
         'no argument': '引数なし',
         'Opens the interactive menu, where option 5 updates the system.': '対話メニューを開きます。オプション5でシステムを更新できます。',
-        'Carino Setup is open source.': 'Carino Setupはオープンソースです。',
-        'Improve this page on GitHub': 'GitHubでこのページを改善',
     },
     ru: {
         'Late shift.': 'Ночная смена.',
@@ -256,8 +249,6 @@ const I18N = {
         'Mounts a Windows/CIFS share at': 'Монтирует общий ресурс Windows/CIFS в',
         'no argument': 'без аргументов',
         'Opens the interactive menu, where option 5 updates the system.': 'Открывает интерактивное меню, где пункт 5 обновляет систему.',
-        'Carino Setup is open source.': 'Carino Setup — проект с открытым исходным кодом.',
-        'Improve this page on GitHub': 'Улучшить эту страницу на GitHub',
     },
 };
 

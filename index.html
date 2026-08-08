@@ -57,6 +57,7 @@
         button { font-family: inherit; }
 
         .container { max-width: 1080px; margin: 0 auto; padding: 0 1.5rem; }
+        main.container { padding-bottom: 4rem; } /* the footer used to be the gap under the last section */
 
         .hero { background: var(--stage-grad); border-bottom: 1px solid var(--border); padding: 34px 0 30px; text-align: center; }
         .hero .kicker { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.32em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
@@ -129,8 +130,6 @@
             border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; padding: 2px 7px;
         }
         .kbd.accent { color: var(--accent); border-color: var(--accent-dim); }
-
-        .footer { text-align: center; padding: 26px 24px; border-top: 1px solid var(--border); color: var(--text-muted); font-family: var(--mono); font-size: 0.7rem; margin-top: 5rem; }
 
         .modebar { display: flex; gap: 6px; margin-bottom: 18px; } /* a sub-tab strip inside the Linux pane, not a peer of the OS tabs: CARINO_SETUP_PLAN is read by setup.sh alone */
         .modebtn {
@@ -348,10 +347,9 @@
         </details>
     </section>
 </main>
+<!-- No footer: the header already carries the GitHub button, and it points at
+     this repository (carino-navbar.js resolves it from the page). -->
 
-<footer class="footer">
-    <p><span data-i18n>Carino Setup is open source.</span> <a href="https://github.com/MiguelCarino/SimpleSetup" data-i18n>Improve this page on GitHub</a>.</p> <!-- the repository is still literally named SimpleSetup; only the owner can rename it, so this URL stays until then -->
-</footer>
 
 <script>
     /* Localization lives in the deferred dictionary script and follows the fleet
