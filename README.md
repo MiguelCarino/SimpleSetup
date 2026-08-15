@@ -18,6 +18,7 @@ Site: <https://setup.carino.systems>
 - **It sets the default systemd target to `graphical`** after any successful desktop install, and enables `gdm`, `sddm` or `lightdm` if one of them is in the package list it just installed. No prompt.
 - **It disables `NetworkManager-wait-online.service`** on Red Hat Enterprise Linux. No prompt, and RHEL only — the rebuilds and Fedora do not do this.
 - **It writes a log** into the current working directory, `carino-setup-YYYYmmdd-HHMMSS.log`, unless `CARINO_SETUP_LOG` names another path.
+- **It offers to measure your download speed** before the Technical Setup, and only if you say yes. This fetches up to 8 MiB from *your own distribution's configured mirror* — not a Carino server and not a generic speed-test CDN, because a generic CDN measured 7x slower than the real mirror on the test machine and would invert the answer. It asks first, `[y/N]`, defaulting to **no**; it is skipped entirely on a metered connection, under a plan, and in a dry run; and whatever it measures, **nothing is written to `/etc/dnf/dnf.conf` or any other configuration file** — the result is passed as `--setopt=` on that run's `dnf` command line and is forgotten when the run ends.
 
 Everything above can be watched first: see [Rehearsing a run](#rehearsing-a-run).
 
@@ -201,6 +202,7 @@ Names, never numbers: the menus have been renumbered twice, so a shared plan tha
 | Windows share `[y/N]` | **no** — a plan carries no server, folder or user to ask for |
 | Desktop environment menu | **none** — add `desktop=<name>` to install one |
 | Reboot `[y/N]` | **no**, unless `reboot=yes` is in the plan |
+| Bandwidth measurement `[y/N]` | **no** — a plan is unattended, and an 8 MiB probe multiplied across an unattended fleet is not defensible. Set `CARINO_PROBE_NET=1` to opt in. |
 
 ## Rehearsing a run
 
@@ -212,7 +214,7 @@ Names, never numbers: the menus have been renumbered twice, so a shared plan tha
 CARINO_SETUP_PLAN=technical,purpose=gaming ./setup.sh dry-run   # rehearses a plan before running it for real
 ```
 
-A rehearsal creates, modifies and deletes nothing: every privileged command and every mutating coreutil (`mkdir`, `rm`, `cp`, `mv`, `ln`, `tar`, `bunzip2`, `chmod`, `tee`, `sed`) is replaced by a `PATH` shim that prints what it would have run, and no log file is written unless you name one. Detection commands — `lspci`, `uname`, `curl`, `grep` — are deliberately left real, so the rehearsal is accurate for *this* machine.
+A rehearsal creates, modifies and deletes nothing: every privileged command and every mutating coreutil (`mkdir`, `rm`, `cp`, `mv`, `ln`, `tar`, `bunzip2`, `chmod`, `tee`, `sed`) is replaced by a `PATH` shim that prints what it would have run, and no log file is written unless you name one. Detection commands — `lspci`, `uname`, `curl`, `grep` — are deliberately left real, so the rehearsal is accurate for *this* machine. The bandwidth probe is skipped entirely during a rehearsal, so a dry run makes no network request beyond the ones it already made (`curl` to GitHub and kernel.org for the menu header).
 
 ## Environment variables
 
@@ -222,13 +224,16 @@ A rehearsal creates, modifies and deletes nothing: every privileged command and 
 | `CARINO_SETUP_DRYRUN` | `1` is the environment equivalent of the `dry-run` modifier. |
 | `CARINO_SETUP_LOG` | Path of the log file. Default: `carino-setup-YYYYmmdd-HHMMSS.log` in the current directory. A dry run writes no log at all unless this is set. |
 | `CARINO_SETUP_OSRELEASE` | Path to read instead of `/etc/os-release`, so you can see what a Debian or an Arch user would get without owning either machine. |
+| `CARINO_PROBE_NET` | `0` disables the bandwidth probe entirely. `1` re-enables it under `CARINO_SETUP_PLAN` and a dry run, where it is otherwise always skipped. |
+| `CARINO_TERM_COLOR` | `never` `auto` `always` `8` `256` `truecolor`. `never` is also the light-terminal escape hatch. |
+| `CARINO_TERM_CHARSET` | `ascii` or `unicode`, overriding the locale probe. |
 
 ```bash
 printf 'NAME="Arch Linux"\n' > /tmp/osr
 CARINO_SETUP_OSRELEASE=/tmp/osr ./setup.sh dry-run
 ```
 
-These four are read by `setup.sh` only. They were introduced the day before this document and were briefly named `SIMPLESETUP_*`; that spelling is gone and has no alias.
+These are read by `setup.sh` only. They were introduced the day before this document and were briefly named `SIMPLESETUP_*`; that spelling is gone and has no alias.
 
 ## Windows: what `setup.ps1` actually needs
 

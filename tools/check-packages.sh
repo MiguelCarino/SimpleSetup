@@ -5,6 +5,18 @@
 # and a single unknown name aborts the whole transaction for every user on that distribution.
 cd "$(dirname "$0")/.." || exit 1
 RED="\e[31m"; GREEN="\e[32m"; YELLOW="\e[33m"; BLUE="\e[94m"; ENDCOLOR="\e[0m"
+carinoLoad () # the same three rung bootstrap setup.sh uses: a copy beside the script, then the deployed copy, then nothing
+{
+    local lib="$1" dir="${BASH_SOURCE[0]%/*}"
+    [[ "$dir" == "${BASH_SOURCE[0]}" ]] && dir="." # %/* is suffix removal, not dirname: with no slash in the path it returns the filename unchanged
+    [[ -f "$dir/../$lib" && -r "$dir/../$lib" ]] && { . "$dir/../$lib"; return 0; } # this file lives in tools/, the libraries live at the repository root
+    command -v curl >/dev/null 2>&1 || return 1
+    local src; src=$(curl -fsSL --max-time 10 "https://setup.carino.systems/$lib" 2>/dev/null) || return 1
+    [[ -n "$src" ]] || return 1
+    { . /dev/stdin <<<"$src"; } 2>/dev/null || return 1
+    return 0
+}
+carinoLoad carino-term.sh && declare -F carino_rule >/dev/null 2>&1 || carino_rule() { printf '%s\n' "-------------------------------------"; } # only carino_rule is shimmed rather than the full API freeze setup.sh carries, because this file calls exactly one primitive and copying twenty five lines of shim to reach it would be the larger thing to review
 MISSING=0; CHECKED=0; UNPROVEN=0; UNCLAIMED=0
 gone()  { MISSING=$((MISSING+1)); echo -e "  ${RED}MISSING${ENDCOLOR}   $1"; }
 here()  { CHECKED=$((CHECKED+1)); }
@@ -119,7 +131,7 @@ if [[ "$WHAT" == all || "$WHAT" == containers || "$WHAT" == el ]]; then
     echo -e "\n${BLUE}Enterprise Linux $(image el)${ENDCOLOR}"; checkLeg el "$EL"
 fi
 
-echo -e "\n${BLUE}-------------------------------------${ENDCOLOR}"
+printf '\n'; carino_rule
 [[ "$UNPROVEN" -gt 0 ]] && echo -e "${YELLOW}$UNPROVEN name(s) unproven: the leg above answered with no authority, so it proved nothing and must not be read as a pass.${ENDCOLOR}"
 [[ "$UNCLAIMED" -gt 0 ]] && echo -e "${RED}$UNCLAIMED package list(s) are watched by no leg. Add them to legVars or the next rename in them ships silently.${ENDCOLOR}"
 if [[ "$MISSING" -eq 0 && "$UNCLAIMED" -eq 0 ]]; then echo -e "${GREEN}$CHECKED names checked, all still present.${ENDCOLOR}"; exit 0

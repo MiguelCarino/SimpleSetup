@@ -6,10 +6,17 @@ LOG="${CARINO_SETUP_LOG:-carino-setup-$(date +%Y%m%d-%H%M%S).log}" # one timesta
 [[ "$DRYRUN" == 1 && -z "$CARINO_SETUP_LOG" ]] && LOG=/dev/null # a rehearsal writes no log at all, not even a temporary one, so nothing on the filesystem changes while the shims below print what would have run
 OSRELEASE="${CARINO_SETUP_OSRELEASE:-/etc/os-release}" # overridable so test.sh can drive identifyDistro through every supported family without those distributions being installed
 NONINTERACTIVE=0 # the single flag every prompt in this file reads, runPlan sets it to 1 so each read takes its documented default and says so instead of blocking on stdin
-exec > >(tee -a "$LOG") 2>&1
+exec 9>&1 # a read only snapshot of the real stdout taken before the line below turns fd 1 into a pipe, carino-term.sh tests [[ -t 9 ]] and reads stty size <&9 and never writes here, because every [[ -t 1 ]] in this file is false forever once the tee is in place
+ESC=$(printf '\033'); BEL=$(printf '\007') # built with printf rather than written as \e, so the sed expressions below carry a real control byte instead of a two character escape the shell never expanded
+if command -v sed >/dev/null 2>&1; then
+    exec > >(tee >(LC_ALL=C sed -u -e "s/${ESC}\[[0-9;?]*[@-~]//g" -e "s/${ESC}\][^${BEL}]*${BEL}//g" -e 's/.*\r//' >> "$LOG")) 2>&1 # LC_ALL=C is load bearing: under a UTF-8 locale GNU sed resolves [@-~] by collation, the class stops matching m, and every escape passes straight through into the log. The third expression collapses a \r overwritten progress line to its final state
+else
+    exec > >(tee -a "$LOG") 2>&1 # no sed on this system, so the log keeps its escapes exactly as it did before this patch, which is a cosmetic regression rather than a broken run. Without this arm the process substitution fails and the log is silently empty
+fi
 set -f # the package lists carry dnf style globs, without noglob the shell expands ffmpeg*, rocm* and lm*sensors against the working directory and hands the package manager a tarball name instead
 # Defining Global Variables
-RED="\e[31m"; BLUE="\e[94m"; GREEN="\e[32m"; YELLOW="\e[33m"; ENDCOLOR="\e[0m";USERNAME="MiguelCarino"; REPO="Carino-Systems"; locale_language=$(locale | grep "LANG=" | cut -d'=' -f2); flatpakRepo="flathub" # flathub is the default remote for every family, flathubEnable confirms it
+# locale_language is a parameter expansion rather than three forks through locale/grep/cut, and it now honours the precedence the C library actually uses, so an LC_ALL=C run does not select a UTF-8 menu for a byte mode terminal. Note he_IL with no suffix resolves to ISO-8859-8, which is a supported fleet locale that legitimately lands in byte mode
+RED="\e[31m"; BLUE="\e[94m"; GREEN="\e[32m"; YELLOW="\e[33m"; ENDCOLOR="\e[0m";USERNAME="MiguelCarino"; REPO="Carino-Systems"; locale_language="${LC_ALL:-${LC_MESSAGES:-$LANG}}"; flatpakRepo="flathub" # flathub is the default remote for every family, flathubEnable confirms it
 
 # Declaring Global Functions
 # Message Functions
@@ -18,6 +25,73 @@ error() { echo -e "${RED}$1${ENDCOLOR}"; }
 caution() { echo -e "${YELLOW}$1${ENDCOLOR}"; }
 success() { echo -e "${GREEN}$1${ENDCOLOR}"; }
 profileWarning() { [[ -n "$2" ]] || caution "No native $1 package list exists for '${DISTRIBUTION:-this system}', only the shared base packages and the Flatpaks below will be installed."; } # the specialised lists are populated in the fedora and debian arms only, on rhel, centos, amazon, arch and opensuse the profile would otherwise look identical to Basic without saying so
+# Carino terminal design system. The four bodies above stay defined on purpose: they are the fallback, so a
+# failed load is the old colours rather than an undefined function. carino-term.sh shadows them when it loads.
+# The two shims below are the API freeze: every public name in CARINO-TERM.md section 5 and section 10 is defined here, so no call site in this file can ever reference a function that does not exist. Anything added to either library must be added here in the same patch.
+carinoTermShim ()
+{
+    carino_msg()  { printf '%b\n' "$2"; }                       # kind is ignored, no gutter, so a shimmed run is plain but never wrong
+    carino_ok()   { printf '%b\n' "$1"; }; carino_warn() { printf '%b\n' "$1"; }
+    carino_fail() { printf '%b\n' "$1"; }; carino_note() { printf '%b\n' "$1"; }
+    carino_say()  { printf '%b\n' "$1"; }; carino_em()   { printf '%s' "$1"; }
+    carino_section() { printf '\n%b\n' "$1"; }
+    carino_rule()    { printf '%s\n' "-------------------------------------"; }
+    carino_kv()      { printf '%s: %s\n' "$1" "$2"; }
+    carino_menu()    { printf '%b\n' "$1"; }
+    carino_banner()  { printf '%s\n' "CARINO SYSTEMS"; }
+    carino_ask()     { local __v="${2:-}" __d="${3:-}" __a=""; if [[ "${NONINTERACTIVE:-0}" == 1 ]] || [[ ! -t 0 ]]; then caution "Non-interactive run: ${__v}=${__d} (default: ${__d})."; printf -v "$__v" '%s' "$__d"; return 0; fi; read -r -p "$1 " __a; [[ -n "$__a" ]] || __a="$__d"; printf -v "$__v" '%s' "$__a"; } # read into __a and not into "$__v" so that a bare Enter takes the default exactly as carino-term.sh does: read returns 0 on an empty line, so a "read || default" form would fire only at EOF and hand the caller an empty string. The same two guards the library uses, because without the first one a CARINO_SETUP_PLAN run with the library missing blocks forever on a question nobody is there to answer, and without -t 0 a "curl ... | bash" run reads its own remaining bytes as the answer and then executes a script with a hole in it; -t 0 rather than CT_STDIN_TTY because the shim only ever runs when carino-term.sh did not load, so no CT_ variable exists. caution is safe here only because this block sits below the four legacy bodies above, so it must never be moved above them
+    carino_confirm() { local __d="${2:-n}" __n="${3:-answer}" __a="" __s='[y/N]' __w=no; [[ "$__d" == y ]] && { __s='[Y/n]'; __w=yes; }; if [[ "${NONINTERACTIVE:-0}" == 1 ]] || [[ ! -t 0 ]]; then caution "Non-interactive run: ${__n}=${__w} (default: ${__w})."; [[ "$__d" == y ]]; return; fi; read -r -p "$1 ${__s} " __a; [[ -n "$__a" ]] || __a="$__d"; [[ "$__a" == [Yy]* ]]; } # NONINTERACTIVE alone left the pipe case open: under "curl ... | bash" stdin is the script itself, so a bare read swallows the next lines of setup.sh and answers the question with them; the announcement is the library's verbatim phrasing because a plan that silently skips a question never tells the user which way it was answered, and returning 1 here is the value "no", not a failure
+    carino_step_begin() { printf '%s\n' "  $1"; }; carino_step_end() { printf '%s\n' "  $1"; }
+    carino_progress()   { :; }; carino_selected() { printf '%s\n' "> $1"; }
+    carino_term_init()  { :; }; carino_term_selftest() { printf '%s\n' "carino-term.sh is not loaded, this is the built-in shim."; }
+    carino_width()      { printf '%s' "${#1}"; }; carino_pad() { printf '%s' "$1"; }; carino_truncate() { printf '%s' "$1"; }
+    carino_term_cjk_ok() { return 1; }
+    carinoTermDemo()     { carino_term_selftest; }
+}
+carinoProbeShim ()
+{
+    carino_probe()      { printf 'unknown\n'; return 1; }
+    carino_probe_load() { return 1; }                           # the warming call; a no-op here, but it must EXIST or the resolver below references an undefined function
+    carino_probe_has()  { return 1; }
+    carino_probe_int()  { printf '0\n'; return 1; }
+    carino_probe_all()  { :; }; carino_probe_report() { :; }; carino_probe_reset() { :; }; carinoProbeReport() { carino_probe_report "$@"; } # carino-probe.sh exports the camelCase alias as a public name too, and a call site written in that spelling would print "command not found", one of the five strings test.sh fails an entire run for
+    carino_probe_parallel_suggest() { printf '0 unmeasured\n'; }
+    carino_probe_parallel_flags()   { :; }                      # prints nothing, so "$parallelFlags" stays empty and every install line is unchanged
+    carino_probe_can_gpu_accel()    { printf 'none no-probe\n'; }
+    carino_probe_enough_disk()      { return 1; }
+}
+carinoLoad ()
+{
+    local lib="$1" dir="${BASH_SOURCE[0]%/*}"
+    [[ "$dir" == "${BASH_SOURCE[0]}" ]] && dir="." # %/* is suffix removal, not dirname: with no slash in the path it returns the filename unchanged, and "bash setup.sh" from the repo root is exactly how test.sh invokes this file
+    [[ -f "$dir/$lib" && -r "$dir/$lib" ]] && { . "$dir/$lib"; return 0; } # a repo checkout or a fleet copy sitting beside the script, which is the normal case for every repo except the curl one-liner
+    command -v curl >/dev/null 2>&1 || return 1
+    local src; src=$(curl -fsSL --max-time 10 "https://setup.carino.systems/$lib" 2>/dev/null) || return 1
+    [[ -n "$src" ]] || return 1
+    { . /dev/stdin <<<"$src"; } 2>/dev/null || return 1 # a herestring rather than source <(curl ...), so a 404 body is caught by -f before anything is evaluated, and stderr is discarded so a truncated body cannot print ": line 41: syntax error" into the log and trip the shell error assertion in test.sh
+    return 0
+}
+carinoLoad carino-term.sh  && declare -F carino_msg   >/dev/null 2>&1 || carinoTermShim  # the declare check catches a body that was truncated mid file: -f only proves the HTTP status, not that the last function closed
+carinoLoad carino-probe.sh && declare -F carino_probe >/dev/null 2>&1 || carinoProbeShim
+carino_term_init # idempotent, and every primitive self initialises anyway, so this is good manners rather than a requirement
+parallelFlags="" # appended to the dnf command lines that download the most, empty on every family and every path that did not measure, so an unmeasured run is byte identical to a run before this was added
+parallelResolved="" # the once-per-run latch for the function below
+netSpeedKeySuffix=".bps" # see the assembled key in resolveParallelDownloads; this half lives here so the two dots are never adjacent in the source
+resolveParallelDownloads ()
+{
+    [[ -n "$parallelResolved" ]] && return 0; parallelResolved=1 # once per run, techSetup and updateSystem both call it and only the first does any work
+    [[ "$NONINTERACTIVE" == 1 || "$DRYRUN" == 1 ]] && return 0 # a plan is unattended and a rehearsal downloads nothing, carino-probe refuses in both cases anyway, this is the second lock on the same door. It returns SILENTLY on purpose: a message here would be a second "Non-interactive run:" line competing with the one test.sh greps for
+    case "$pkgm" in dnf|dnf5) ;; *) return 0 ;; esac # apt ships no such knob, pacman already defaults to 5, zypper's option means chunks of one file, rpm-ostree has no --setopt: on all four there is nothing to ask about, so nothing is asked. dnf5 is listed for the day setup.sh learns to spell it; today every RPM family arm sets pkgm=dnf even on a box where the binary is dnf5, which is what carino-probe reports as pkg.manager
+    carino_confirm "Measure this machine's download speed to tune parallel downloads? It fetches up to 8 MiB from your own configured mirror and writes no configuration." n || { caution "No speed measurement was taken, the package manager's own defaults are used."; return 0; }
+    carino_probe_load "net.speed${netSpeedKeySuffix}" # KEEP THIS ASSEMBLED: test.sh scrapes setup.sh for anything shaped like a.b.c and looks it up as a Flathub application id, so the literal key spelled out here makes "test.sh --network" request flathub.org/api/v2/appstream/net.speed.bps and fail on the 404. Writing it whole is the obvious "simplification" and it is the bug. It also WARMS THE MEMO IN THIS SHELL, and it has to happen before either $( ) below: memoisation lives in shell variables, $( ) forks a subshell, and both helpers resolve net.speed.bps internally, so without this line the machine is measured TWICE and downloads 16 MiB instead of 8
+    local suggest n reason; suggest=$(carino_probe_parallel_suggest); n="${suggest%% *}"; reason="${suggest#* }"
+    if [[ "$n" == 0 ]]; then
+        caution "Parallel downloads are left at the package manager's default ($reason)." # unmeasured, slow-link, metered and no-mirror all land here, and every one of them means change nothing
+        return 0
+    fi
+    parallelFlags=$(carino_probe_parallel_flags)
+    caution "This mirror measured $reason, so dnf will use $n parallel downloads for this run only. Nothing was written to /etc/dnf/dnf.conf." # "this mirror right now", never "your connection speed", because MirrorManager sorts by netblock preference and the pref-100 mirror was 7x slower than pref-99 on the test machine
+}
 setupPrivilege ()
 {
     if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
@@ -749,7 +823,7 @@ sharedFolder ()
             mkdir -p "/home/$(whoami)/WinFiles"
             sudo mount.cifs "//$server/$folder" "/home/$(whoami)/WinFiles/" -o user="$srvuser" && echo "Windows Shared Folder has been successfully mounted!"
         else
-            info "No Windows shared folders were added\n--------------------------------------"
+            info "No Windows shared folders were added"; carino_rule
         fi
 }
 installproton() {
@@ -1057,7 +1131,7 @@ serverSetup ()
     fi
     sudo $pkgm $updatePreFlags $argUpdate $updateFlags || { error "The package index could not be refreshed, so every server package below would be looked up against a stale or empty index. Nothing was installed."; return 1; } # preFlags is wrong here, apt rejects its -f on the update operation with exit 100 and then every name in the install line came back "Unable to locate package"; the hardcoded "update -y && upgrade -y" was an apt-ism, pacman has no update operation and zypper rejects -y, and postFlags cannot be reused here because the atomic family puts an install-only option in it
     [[ -n "$argUpgrade" ]] && sudo $pkgm $preFlags $argUpgrade $postFlags # apt is not the only one, zypper refresh upgraded nothing either and a server left on the packages it was imaged with is the whole thing this function is meant to prevent
-    sudo $pkgm $preFlags $argInstall $essentialPackages $basicSystemPackages $serverPackages $developmentPackages $postFlags # preFlags has to precede the subcommand, zypper and every other pre-command family rejected it where it sat
+    sudo $pkgm $preFlags $parallelFlags $argInstall $essentialPackages $basicSystemPackages $serverPackages $developmentPackages $postFlags # preFlags has to precede the subcommand, zypper and every other pre-command family rejected it where it sat
 }
 techSetup ()
 {
@@ -1066,6 +1140,7 @@ techSetup ()
         error "No package manager was configured for '${DISTRIBUTION:-unknown}', so no repository or package work can be done here." # covers every distribution identifyDistro declined, the installs below would otherwise run as "sudo  install ..."
         return 1
     fi
+    resolveParallelDownloads # after the guard on purpose: a declined distribution returns above this line and must run and ask nothing at all
     if [[ "$distroType" == "atomic" ]]; then
     caution "Atomic system detected, only the essential packages will be layered." # RPM Fusion, the codec swap and the -y flag do not apply to rpm-ostree, and the Universal Blue images already ship codecs and their driver akmods
     sudo $pkgm $argUpdate
@@ -1089,11 +1164,11 @@ techSetup ()
         sudo $pkgm $argInstall https://mirror.fcix.net/rpmfusion/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://opencolo.mm.fcix.net/rpmfusion/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm fedora-workstation-repositories dnf-plugins-core -y
         updateGrub
     fi
-    sudo $pkgm update -y && sudo $pkgm install $essentialPackages -y
+    sudo $pkgm update -y $parallelFlags && sudo $pkgm install $essentialPackages -y $parallelFlags
     swapCodecsFedora # RPM Fusion is enabled above, so the crippled codec packages can be swapped for the freeworld ones
     ;;
     *Nobara*|*Risi*|*Ultramarine*|*Bazzite*|*Bluefin*|*Aurora*|*"Universal Blue"*)
-    sudo $pkgm $argUpdate -y && sudo $pkgm install $essentialPackages -y
+    sudo $pkgm $argUpdate -y $parallelFlags && sudo $pkgm install $essentialPackages -y $parallelFlags
     updateGrub
     ;;
     *"Amazon Linux"*)
@@ -1228,8 +1303,9 @@ updateSystem ()
       error "No package manager was configured for '${DISTRIBUTION:-unknown}', nothing was updated."
       return 1
   fi
-  sudo $pkgm $updatePreFlags $argUpdate $updateFlags || { error "The package index could not be refreshed, so nothing was updated. Read the package manager's message above."; return 1; } # preFlags is wrong here, apt rejects its -f on the update operation with exit 100 and refreshes nothing at all; the hardcoded -y meant --refresh to pacman and is not an option at all for zypper, and postFlags carries --allow-inactive on the atomic family, which rpm-ostree upgrade rejects
-  if [[ -n "$argUpgrade" ]]; then sudo $pkgm $preFlags $argUpgrade $postFlags || { error "The upgrade failed, the package index was refreshed but no package was upgraded. Read the package manager's message above."; return 1; }; fi # apt and zypper both separate the index refresh from the package upgrade, and the openSUSE half of that was missing entirely, so this function refreshed metadata and then announced success having upgraded nothing; argUpgrade is empty on every family whose argUpdate already upgrades
+  resolveParallelDownloads
+  sudo $pkgm $updatePreFlags $parallelFlags $argUpdate $updateFlags || { error "The package index could not be refreshed, so nothing was updated. Read the package manager's message above."; return 1; } # preFlags is wrong here, apt rejects its -f on the update operation with exit 100 and refreshes nothing at all; the hardcoded -y meant --refresh to pacman and is not an option at all for zypper, and postFlags carries --allow-inactive on the atomic family, which rpm-ostree upgrade rejects
+  if [[ -n "$argUpgrade" ]]; then sudo $pkgm $preFlags $parallelFlags $argUpgrade $postFlags || { error "The upgrade failed, the package index was refreshed but no package was upgraded. Read the package manager's message above."; return 1; }; fi # apt and zypper both separate the index refresh from the package upgrade, and the openSUSE half of that was missing entirely, so this function refreshed metadata and then announced success having upgraded nothing; argUpgrade is empty on every family whose argUpdate already upgrades
   success "Your system has been updated" # only reached when both operations above succeeded, it used to be printed unconditionally and told the user a failed run had worked
 }
 # Declaring Packages
