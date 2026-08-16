@@ -57,39 +57,107 @@
         button { font-family: inherit; }
 
         .container { max-width: 1080px; margin: 0 auto; padding: 0 1.5rem; }
-        main.container { padding-bottom: 4rem; } /* the footer used to be the gap under the last section */
 
-        .hero { background: var(--stage-grad); border-bottom: 1px solid var(--border); padding: 34px 0 30px; text-align: center; }
-        .hero .kicker { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.32em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+        /* ---- one screen ----
+           The page is a single hero now, the way pacs.carino.systems is: the
+           command, the platform picker and the four sheet chips all sit above
+           the fold, and everything that used to be a section below it — the
+           plan builder, the distribution list, the argument table, what this
+           does and refuses — is a <dialog> opened from here. A dialog is
+           markup, not a fetch, so none of that content left the page: it is
+           still one Ctrl-F away and still indexed.
+
+           Sizing follows the same rule as PACS. --tall is how much taller this
+           viewport is than the point where the hero stops having room, so every
+           size below reads `base + --tall × rate` and is exactly `base` on any
+           screen under 900px. A calc rather than a media query because a
+           breakpoint steps: any vh expression steep enough to be worth having
+           above 900px is already too steep below it. */
+        :root { --tall: max(0px, 100vh - 900px); }
+        body { min-height: 100dvh; display: flex; flex-direction: column; }
+        .hero { flex: 1 0 auto; display: flex; background: var(--stage-grad); text-align: center;
+            padding: min(60px, calc(clamp(10px, 2vh, 38px) + var(--tall) * .055)) 0 clamp(10px, 2vh, 30px); }
+        /* Top-anchored, not centred: surplus height collects at the bottom where
+           it is quiet, instead of opening a gap between the navbar and the mark. */
+        .hero > .container { margin-block: 0 auto; width: 100%; }
+
+        /* The mark, and under it the one piece of motion on the page: a faint
+           full trace with a bright pulse climbing it. PACS draws a heartbeat
+           because that is what its reader is waiting on; this draws the step
+           function of a machine going from bare to configured, because that is
+           what one command here does. Sized off viewport HEIGHT — height is the
+           scarce dimension on a one-screen page, so the decoration shrinks with
+           the thing it competes against. */
+        .hero-mark { display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: min(28px, calc(8px + var(--tall) * .042));
+            margin: 0 auto min(46px, calc(clamp(3px, .7vh, 11px) + var(--tall) * .09)); }
+        .hero-mark .mark { width: auto; display: block; aspect-ratio: 1 / 1;
+            height: min(132px, calc(clamp(30px, 5.6vh, 66px) + var(--tall) * .15)); }
+        .steps { display: block; margin: 0; width: auto; aspect-ratio: 5 / 1; overflow: visible;
+            height: min(70px, calc(clamp(18px, 3.6vh, 44px) + var(--tall) * .07)); }
+        .steps polyline { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        .steps .trace { stroke: var(--accent); stroke-width: 2; opacity: .12; }
+        .steps .pulse { stroke: var(--accent); stroke-width: 2.6; stroke-dasharray: 22 120;
+            filter: drop-shadow(0 0 6px rgba(234,179,8,0.9)); animation: climb 1.9s linear infinite; }
+        @keyframes climb { from { stroke-dashoffset: 142; } to { stroke-dashoffset: 0; } }
+        /* Motion is decoration here: the shape carries the meaning, the sweep
+           only carries the mood, so a reader who asked for less of it keeps the
+           shape. */
+        @media (prefers-reduced-motion: reduce) { .steps .pulse { animation: none; stroke-dasharray: none; } }
+
         .hero h1 {
-            font-family: var(--display); font-weight: 900; font-size: clamp(2.1rem, 5vw, 3.2rem);
-            line-height: 0.95; text-transform: uppercase; letter-spacing: 1px;
+            font-family: var(--display); font-weight: 900; line-height: 1.02;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            font-size: min(3.4rem, calc(clamp(1.5rem, 3.4vw + .4vh, 2.6rem) + var(--tall) * .032));
+            margin: 0 0 min(52px, calc(clamp(8px, 1.4vh, 15px) + var(--tall) * .09));
+        }
+        .hero h1 .gold {
             background: var(--gold-text); -webkit-background-clip: text; background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .hero p { max-width: 660px; margin: 12px auto 0; color: var(--text-sec); font-family: var(--mono-i18n); font-size: 0.85rem; line-height: 1.7; }
+        .lede { color: #d4d4d4; font-family: var(--sans-i18n);
+            max-width: min(820px, calc(660px + var(--tall) * .35));
+            font-size: min(1.28rem, calc(clamp(.9rem, .55rem + .5vh, 1.02rem) + var(--tall) * .012));
+            line-height: 1.6;
+            margin: 0 auto min(44px, calc(clamp(11px, 2.2vh, 24px) + var(--tall) * .06)); }
+        .lede strong { color: var(--text); }
 
-        .os-picker { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 1.5rem 0 1.25rem; }
+        /* Above the buttons, so it reads as their label rather than as a
+           footnote: it says which one is already selected and why. */
+        .platform { margin: 0 0 min(24px, calc(clamp(6px, 1.1vh, 12px) + var(--tall) * .03));
+            font-family: var(--mono-i18n); font-size: min(.95rem, calc(.74rem + var(--tall) * .008)); color: var(--text-muted); }
+        .platform strong { color: var(--accent); font-weight: 700; }
+
+        .os-picker { display: flex; justify-content: center; flex-wrap: wrap;
+            gap: min(26px, calc(12px + var(--tall) * .035)); }
         .os-btn {
             position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px;
-            min-width: 160px; padding: 10px 20px; border-radius: 11px; cursor: pointer; text-align: center;
+            min-width: min(210px, calc(146px + var(--tall) * .075));
+            padding: min(24px, calc(11px + var(--tall) * .022)) min(40px, calc(20px + var(--tall) * .034));
+            border-radius: 11px; cursor: pointer; text-align: center;
             border: 1px solid var(--border); background: linear-gradient(180deg, var(--bg-elev), #0a0a0a);
             color: var(--text); transition: 0.16s;
         }
         .os-btn:hover { border-color: var(--accent); transform: translateY(-2px); }
-        .os-btn.detected:not(.active) { border-color: var(--accent-dim); } /* the platform we detected stays marked after you click away from it, without a label */
-        .os-btn b { font-family: var(--display); font-size: 1.02rem; letter-spacing: 0.02em; }
+        .os-btn b { font-family: var(--display); font-size: min(1.34rem, calc(.98rem + var(--tall) * .012)); letter-spacing: 0.02em; }
         .os-btn .fmt { font-family: var(--mono); font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
         .os-btn.active { border-color: var(--accent); background: var(--accent); color: #050505; box-shadow: 0 10px 30px var(--accent-glow); }
         .os-btn.active .fmt { color: #3a2c00; }
-        .fold { border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-card); margin-top: 1.25rem; }
-        .fold > summary { cursor: pointer; padding: 0.85rem 1.1rem; font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-sec); list-style: none; }
-        .fold > summary::-webkit-details-marker { display: none; }
-        .fold > summary::before { content: '+ '; color: var(--accent); }
-        .fold[open] > summary::before { content: '\2212 '; }
-        .fold > summary:hover { color: var(--accent); }
-        .fold .fold-body { padding: 0 1.1rem 1.1rem; }
-        .tabpane { padding: 18px 2px 2px; color: var(--text-sec); font-size: 0.9rem; }
+        /* The tab you are on is gold; the machine you are ON gets the badge. They
+           are usually the same button and the badge is then just confirmation,
+           but clicking away has to leave the detection visible somewhere. */
+        .os-btn .rec { display: none; }
+        .os-btn.detected .rec {
+            display: block; position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+            background: var(--bg); color: var(--accent); border: 1px solid var(--accent); border-radius: 999px;
+            font-family: var(--mono); font-size: 0.56rem; letter-spacing: 0.1em; text-transform: uppercase;
+            padding: 2px 8px; white-space: nowrap;
+        }
+        .os-btn.detected:not(.active) { border-color: var(--accent-dim); }
+
+        /* The command pane under the picker. It carries the payload of this
+           page, so it gets the space the download buttons get on PACS. */
+        .os-content { margin-top: min(34px, calc(clamp(12px, 2vh, 18px) + var(--tall) * .04)); text-align: left; }
 
         .terminal-wrapper { position: relative; }
         .terminal { background: #000; border: 1px solid var(--border); border-radius: 12px; padding: 1.4rem 1.6rem; overflow-x: auto; } /* no position:relative — the copy button anchors to the wrapper so it cannot scroll away with the command */
@@ -108,18 +176,78 @@
 
         .note { font-family: var(--mono); font-size: 0.7rem; color: var(--text-muted); margin-top: 10px; line-height: 1.6; }
 
-        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-top: 1.75rem; }
-        .card {
-            display: flex; flex-direction: column; background: var(--bg-card);
-            border: 1px solid var(--border); padding: 22px; border-radius: 12px; transition: 0.22s;
+        /* ---- the row that opens the sheets ----
+           Buttons, not a bespoke pill: the branding reference has one button
+           component and its pills are for status, not navigation. */
+        .chips { display: flex; flex-wrap: wrap; justify-content: center;
+            gap: min(18px, calc(8px + var(--tall) * .026));
+            margin: min(36px, calc(clamp(10px, 1.9vh, 17px) + var(--tall) * .05)) auto 0; max-width: min(980px, 94vw); }
+        .chip {
+            font-family: var(--mono-i18n); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+            font-size: min(.9rem, calc(.68rem + var(--tall) * .008));
+            padding: min(14px, calc(6px + var(--tall) * .022)) min(24px, calc(12px + var(--tall) * .032));
+            border-radius: 7px; cursor: pointer; border: 1px solid var(--border);
+            color: var(--text-sec); background: transparent; transition: 0.15s;
         }
-        .card:hover { border-color: var(--border-hv); background: linear-gradient(145deg,#17120a 0%,#0b0b0b 100%); transform: translateY(-4px); box-shadow: 0 14px 28px rgba(0,0,0,0.6), 0 0 22px var(--accent-glow); }
-        .c-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; }
-        .c-desc { font-size: 0.85rem; color: var(--text-sec); line-height: 1.6; flex: 1; }
+        .chip:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-faint); }
+        .chip.primary { color: var(--accent); border-color: var(--accent-dim); }
+        .foot-note { font-family: var(--mono-i18n); color: var(--text-muted); line-height: 1.7;
+            max-width: min(760px, 94vw);
+            font-size: min(.82rem, calc(.66rem + var(--tall) * .006));
+            margin: min(30px, calc(clamp(10px, 1.8vh, 16px) + var(--tall) * .04)) auto 0; }
+        .foot-note a { color: var(--accent); text-decoration: none; }
+        .foot-note a:hover { text-decoration: underline; }
 
-        .args-section { margin-top: 1.5rem; }
-        .args-section h2 { font-family: var(--display-i18n); font-weight: 900; font-size: 1.9rem; text-transform: uppercase; letter-spacing: 0.5px; }
-        .table-wrap { overflow-x: auto; margin-top: 1rem; }
+        /* ---- modal ----
+           The branding system's component (branding.carino.systems §17), built
+           on <dialog> rather than a scrim div toggled with `hidden`: the element
+           supplies the focus trap, Escape, the backdrop and an inert background,
+           none of which a div gets for free. */
+        /* `display` only when open. A bare `display: flex` overrides the UA's
+           `dialog:not([open]) { display: none }` and every sheet renders inline. */
+        .modal[open] { display: flex; }
+        .modal {
+            /* `margin: auto` is what centres a top-layer <dialog>, and the
+               `* { margin: 0 }` reset at the top of this stylesheet takes it
+               away — which pins every sheet to the top-left corner. Put back
+               explicitly rather than by carving dialog out of the reset. */
+            margin: auto;
+            flex-direction: column; padding: 0; overflow: hidden; text-align: left;
+            width: min(92vw, 680px); max-height: min(88vh, 900px);
+            background: var(--bg-elev); border: 1px solid var(--border); border-radius: 14px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.75); color: var(--text);
+        }
+        .modal.wide { width: min(94vw, 1080px); }
+        .modal::backdrop { background: rgba(0,0,0,0.65); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+        .modal-head { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
+        .modal-title { margin: 0; flex: 1; font-family: var(--display-i18n); font-weight: 900; font-size: 1.05rem;
+            text-transform: uppercase; letter-spacing: 0.5px; }
+        .modal-head form { margin: 0; }
+        .modal-x { border: none; background: transparent; color: var(--text-muted); font-size: 1.05rem; line-height: 1;
+            cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: 0.15s; }
+        .modal-x:hover { color: var(--accent); background: var(--accent-faint); }
+        .modal-body { padding: 18px; overflow-y: auto; }
+        .modal-body > .note:first-child { margin-top: 0; }
+
+        /* Two columns that collapse to one, and they collapse in the right
+           order: a visitor who reads only the red box has been told what this
+           will not do without ever being told what it does. */
+        .contrast { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+        @media (max-width: 860px) { .contrast { grid-template-columns: 1fr; gap: 16px; } }
+        .isbox { border: 1px solid var(--border); border-left: 4px solid var(--accent);
+            border-radius: 12px; padding: 18px 20px; background: var(--accent-faint); min-width: 0; }
+        .isbox h3 { margin: 0 0 12px; color: var(--accent); font-family: var(--display-i18n); font-size: 1.05rem; }
+        .notbox { border: 1px solid #7f1d1d; border-left: 4px solid #b91c1c;
+            border-radius: 12px; padding: 18px 20px; background: rgba(185,28,28,0.06); min-width: 0; }
+        .notbox h3 { margin: 0 0 12px; color: #f87171; font-family: var(--display-i18n); font-size: 1.05rem; }
+        .isbox ul, .notbox ul { list-style: none; margin: 0; padding: 0; }
+        .isbox li, .notbox li { margin-bottom: 11px; font-size: 0.86rem; line-height: 1.55; color: #d4d4d4;
+            word-break: normal; overflow-wrap: break-word; }
+        .isbox li:last-child, .notbox li:last-child { margin-bottom: 0; }
+        .isbox li b { color: var(--text); }
+        .notbox li b { color: #fca5a5; }
+
+        .table-wrap { overflow-x: auto; }
         table.data { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 0.76rem; }
         table.data th { text-align: left; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.62rem; font-weight: 700; padding: 8px 12px; border-bottom: 1px solid var(--border); }
         table.data td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--text-sec); }
@@ -130,16 +258,6 @@
             border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; padding: 2px 7px;
         }
         .kbd.accent { color: var(--accent); border-color: var(--accent-dim); }
-
-        .modebar { display: flex; gap: 6px; margin-bottom: 18px; } /* a sub-tab strip inside the Linux pane, not a peer of the OS tabs: CARINO_SETUP_PLAN is read by setup.sh alone */
-        .modebtn {
-            font-family: var(--mono); font-size: 0.62rem; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 0.08em;
-            padding: 8px 14px; border-radius: 6px; cursor: pointer;
-            color: var(--text-sec); background: transparent; border: 1px solid var(--border); transition: 0.15s;
-        }
-        .modebtn:hover { color: var(--text); border-color: var(--border-hv); }
-        .modebtn.active { color: var(--accent); border-color: var(--accent-dim); background: var(--accent-faint); }
 
         .build-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-top: 18px; }
         .field { display: flex; flex-direction: column; gap: 7px; }
@@ -187,10 +305,53 @@
         .caution-line { margin-top: 14px; padding-left: 12px; border-left: 2px solid var(--accent-dim); font-family: var(--mono); font-size: 0.68rem; color: var(--warn); line-height: 1.7; }
         .out-label { font-family: var(--mono); font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin: 24px 0 9px; }
 
+        /* No staircase on a phone. It is the widest thing in the hero at 5:1, so
+           on a 390px screen it either goes hairline-thin or it sets the width of
+           everything above it — and a phone is the one place this page was
+           already scrolling. The mark takes the space instead and grows into it.
+           Removed rather than hidden, so it gives its height back. */
+        @media (max-width: 640px) {
+            .steps { display: none; }
+            .hero-mark .mark { height: clamp(44px, 12vw, 74px); }
+        }
+        /* Short screens, any width. Russian and Portuguese both run about a line
+           longer than English here, which is enough to push a 1366×768 laptop
+           over by itself — so the trim is keyed to the height that is short
+           rather than to the language that is long. Font size only: narrowing
+           max-width would wrap the lede to MORE lines and make it taller. */
+        @media (max-height: 780px) {
+            .lede { font-size: 0.94rem; max-width: 720px; }
+            .terminal { padding: 1rem 1.2rem; }
+        }
+        /* 1024×600 is the floor this page is measured against — a netbook, a
+           VM console, a projector. Everything above still fits there on the
+           calc alone; these are the last few rows, and they come out of the
+           decoration and the gaps rather than out of anything that says
+           something. The staircase goes first: it is the only element on the
+           page carrying no information at all. */
+        @media (max-height: 660px) {
+            .steps { display: none; }
+            .hero-mark .mark { height: clamp(26px, 4.6vh, 34px); }
+            .hero-mark { margin-bottom: 10px; }
+            .hero h1 { margin-bottom: 9px; }
+            .lede { font-size: 0.84rem; line-height: 1.48; margin-bottom: 12px; }
+            .platform { margin-bottom: 8px; }
+            .os-btn { padding: 8px 18px; }
+            .os-content { margin-top: 12px; }
+            .terminal { padding: 0.8rem 1.05rem; }
+            .note { margin-top: 7px; }
+            .chips { margin-top: 11px; }
+            .foot-note { font-size: 0.62rem; line-height: 1.5; margin-top: 8px; }
+        }
         @media (max-width: 600px) {
-            .hero { padding: 44px 0 38px; }
+            .os-btn { min-width: 112px; padding: 9px 14px; gap: 0; }
+            .os-btn b { font-size: 0.95rem; }
+            .os-picker { gap: 8px; }
+            .lede { font-size: 0.88rem; }
             .terminal { padding: 1.1rem 1rem; }
             .term-copy { top: 6px; right: 6px; }
+            .chips { gap: 6px; }
+            .chip { padding: 6px 12px; font-size: 0.66rem; }
             .build-grid { grid-template-columns: 1fr; }
         }
     </style>
@@ -201,46 +362,105 @@
 <script src="carino-lang.js" defer></script>
 <script src="i18n.js" defer></script>
 
+<!-- ── Hero: the whole page ──────────────────────────────────────────
+     The mark, the argument, the platform picker, the command, and four chips
+     that open the rest as dialogs. Nothing has to be scrolled past to reach the
+     one line this site exists to hand over. -->
 <header class="hero">
     <div class="container">
-        <div class="kicker" data-i18n>Carino Systems · Universal OS Automation</div>
-        <h1>Setup</h1>
-        <p id="txt-tagline" data-i18n>One command turns a fresh install into a usable machine. Linux, Windows and macOS.</p>
+        <!-- The mark sits above the trace, which reads as its underline. Both
+             are aria-hidden: the navbar already says "Carino Setup" in text, and
+             a logo announced twice is noise. -->
+        <div class="hero-mark" aria-hidden="true">
+            <!-- The Carino mark, inline rather than as a file: logo.webp is a
+                 50×50 raster that exists to be a favicon and goes soft the
+                 moment it is drawn larger than that, and an inline path costs
+                 no request at all. Same geometry the rest of the fleet uses. -->
+            <svg class="mark" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+                <path d="M 81.07 25.82 A 34.81 34.81 0 1 0 81.07 74.18" fill="none" stroke="var(--accent)" stroke-width="16.38" stroke-linecap="butt"/>
+            </svg>
+            <svg class="steps" viewBox="0 0 200 40" preserveAspectRatio="xMidYMid meet">
+                <polyline class="trace" pathLength="100" points="0,34 46,34 46,25 88,25 88,16 130,16 130,7 200,7" />
+                <polyline class="pulse" pathLength="100" points="0,34 46,34 46,25 88,25 88,16 130,16 130,7 200,7" />
+            </svg>
+        </div>
+        <h1><span data-i18n>Just reinstalled the whole machine?</span><br><span class="gold" data-i18n>Don't lose the afternoon to it.</span></h1>
+        <p class="lede">
+            <strong>Carino Setup</strong>
+            <span data-i18n>is one command. It reads the machine it is running on — operating system, distribution family, hardware — then installs the drivers, codecs and repositories that match it, and the software for whatever the machine is actually for: 15 purpose profiles from Gaming to Medical Imaging.</span>
+            <span data-i18n>Linux, Windows and macOS, with nothing to install first. It refuses the distributions it cannot do honestly and prints the reason, and a dry run shows you every privileged command instead of running it.</span>
+        </p>
+
+        <!-- Above the buttons, so it reads as their label rather than as a
+             footnote. Written by script: the detected platform cannot come from
+             markup, so this line is re-rendered on carino:langchange too. -->
+        <p class="platform" id="platform"><span data-i18n>Pick the machine you are setting up.</span></p>
+
+        <div class="os-picker" role="tablist" aria-label="Operating system">
+            <button type="button" class="os-btn active" role="tab" id="tab-linux" data-os="linux" aria-controls="linux-section" aria-selected="true"><span class="rec" data-i18n>detected</span><b>🐧 Linux</b><span class="fmt">Fedora · Debian · Arch</span></button>
+            <button type="button" class="os-btn" role="tab" id="tab-windows" data-os="windows" aria-controls="windows-section" aria-selected="false"><span class="rec" data-i18n>detected</span><b>🪟 Windows</b><span class="fmt">10 · 11</span></button>
+            <button type="button" class="os-btn" role="tab" id="tab-mac" data-os="mac" aria-controls="mac-section" aria-selected="false"><span class="rec" data-i18n>detected</span><b> macOS</b><span class="fmt">Apple Silicon · Intel</span></button>
+        </div>
+
+        <section id="linux-section" class="os-content" role="tabpanel" aria-labelledby="tab-linux">
+            <div class="terminal-wrapper">
+                <div class="terminal"><code id="linux-cmd"><span class="prompt">$</span> <span class="cmd">bash &lt;(curl -s https://setup.carino.systems/setup.sh)</span></code></div>
+                <button type="button" class="copy-btn term-copy" data-copy="linux-cmd" aria-label="Copy the Linux command"><span data-i18n>Copy</span></button>
+            </div>
+            <p class="note"><b>Fedora</b> <span data-i18n>is what it is built and tested on, including the atomic variants. Debian, Ubuntu, Arch, RHEL, CentOS and their derivatives are supported too.</span></p>
+        </section>
+
+        <section id="windows-section" class="os-content" role="tabpanel" aria-labelledby="tab-windows" hidden>
+            <div class="terminal-wrapper">
+                <div class="terminal"><code id="win-cmd"><span class="prompt">PS&gt;</span> <span class="cmd">iwr -useb https://setup.carino.systems/setup.ps1 | iex</span></code></div>
+                <button type="button" class="copy-btn term-copy" data-copy="win-cmd" aria-label="Copy the Windows command"><span data-i18n>Copy</span></button>
+            </div>
+            <p class="note"><b data-i18n>Run Terminal as Administrator</b> <span data-i18n>— the script stops without it. It detects your build, applies the Windows 10 or 11 tweaks, then asks which profile to install and installs it with winget.</span></p>
+        </section>
+
+        <section id="mac-section" class="os-content" role="tabpanel" aria-labelledby="tab-mac" hidden>
+            <div class="terminal-wrapper">
+                <div class="terminal"><code id="mac-cmd"><span class="prompt">$</span> <span class="cmd">bash &lt;(curl -s https://setup.carino.systems/macos.sh)</span></code></div>
+                <button type="button" class="copy-btn term-copy" data-copy="mac-cmd" aria-label="Copy the macOS command"><span data-i18n>Copy</span></button>
+            </div>
+            <p class="note" data-i18n>Installs Homebrew if missing, then a Basic, Gaming, Corporate or FOSS profile. Apple Silicon and Intel.</p>
+        </section>
+
+        <!-- What used to be four sections below the fold. They are dialogs now,
+             opened from here, so the page is one screen and nothing has to be
+             scrolled past to reach the command. The content did not go anywhere:
+             a dialog is markup, not a fetch. -->
+        <nav class="chips" aria-label="More about Carino Setup">
+            <button class="chip primary" type="button" data-sheet="builderDialog" data-i18n>Build a plan</button>
+            <button class="chip" type="button" data-sheet="whatDialog" data-i18n>What it does (and refuses)</button>
+            <button class="chip" type="button" data-sheet="distroDialog" data-i18n>Every distribution it knows</button>
+            <button class="chip" type="button" data-sheet="argsDialog" data-i18n>Available Arguments</button>
+        </nav>
+
+        <!-- The last line before somebody pastes a curl into a root shell. It
+             is the one claim on this page a visitor can check for themselves,
+             so it links to the file rather than asking to be believed. -->
+        <p class="foot-note">
+            <span data-i18n>This page runs entirely in your browser and sends nothing anywhere. The script is one readable file:</span>
+            <a href="https://github.com/MiguelCarino/SimpleSetup/blob/main/setup.sh" target="_blank" rel="noopener">setup.sh</a> ·
+            <a href="https://github.com/MiguelCarino/SimpleSetup/blob/main/setup.ps1" target="_blank" rel="noopener">setup.ps1</a> ·
+            <a href="https://github.com/MiguelCarino/SimpleSetup/blob/main/macos.sh" target="_blank" rel="noopener">macos.sh</a>
+        </p>
     </div>
 </header>
 
-<main class="container">
-    <div class="os-picker" role="tablist" aria-label="Operating system">
-        <button type="button" class="os-btn active" role="tab" id="tab-linux" data-os="linux" aria-controls="linux-section" aria-selected="true"><b>🐧 Linux</b><span class="fmt">Fedora · Debian · Arch</span></button>
-        <button type="button" class="os-btn" role="tab" id="tab-windows" data-os="windows" aria-controls="windows-section" aria-selected="false"><b>🪟 Windows</b><span class="fmt">10 · 11</span></button>
-        <button type="button" class="os-btn" role="tab" id="tab-mac" data-os="mac" aria-controls="mac-section" aria-selected="false"><b> macOS</b><span class="fmt">Apple Silicon · Intel</span></button>
+<!-- ── The sheets ────────────────────────────────────────────────────
+     One <dialog> each. The browser supplies the focus trap, Escape, the
+     backdrop and the inert background, so none of that is written here. They
+     scroll inside themselves when they must, which is why the page does not. -->
+
+<dialog class="modal wide" id="builderDialog" aria-labelledby="builderTitle">
+    <div class="modal-head">
+        <h2 class="modal-title" id="builderTitle" data-i18n>Plan Builder</h2>
+        <form method="dialog"><button class="modal-x" aria-label="Close">✕</button></form>
     </div>
-
-    <section id="linux-section" class="tabpane os-content" role="tabpanel" aria-labelledby="tab-linux">
-        <div class="modebar" id="linux-modebar" role="tablist" aria-label="Linux command mode" hidden> <!-- hidden in the markup and unhidden by script, so a visitor without JavaScript is never shown a control that cannot work -->
-            <button type="button" class="modebtn active" role="tab" id="mode-standard" data-mode="standard" aria-controls="linux-standard" aria-selected="true" data-i18n>One Command</button>
-            <button type="button" class="modebtn" role="tab" id="mode-builder" data-mode="builder" aria-controls="builder-mount" aria-selected="false" data-i18n>Plan Builder</button>
-        </div>
-
-        <div id="linux-standard" class="linux-mode" role="tabpanel" aria-labelledby="mode-standard">
-        <div class="terminal-wrapper">
-            <div class="terminal"><code id="linux-cmd"><span class="prompt">$</span> <span class="cmd">bash &lt;(curl -s https://setup.carino.systems/setup.sh)</span></code></div>
-            <button type="button" class="copy-btn term-copy" data-copy="linux-cmd" aria-label="Copy the Linux command"><span data-i18n>Copy</span></button>
-        </div>
-        <p class="note">Built and tested on <b>Fedora</b>, including the atomic variants. Debian, Ubuntu, Arch, RHEL, CentOS and their derivatives are supported too.</p>
-
-        <details class="fold">
-            <summary data-i18n>Every distribution it knows about</summary>
-            <div class="fold-body">
-                <p class="note"><b>Fedora family</b> — Fedora, Nobara, Risi, Ultramarine, and the atomic variants Silverblue, Kinoite, Bazzite, Bluefin, Aurora and Universal Blue.</p>
-                <p class="note"><b>Debian family</b> — Debian, Ubuntu and its flavours, Mint, LMDE, Pop!_OS, Zorin, elementary, Kali, Parrot, Devuan, Raspberry Pi OS, MX, Deepin, KDE neon and more.</p>
-                <p class="note"><b>Enterprise</b> — RHEL, CentOS Stream and the rebuilds: Rocky, AlmaLinux, Oracle Linux and others. <b>Arch family</b> — Arch, Manjaro, EndeavourOS, Garuda, CachyOS, ArcoLinux, RebornOS, Archcraft. <b>Amazon Linux</b>, headless only. <b>openSUSE</b> is still under test.</p>
-                <p class="note">Refused by design, each with a reason the script prints: SteamOS, Artix, Parabola, Gentoo, Slackware, NixOS, Guix, Alpine, Void, Clear Linux, Solus, Qubes, Mageia, OpenMandriva, Chimera and the transactional openSUSE variants.</p>
-            </div>
-        </details>
-        </div>
-
-        <section id="builder-mount" class="linux-mode" role="tabpanel" aria-labelledby="mode-builder" hidden>
+    <div class="modal-body">
+        <section id="builder-mount">
             <p class="note" data-i18n>Choose what you want and this page writes the command. Nothing runs here and nothing leaves your browser.</p>
 
             <div class="build-grid">
@@ -281,43 +501,59 @@
                 <p class="note" id="b-share"></p>
             </div>
         </section>
-    </section>
+    </div>
+</dialog>
 
-    <section id="windows-section" class="tabpane os-content" role="tabpanel" aria-labelledby="tab-windows" hidden>
-        <div class="terminal-wrapper">
-            <div class="terminal"><code id="win-cmd"><span class="prompt">PS&gt;</span> <span class="cmd">iwr -useb https://setup.carino.systems/setup.ps1 | iex</span></code></div>
-            <button type="button" class="copy-btn term-copy" data-copy="win-cmd" aria-label="Copy the Windows command"><span data-i18n>Copy</span></button>
-        </div>
-        <p class="note"><b data-i18n>Run Terminal as Administrator</b> <span data-i18n>— the script stops without it. It detects your build, applies the Windows 10 or 11 tweaks, then asks which profile to install and installs it with winget.</span></p>
-    </section>
-
-    <section id="mac-section" class="tabpane os-content" role="tabpanel" aria-labelledby="tab-mac" hidden>
-        <div class="terminal-wrapper">
-            <div class="terminal"><code id="mac-cmd"><span class="prompt">$</span> <span class="cmd">bash &lt;(curl -s https://setup.carino.systems/macos.sh)</span></code></div>
-            <button type="button" class="copy-btn term-copy" data-copy="mac-cmd" aria-label="Copy the macOS command"><span data-i18n>Copy</span></button>
-        </div>
-        <p class="note" data-i18n>Installs Homebrew if missing, then a Basic, Gaming, Corporate or FOSS profile. Apple Silicon and Intel.</p>
-    </section>
-
-    <div class="card-grid">
-        <div class="card">
-            <h3 class="c-title" data-i18n>Smart Detection</h3>
-            <p class="c-desc" data-i18n>Identifies your OS, distribution and hardware, then installs what matches.</p>
-        </div>
-        <div class="card">
-            <h3 class="c-title" data-i18n>Eight Languages</h3>
-            <p class="c-desc" data-i18n>Installer menus in English, Japanese, Russian, Spanish, Finnish, Chinese, Korean and Hebrew.</p>
-        </div>
-        <div class="card">
-            <h3 class="c-title" data-i18n>Purpose-Built</h3>
-            <p class="c-desc" data-i18n>15 profiles — Gaming, Corporate, Development, Design, Cybersecurity, Medical Imaging and more.</p>
+<dialog class="modal wide" id="whatDialog" aria-labelledby="whatTitle">
+    <div class="modal-head">
+        <h2 class="modal-title" id="whatTitle" data-i18n>What it does (and refuses)</h2>
+        <form method="dialog"><button class="modal-x" aria-label="Close">✕</button></form>
+    </div>
+    <div class="modal-body">
+        <div class="contrast">
+            <div class="isbox">
+                <h3 data-i18n>What it does</h3>
+                <ul>
+                    <li><b data-i18n>Reads the machine before it touches it.</b> <span data-i18n>Operating system, distribution family and graphics hardware, then it installs what matches instead of a fixed list.</span></li>
+                    <li><b data-i18n>15 purpose profiles.</b> <span data-i18n>Gaming, Corporate, Development, Design, Cybersecurity, Forensics, Scientific, Robotics, Medical Imaging and more — native packages and the Flatpaks that belong with them.</span></li>
+                    <li><b data-i18n>Twelve desktops, where the family has them.</b> <span data-i18n>GNOME through Niri. Where a family has no package list for one, the builder names it and says why rather than letting the install fail halfway.</span></li>
+                    <li><b data-i18n>Rehearses on request.</b> <span data-i18n>A dry run prints every privileged command it would run and installs nothing.</span></li>
+                    <li><b data-i18n>Installer menus in eight languages.</b> <span data-i18n>English, Japanese, Russian, Spanish, Finnish, Chinese, Korean and Hebrew.</span></li>
+                </ul>
+            </div>
+            <div class="notbox">
+                <h3 data-i18n>What it will not do</h3>
+                <ul>
+                    <li><b data-i18n>It is not a configuration manager.</b> <span data-i18n>It installs once. It does not converge a machine to a described state, it does not run again on a schedule, and running it twice does not undo the first run. Ansible and Salt still have a job.</span></li>
+                    <li><b data-i18n>It is not sandboxed.</b> <span data-i18n>It runs privileged commands and adds third-party repositories — RPM Fusion, EPEL, Remi, Flathub, LibreWolf, AnyDesk. Read the dry run before you run the real one.</span></li>
+                    <li><b data-i18n>It is not universal, and it says so.</b> <span data-i18n>A list of distributions is refused by design, each with the reason printed. Source-based, musl, non-systemd and declarative systems are not near misses; supporting them would be a different tool.</span></li>
+                    <li><b data-i18n>It is not a backup.</b> <span data-i18n>Run it on a fresh install, not on a machine carrying work you have not copied off somewhere else.</span></li>
+                </ul>
+            </div>
         </div>
     </div>
+</dialog>
 
-    <section class="args-section">
-        <details class="fold">
-            <summary id="txt-args-title" data-i18n>Available Arguments</summary>
-            <div class="fold-body">
+<dialog class="modal" id="distroDialog" aria-labelledby="distroTitle">
+    <div class="modal-head">
+        <h2 class="modal-title" id="distroTitle" data-i18n>Every distribution it knows</h2>
+        <form method="dialog"><button class="modal-x" aria-label="Close">✕</button></form>
+    </div>
+    <div class="modal-body">
+        <p class="note"><b>Fedora family</b> — Fedora, Nobara, Risi, Ultramarine, and the atomic variants Silverblue, Kinoite, Bazzite, Bluefin, Aurora and Universal Blue.</p>
+        <p class="note"><b>Debian family</b> — Debian, Ubuntu and its flavours, Mint, LMDE, Pop!_OS, Zorin, elementary, Kali, Parrot, Devuan, Raspberry Pi OS, MX, Deepin, KDE neon and more.</p>
+        <p class="note"><b>Enterprise</b> — RHEL, CentOS Stream and the rebuilds: Rocky, AlmaLinux, Oracle Linux and others. <b>Arch family</b> — Arch, Manjaro, EndeavourOS, Garuda, CachyOS, ArcoLinux, RebornOS, Archcraft. <b>Amazon Linux</b>, headless only. <b>openSUSE</b> is still under test.</p>
+        <p class="note"><span data-i18n>Refused by design, each with a reason the script prints:</span> SteamOS, Artix, Parabola, Gentoo, Slackware, NixOS, Guix, Alpine, Void, Clear Linux, Solus, Qubes, Mageia, OpenMandriva, Chimera <span data-i18n>and the transactional openSUSE variants.</span></p>
+        <p class="note"><span data-i18n>The Plan Builder prints each of those reasons in full — pick the distribution there to read the one you came for.</span></p>
+    </div>
+</dialog>
+
+<dialog class="modal wide" id="argsDialog" aria-labelledby="argsTitle">
+    <div class="modal-head">
+        <h2 class="modal-title" id="argsTitle" data-i18n>Available Arguments</h2>
+        <form method="dialog"><button class="modal-x" aria-label="Close">✕</button></form>
+    </div>
+    <div class="modal-body">
         <div class="table-wrap">
             <table class="data">
                 <thead>
@@ -343,10 +579,8 @@
                 </tbody>
             </table>
         </div>
-            </div>
-        </details>
-    </section>
-</main>
+    </div>
+</dialog>
 <!-- No footer: the header already carries the GitHub button, and it points at
      this repository (carino-navbar.js resolves it from the page). -->
 
@@ -374,6 +608,55 @@
         const hit = document.querySelector('.os-btn[data-os="' + detectedOS + '"]');
         if (hit) { hit.classList.add('detected'); hit.click(); } /* after the listener is attached, otherwise the click fires into nothing; clicking rather than setting classes keeps one switching path so panels and aria stay in step */
     }
+
+    /* The line above the picker. It is the one piece of translated text on this
+       page that script writes rather than markup, so it has to be re-rendered
+       on carino:langchange as well — i18n.js only re-applies [data-i18n]
+       elements, and the platform name cannot come from markup. */
+    const OSNAME = { linux: 'Linux', windows: 'Windows', mac: 'macOS' };
+    function renderPlatform() {
+        const el = document.getElementById('platform');
+        if (!el) return;
+        if (!detectedOS) { el.textContent = T('Pick the machine you are setting up.'); return; }
+        const parts = T('Detected {os} — pick another if that is not the machine you are setting up.').split('{os}');
+        el.textContent = '';
+        el.appendChild(document.createTextNode(parts[0]));
+        const strong = document.createElement('strong');
+        strong.textContent = OSNAME[detectedOS];
+        el.appendChild(strong);
+        el.appendChild(document.createTextNode(parts.length > 1 ? parts[1] : ''));
+    }
+    window.addEventListener('carino:langchange', renderPlatform);
+    document.addEventListener('DOMContentLoaded', renderPlatform); /* i18n.js is deferred, so T() only answers in the reader's language from here on */
+
+    /* ---- sheets ----
+       Every chip opens a <dialog> the same way, so the wiring is one delegated
+       listener rather than one per sheet. <dialog> brings the focus trap,
+       Escape, the backdrop and an inert background with it; backdrop dismissal
+       is the only part it does not, and a click anywhere in the dialog's box,
+       padding included, reports the dialog itself as the target, so the hit has
+       to be tested against the box. */
+    function openSheet(id) {
+        const dlg = document.getElementById(id);
+        if (!dlg) return false;
+        if (typeof dlg.showModal === 'function') { dlg.showModal(); return true; }
+        /* No <dialog> support: show it in place rather than leave a chip that
+           does nothing. Everything on this page lives in one of these. */
+        dlg.setAttribute('open', '');
+        dlg.scrollIntoView({ block: 'start' });
+        return true;
+    }
+    document.querySelectorAll('[data-sheet]').forEach(btn =>
+        btn.addEventListener('click', () => openSheet(btn.dataset.sheet)));
+    document.querySelectorAll('dialog.modal').forEach(dlg => {
+        dlg.addEventListener('click', e => {
+            if (e.target !== dlg) return;
+            const r = dlg.getBoundingClientRect();
+            const inside = e.clientX >= r.left && e.clientX <= r.right &&
+                           e.clientY >= r.top && e.clientY <= r.bottom;
+            if (!inside) dlg.close();
+        });
+    });
 
     document.querySelectorAll('.copy-btn[data-copy]').forEach(btn => btn.addEventListener('click', () => {
         const cmd = document.getElementById(btn.dataset.copy).querySelector('.cmd').textContent; /* .cmd only, so the shell prompt never lands in the clipboard */
@@ -680,17 +963,14 @@
     }
 
     Object.keys(B).forEach(k => B[k].addEventListener('change', build));
-    document.querySelectorAll('.modebtn').forEach(btn => btn.addEventListener('click', () => {
-        document.querySelectorAll('.linux-mode').forEach(m => { m.hidden = m.id !== (btn.dataset.mode === 'builder' ? 'builder-mount' : 'linux-standard'); });
-        document.querySelectorAll('.modebtn').forEach(m => { m.classList.remove('active'); m.setAttribute('aria-selected', 'false'); });
-        btn.classList.add('active');
-        btn.setAttribute('aria-selected', 'true');
-    }));
 
-    el('linux-modebar').hidden = false; /* the builder only becomes reachable once the script that drives it has run */
     const deepLinked = readHash();
     build();
-    if (deepLinked) { el('tab-linux').click(); el('mode-builder').click(); } /* a shared plan link lands a Windows or macOS visitor on the Linux tab with the builder already open, rather than on a pane that never mentions it */
+    /* A shared plan link opens the builder with the plan already in it, and
+       lands a Windows or macOS visitor on the Linux tab behind it rather than
+       on a pane that never mentions any of this. CARINO_SETUP_PLAN is read by
+       setup.sh alone, so a plan is a Linux thing by construction. */
+    if (deepLinked) { el('tab-linux').click(); openSheet('builderDialog'); }
 </script>
 
 </body>
