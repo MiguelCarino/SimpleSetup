@@ -1,0 +1,39 @@
+# ~/.config/mako/sections -- mako's criteria sections, included at the end of
+# ~/.config/mako/config (that file explains why they live here).
+#
+# Each section matches a subset of notifications and overrides only the
+# options it names; everything else falls through to the config's defaults.
+# Order matters -- later matching sections win.
+# ---------------------------------------------------------------------------
+
+[grouped]
+format=<span color="#00F0FF"><b>%s</b></span>\n%b\n<small>(%g more)</small>
+
+# Critical notifications must not disappear on their own. timeout=0 means they
+# stay until dismissed, which is the whole point of the urgency level -- a
+# battery-empty or disk-full warning that times out after five seconds while
+# you are looking at another screen has not warned you of anything.
+[urgency=critical]
+border-color=#FF2A6D
+format=<span color="#FF2A6D"><b>%s</b></span>\n%b
+text-color=#FF6B95
+border-size=2
+default-timeout=0
+
+[urgency=low]
+text-color=#96D7E68C
+default-timeout=3000
+on-notify=none
+
+# Do-not-disturb. Toggled with ALT+SHIFT+D (see ~/.config/hypr/lua/binds.lua); the binding
+# calls `makoctl mode -t do-not-disturb`. invisible=1 suppresses the popup but
+# still records it in history, so nothing is actually lost -- `makoctl restore`
+# brings back whatever arrived while you were quiet.
+[mode=do-not-disturb]
+invisible=1
+on-notify=none
+
+# ...except things that are genuinely urgent, which stay visible even in DND.
+# For DND to mean absolutely silent, set invisible=1 here too.
+[mode=do-not-disturb urgency=critical]
+invisible=0

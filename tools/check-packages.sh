@@ -1,138 +1,114 @@
-#!/bin/bash
-# Checks the package names in setup.sh against the distributions that have to provide them.
-# Usage: tools/check-packages.sh [coverage|flathub|arch|fedora|debian|ubuntu|opensuse|el|cheap|containers|all]   (default: all)
-# Package names rot silently. Nothing in the script notices when a name is renamed upstream,
-# and a single unknown name aborts the whole transaction for every user on that distribution.
+#!/usr/bin/env bash
+# Checks that the package names in setup.sh (section 4, arrays <group>_<family>) still resolve.
+# Usage: tools/check-packages.sh [coverage|flathub|arch|fedora|debian|ubuntu|opensuse|el|alpine|cheap|containers|all]
+#   cheap      = coverage + flathub + arch (HTTP only)      containers = fedora debian ubuntu opensuse el alpine
+# A single unknown name used to abort a whole transaction; setup.sh now skips unknown names, so a
+# name that rots silently drops a feature instead. This script is how that is noticed.
 cd "$(dirname "$0")/.." || exit 1
-RED="\e[31m"; GREEN="\e[32m"; YELLOW="\e[33m"; BLUE="\e[94m"; ENDCOLOR="\e[0m"
-carinoLoad () # the same three rung bootstrap setup.sh uses: a copy beside the script, then the deployed copy, then nothing
-{
-    local lib="$1" dir="${BASH_SOURCE[0]%/*}"
-    [[ "$dir" == "${BASH_SOURCE[0]}" ]] && dir="." # %/* is suffix removal, not dirname: with no slash in the path it returns the filename unchanged
-    [[ -f "$dir/../$lib" && -r "$dir/../$lib" ]] && { . "$dir/../$lib"; return 0; } # this file lives in tools/, the libraries live at the repository root
-    command -v curl >/dev/null 2>&1 || return 1
-    local src; src=$(curl -fsSL --max-time 10 "https://setup.carino.systems/$lib" 2>/dev/null) || return 1
-    [[ -n "$src" ]] || return 1
-    { . /dev/stdin <<<"$src"; } 2>/dev/null || return 1
-    return 0
-}
-carinoLoad carino-term.sh && declare -F carino_rule >/dev/null 2>&1 || carino_rule() { printf '%s\n' "-------------------------------------"; } # only carino_rule is shimmed rather than the full API freeze setup.sh carries, because this file calls exactly one primitive and copying twenty five lines of shim to reach it would be the larger thing to review
-MISSING=0; CHECKED=0; UNPROVEN=0; UNCLAIMED=0
-gone()  { MISSING=$((MISSING+1)); echo -e "  ${RED}MISSING${ENDCOLOR}   $1"; }
-here()  { CHECKED=$((CHECKED+1)); }
-skip()  { UNPROVEN=$((UNPROVEN+1)); echo -e "  ${YELLOW}unproven${ENDCOLOR}  $1"; } # an unproven name is neither a pass nor a failure, it is a name nothing authoritative was asked about
-orphan(){ UNCLAIMED=$((UNCLAIMED+1)); echo -e "  ${RED}UNWATCHED${ENDCOLOR} $1"; }
-WHAT="${1:-all}"
-SENTINEL="carino-setup-sentinel-not-a-package" # asked for alongside the real names in every container leg, a leg that does not report it as missing is broken rather than clean
-CRT=""; command -v podman >/dev/null 2>&1 && CRT=podman
-[[ -z "$CRT" ]] && command -v docker >/dev/null 2>&1 && CRT=docker
+WHAT=${1:-all}
+MISSING=0 CHECKED=0 UNPROVEN=0
+gone() { MISSING=$((MISSING + 1)); printf '  MISSING   %s\n' "$1"; }
+here() { CHECKED=$((CHECKED + 1)); }
+skip() { UNPROVEN=$((UNPROVEN + 1)); printf '  unproven  %s\n' "$1"; }
+want() { [[ $WHAT == all || " $2 " == *" $WHAT "* || $WHAT == "$1" ]]; }   # want <leg> "<groups that include it>"
+# names known to be absent from the release a leg checks; setup.sh skips them there, so they are not failures
+declare -A EXPECTED=([ubuntu]="fastfetch")
+SENTINEL=carino-setup-sentinel-not-a-package   # every container query must report this one missing, or it proved nothing
+CRT=''; have() { command -v "$1" >/dev/null 2>&1; }
+have podman && CRT=podman; [[ -z $CRT ]] && have docker && CRT=docker
 
-names() { grep -hoE "^($1)=.*" setup.sh | cut -d= -f2- | sed 's/#.*$//' | tr -d '"' | tr ' ' '\n' | grep -vE '^\s*$|\*|^@|/|:|^-|\$|,' | sort -u; } # the trailing comment is stripped before the split, otherwise every prose word in it is looked up as a package name; globs, dnf groups, URLs and flags cannot be looked up either
-
-LEGS="flathub arch fedora debian ubuntu opensuse el" # the index every *Packages* variable in setup.sh has to map onto, the coverage leg below fails the run when one maps onto none
-legVars ()
-{
-    case "$1" in # written out rather than derived, a leg claims a variable only if the distribution it queries is the one that actually reads that variable
-        flathub)  echo '' ;; # reads the whole file for application identifiers, it claims no shell variable
-        arch)     echo 'arch[a-z0-9]*Packages|[a-zA-Z0-9]+PackagesArch' ;;
-        fedora)   echo 'essentialPackages|basicUserPackages|basicSystemPackages|basicDesktopEnvironmentPackages|supportPackages|developmentPackages|gamingPackages|multimediaPackages|virtconPackages|amdPackages|nvidiaPackages|intelPackages|i3RicingPackages|languagePackages|carinoPackages|ciscoPackages|astronomyPackages|compneuroPackages|designPackages|musicPackages|securityPackages|forensicsPackages|scientificPackages|roboticsPackages|imagenologyPackages|fedora[a-z0-9]*Packages|[a-zA-Z0-9]+PackagesRPM' ;;
-        debian)   echo 'essentialPackages|basicUserPackages|basicSystemPackages|supportPackages|developmentPackages|gamingPackages|virtconPackages|amdPackages|intelPackages|i3RicingPackages|serverPackages|astronomyPackages|compneuroPackages|designPackages|musicPackages|securityPackages|forensicsPackages|scientificPackages|roboticsPackages|imagenologyPackages|debian[a-z0-9]*Packages|[a-zA-Z0-9]+PackagesDebian' ;; # nvidiaPackages is absent on purpose, the debian arm replaces it with nvidiaPackagesDebian or nvidiaPackagesUbuntu and never installs the shared RPM shaped value
-        ubuntu)   echo '[a-zA-Z0-9]+PackagesUbuntu' ;;
-        opensuse) echo 'opensuse[a-z0-9]*Packages|[a-zA-Z0-9]+PackagesOpenSUSE' ;;
-        el)       echo 'rhel[a-z0-9]*Packages|centos[a-z0-9]*Packages' ;;
-    esac
+# shellcheck source=/dev/null  # section 4 of setup.sh is plain data: arrays only
+source <(awk '/^# ==== 4\./,/^# ==== 5\./' setup.sh)
+FAMILIES="fedora atomic rhel debian ubuntu arch opensuse solus alpine void gentoo mageia"
+RX="^([a-z0-9_]+)_(${FAMILIES// /|})$"
+arrays() { compgen -A arrayvar | grep -E "$RX"; }
+names() { # names <family> [fallback family]: every checkable name the family installs (URLs, @groups, atoms dropped)
+    local a g; local -A seen=()
+    for a in $(arrays | grep -E "_($1${2:+|$2})$"); do
+        g=${a%_*}
+        [[ $a == *_"${2:-none}" ]] && declare -p "${g}_$1" >/dev/null 2>&1 && continue   # the family's own list wins
+        [[ $a == *_"${2:-none}" && $g == drivers_nvidia?* ]] && continue   # the fallback family's legacy NVIDIA lists are not used
+        local -n l=$a; for n in "${l[@]}"; do seen[$n]=1; done; unset -n l
+    done
+    printf '%s\n' "${!seen[@]}" | grep -vE '/|^@|^-' | sort
 }
-packageVars() { grep -oE '^[a-zA-Z][a-zA-Z0-9_]*Packages[a-zA-Z0-9]*=' setup.sh | tr -d '=' | sort -u; }
-
-image ()
-{
-    case "$1" in # the suite each family's names have to resolve in, overridable so a new stable can be rehearsed before it ships
-        debian)   echo "docker.io/library/debian:${DEBIAN_SUITE:-trixie}" ;;
-        ubuntu)   echo "docker.io/library/ubuntu:${UBUNTU_SUITE:-24.04}" ;;
-        fedora)   echo "docker.io/library/fedora:${FEDORA_RELEASE:-latest}" ;;
-        opensuse) echo "docker.io/opensuse/${OPENSUSE_RELEASE:-tumbleweed}" ;;
-        el)       echo "${EL_IMAGE:-quay.io/centos/centos:stream10}" ;;
-    esac
-}
-inContainer ()
-{
-    local img=$1 inner=$2; shift 2
+inContainer() { # inContainer <image> <script> <names...>: prints the names the image cannot find
+    local img=$1 script=$2; shift 2
     $CRT pull -q "$img" >/dev/null 2>&1 || return 1
-    $CRT run --rm "$img" bash -c "$inner" _ "$@" 2>/dev/null
+    $CRT run --rm "$img" sh -c "$script" _ "$@" 2>/dev/null
 }
-APT='sed -i "s/^Components: main.*/Components: main contrib non-free non-free-firmware/" /etc/apt/sources.list.d/debian.sources 2>/dev/null; apt-get update -qq >/dev/null 2>&1; apt-get install -s -qq "$@" 2>&1 | sed -n "s/^E: Unable to locate package //p; s/^E: Package .\(.*\). has no installation candidate\$/\1/p"' # the authority is the resolver itself, which honours Provides and virtual packages exactly as the real install would; a web page is not an authority, packages.debian.org answers a missing name with two different error pages and the second one used to read as EXISTS. The extra components mirror what nvidiaRepoSetup enables, without them the five nvidiaPackagesDebian names read as missing when they are only hidden
-DNF='dnf -q -y install "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm" "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm" >/dev/null 2>&1; dnf -q install --assumeno "$@" 2>&1 | sed -n "s/^No match for argument: //p"' # RPM Fusion is enabled first because techSetup and nvidiaRepoSetup both enable it, and akmod-nvidia, the freeworld codecs and lpf-spotify-client are in no stock Fedora repository
-EL='dnf -q -y install epel-release >/dev/null 2>&1; dnf -q config-manager --set-enabled crb >/dev/null 2>&1 || dnf -q config-manager setopt crb.enabled=1 >/dev/null 2>&1; dnf install --assumeno "$@" 2>&1 | sed -n "s/^No match for argument: //p"' # rhelRepo and centosRepo both enable CRB and EPEL before installing, so the check has to see the same repositories the user will, and the install is deliberately not quiet because the dnf4 the rebuilds still ship prints its per argument "No match" lines only when it is not
-ZYP='zypper -n install openSUSE-repos-Tumbleweed-NVIDIA >/dev/null 2>&1; zypper -n --gpg-auto-import-keys refresh >/dev/null 2>&1; zypper -n install -D "$@" 2>&1 | sed -n "s/^No provider of .\(.*\). found\..*/\1/p"' # nvidiaRepoSetup installs exactly this package and refreshes, the G06 userspace libraries live in NVIDIA's own repository and read as missing without it; point OPENSUSE_RELEASE at a Leap image and this line needs the Leap spelling of the same package
-
-checkLeg ()
-{
-    local leg=$1 inner=$2 img all miss p
-    img=$(image "$leg")
-    all=$(names "$(legVars "$leg")")
-    [[ -z "$all" ]] && return 0
-    if [[ -z "$CRT" ]]; then
-        for p in $all; do skip "$leg  $p (no podman and no docker, nothing authoritative was asked, treat this leg as unproven)"; done
-        return 0
-    fi
-    miss=$(inContainer "$img" "$inner" $all "$SENTINEL") || { for p in $all; do skip "$leg  $p ($img could not be pulled or run)"; done; return 0; }
-    if ! grep -qxF "$SENTINEL" <<<"$miss"; then for p in $all; do skip "$leg  $p (the query did not even report $SENTINEL as missing, so it proved nothing)"; done; return 0; fi # a query that answers nothing looks exactly like a query that answers "all present", which is the false pass this whole tool exists to stop
-    for p in $all; do
-        if grep -qxF "$p" <<<"$miss"; then gone "$leg  $p (nothing in $img provides it)"; else here; fi
+leg() { # leg <label> <image> <script> <family> [fallback]
+    local label=$1 img=$2 script=$3 miss p; local -a all
+    mapfile -t all < <(names "$4" "${5:-}")
+    printf '\n%s (%s): %d names\n' "$label" "$img" "${#all[@]}"
+    if [[ -z $CRT ]]; then skip "$label: no podman or docker"; return 0; fi
+    miss=$(inContainer "$img" "$script" "${all[@]}" "$SENTINEL") || { skip "$label: $img could not be pulled or run"; return 0; }
+    grep -qxF "$SENTINEL" <<<"$miss" || { skip "$label: the query did not report $SENTINEL missing, so it proved nothing"; return 0; }
+    for p in "${all[@]}"; do
+        if ! grep -qxF -- "$p" <<<"$miss"; then here
+        elif [[ " ${EXPECTED[$label]:-} " == *" $p "* ]]; then printf '  expected  %s  %s (absent in this release)\n' "$label" "$p"; here
+        else gone "$label  $p"; fi
     done
 }
 
-if [[ "$WHAT" == all || "$WHAT" == cheap || "$WHAT" == coverage ]]; then
-    echo -e "\n${BLUE}Coverage: every package list in setup.sh is claimed by a leg${ENDCOLOR}"
-    for v in $(packageVars); do
-        claim=""
-        for leg in $LEGS; do
-            rx=$(legVars "$leg"); [[ -z "$rx" ]] && continue
-            [[ "$v" =~ ^($rx)$ ]] && claim="$claim $leg"
-        done
-        if [[ -z "$claim" ]]; then orphan "$v is claimed by no leg, a rename inside it would ship unnoticed"; else here; fi
+DNF_FEDORA='dnf -y -q install dnf5-plugins "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm" "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm" >/dev/null 2>&1
+dnf -y -q copr enable lionheartp/Hyprland >/dev/null 2>&1; dnf -y -q config-manager setopt fedora-cisco-openh264.enabled=1 >/dev/null 2>&1
+dnf install --assumeno "$@" 2>&1 | sed -n "s/^No match for argument: //p"'
+DNF_EL='dnf -y -q install epel-release dnf-plugins-core almalinux-release-nvidia-driver >/dev/null 2>&1; dnf -q config-manager --set-enabled crb >/dev/null 2>&1
+dnf -y -q install "https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm" >/dev/null 2>&1
+dnf install --assumeno "$@" 2>&1 | sed -n "s/^No match for argument: //p"'
+APT_AVAIL='for p; do apt-cache show "$p" >/dev/null 2>&1 || apt-cache showpkg "$p" 2>/dev/null | awk "/^Reverse Provides:/{f=1;next} f&&NF{x=1} END{exit !x}" || echo "$p"; done'
+APT_DEBIAN='sed -i "s/^Components: main.*/Components: main contrib non-free non-free-firmware/" /etc/apt/sources.list.d/debian.sources
+printf "Types: deb\nURIs: http://deb.debian.org/debian\nSuites: trixie-backports\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.pgp\n" > /etc/apt/sources.list.d/backports.sources
+apt-get update -qq >/dev/null 2>&1; '$APT_AVAIL
+APT_UBUNTU='sed -i "s/^Components: .*/Components: main restricted universe multiverse/" /etc/apt/sources.list.d/ubuntu.sources
+echo "deb [trusted=yes] http://ppa.launchpadcontent.net/cppiber/hyprland/ubuntu noble main" > /etc/apt/sources.list.d/hyprland-ppa.list
+apt-get update -qq >/dev/null 2>&1; '$APT_AVAIL
+ZYPPER='zypper -n -q install openSUSE-repos-Tumbleweed-NVIDIA >/dev/null 2>&1
+zypper -n -q ar -cfp 90 https://ftp.gwdg.de/pub/linux/misc/packman/suse/openSUSE_Tumbleweed/ packman >/dev/null 2>&1
+zypper -n -q --gpg-auto-import-keys refresh >/dev/null 2>&1
+for p; do zypper -n -q --no-refresh search -x --provides "$p" >/dev/null 2>&1 || echo "$p"; done'
+APK='apk update -q >/dev/null 2>&1; for p; do apk search -e "$p" 2>/dev/null | grep -q . || echo "$p"; done'
+
+if want coverage "cheap"; then
+    printf '\nCoverage: every array in section 4 names a known family\n'
+    for a in $(compgen -A arrayvar | grep -E '_[a-z]+$'); do
+        [[ $a =~ $RX || $a == flatpak_* || $a == FALLBACK || $a == DONE_* ]] && { here; continue; }
+        grep -qE "^$a=\(" setup.sh && gone "coverage  $a is not <group>_<family> or flatpak_<group>"
+    done
+    for f in atomic solus void gentoo mageia; do
+        n=$(names "$f" | grep -c .)
+        (( n )) && skip "$f: $n names have no automated leg here (no official container or index to ask)"
     done
 fi
 
-if [[ "$WHAT" == all || "$WHAT" == cheap || "$WHAT" == flathub ]]; then
-    echo -e "\n${BLUE}Flathub application identifiers${ENDCOLOR}"
-    for id in $(sed 's/#.*$//' setup.sh | grep -ohE '\b[a-z][a-z0-9_]*(\.[A-Za-z][A-Za-z0-9_-]*){2,}\b' | grep -vE '\.(sh|ps1|com|org|net|io|us|systems|conf|repo|list|asc|json|target|service|rpm|deb|gz|bz2|zst|d)$' | grep -vE '^org\.gnome\.desktop' | sort -u); do # same comment stripping as names() above, the flathub leg reads the whole file rather than a variable
-        code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "https://flathub.org/api/v2/appstream/$id")
-        if [[ "$code" == 200 ]]; then here; else gone "flathub  $id (HTTP $code)"; fi
+if want flathub "cheap"; then
+    printf '\nFlathub application ids\n'
+    for id in $(for a in $(compgen -A arrayvar | grep '^flatpak_'); do declare -n l=$a; printf '%s\n' "${l[@]}"; unset -n l; done | sort -u); do
+        code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://flathub.org/api/v2/appstream/$id")
+        if [[ $code == 200 ]]; then here; else gone "flathub  $id (HTTP $code)"; fi
     done
 fi
 
-if [[ "$WHAT" == all || "$WHAT" == cheap || "$WHAT" == arch ]]; then
-    echo -e "\n${BLUE}Arch official repositories${ENDCOLOR}"
-    for p in $(names "$(legVars arch)"); do
-        n=$(curl -s --max-time 15 "https://archlinux.org/packages/search/json/?name=$p" | python3 -c 'import sys,json
+if want arch "cheap"; then
+    printf '\nArch official repositories (archlinux.org)\n'
+    for p in $(names arch); do
+        n=$(curl -s --max-time 20 "https://archlinux.org/packages/search/json/?name=$p" | python3 -c 'import sys,json
 try: print(len(json.load(sys.stdin)["results"]))
 except Exception: print(-1)')
-        if [[ "$n" -gt 0 ]]; then here
-        elif [[ "$n" -lt 0 ]]; then skip "arch      $p (lookup failed)"
-        elif [[ "$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "https://archlinux.org/groups/x86_64/$p/")" == 200 ]]; then here # xfce4 and xfce4-goodies are groups rather than packages, pacman takes both so both count as present
-        else gone "arch      $p"; fi
+        if (( n > 0 )); then here
+        elif (( n < 0 )); then skip "arch  $p (lookup failed)"
+        elif [[ $(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://archlinux.org/groups/x86_64/$p/") == 200 ]]; then here   # groups (xfce4, plasma-meta's members)
+        else gone "arch  $p"; fi
     done
 fi
 
-if [[ "$WHAT" == all || "$WHAT" == containers || "$WHAT" == fedora ]]; then
-    echo -e "\n${BLUE}Fedora $(image fedora)${ENDCOLOR}"; checkLeg fedora "$DNF"
-fi
-if [[ "$WHAT" == all || "$WHAT" == containers || "$WHAT" == debian ]]; then
-    echo -e "\n${BLUE}Debian $(image debian)${ENDCOLOR}"; checkLeg debian "$APT"
-fi
-if [[ "$WHAT" == all || "$WHAT" == containers || "$WHAT" == ubuntu ]]; then
-    echo -e "\n${BLUE}Ubuntu $(image ubuntu)${ENDCOLOR}"; checkLeg ubuntu "$APT"
-fi
-if [[ "$WHAT" == all || "$WHAT" == containers || "$WHAT" == opensuse ]]; then
-    echo -e "\n${BLUE}openSUSE $(image opensuse)${ENDCOLOR}"; checkLeg opensuse "$ZYP"
-fi
-if [[ "$WHAT" == all || "$WHAT" == containers || "$WHAT" == el ]]; then
-    echo -e "\n${BLUE}Enterprise Linux $(image el)${ENDCOLOR}"; checkLeg el "$EL"
-fi
+want fedora   "containers" && leg fedora   "docker.io/library/fedora:${FEDORA_RELEASE:-44}"      "$DNF_FEDORA" fedora
+want debian   "containers" && leg debian   "docker.io/library/debian:${DEBIAN_SUITE:-trixie}"    "$APT_DEBIAN" debian
+want ubuntu   "containers" && leg ubuntu   "docker.io/library/ubuntu:${UBUNTU_SUITE:-24.04}"     "$APT_UBUNTU" ubuntu debian
+want opensuse "containers" && leg opensuse "docker.io/opensuse/${OPENSUSE_RELEASE:-tumbleweed}"  "$ZYPPER" opensuse
+want el       "containers" && leg el       "${EL_IMAGE:-docker.io/library/almalinux:10}"         "$DNF_EL" rhel
+want alpine   "containers" && leg alpine   "docker.io/library/alpine:${ALPINE_RELEASE:-latest}"  "$APK" alpine
 
-printf '\n'; carino_rule
-[[ "$UNPROVEN" -gt 0 ]] && echo -e "${YELLOW}$UNPROVEN name(s) unproven: the leg above answered with no authority, so it proved nothing and must not be read as a pass.${ENDCOLOR}"
-[[ "$UNCLAIMED" -gt 0 ]] && echo -e "${RED}$UNCLAIMED package list(s) are watched by no leg. Add them to legVars or the next rename in them ships silently.${ENDCOLOR}"
-if [[ "$MISSING" -eq 0 && "$UNCLAIMED" -eq 0 ]]; then echo -e "${GREEN}$CHECKED names checked, all still present.${ENDCOLOR}"; exit 0
-else echo -e "${RED}$CHECKED names checked, $MISSING no longer resolve.${ENDCOLOR}"; exit 1; fi
+printf '\n%d names resolve, %d missing, %d unproven\n' "$CHECKED" "$MISSING" "$UNPROVEN"
+(( MISSING == 0 ))

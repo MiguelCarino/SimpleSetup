@@ -1,0 +1,185 @@
+/* ===========================================================================
+   wofi — NEON HUD, matching the bar (~/.config/waybar/style.css).
+   Palette kept in step with it by hand.
+
+   No glow anywhere: the show comes from motion and colour instead --
+     - a rainbow scan line sweeping along the top edge, in the same six
+       colours as the focused-window border (lua/settings.lua)
+     - the selected row as a solid cyan-to-magenta bar that slides its text in
+     - the compositor side: the card pops in and the rest of the screen dims
+       behind it (the `wofi-glass` layer rule in ~/.config/hypr/lua/rules.lua)
+
+   Also serves as the picker for the clipboard history (SUPER+V), the window
+   switcher (SUPER+W) and the power menu (SUPER+Escape), so it is the
+   most-seen surface after the bar. No rule below writes a colour literal:
+   change a name in the PALETTE to recolour everything made from it.
+   =========================================================================== */
+/* --- PALETTE ------------------------------------------------------------------ */
+@define-color cyan       #00f0ff;   /* ACCENT role */
+@define-color magenta    #ff2a6d;   /* second accent: caret, bottom edge */
+@define-color violet     #9f00ff;   /* scrollbar */
+@define-color mist       #96d7e6;   /* the blue-grey dim text is made of */
+@define-color sel-mid    #00b8ff;   /* middle stop of the selected row's gradient */
+/* The scan line: the focused-window border's colours (lua/settings.lua). */
+@define-color scan-1     #0ff0fc;
+@define-color scan-2     #39ff14;
+@define-color scan-3     #fffb00;
+@define-color scan-4     #ff0055;
+@define-color scan-5     #9f00ff;
+@define-color surface    rgba(6, 8, 16, 0.94);      /* the card */
+@define-color groove     rgba(0, 0, 0, 0.55);       /* the search well */
+@define-color edge       alpha(@cyan, 0.28);
+@define-color edge-lit   alpha(@cyan, 0.85);
+@define-color text       #e6fcff;
+@define-color text-dim   alpha(@mist, 0.55);
+@define-color text-bright #ffffff;                  /* typed text */
+@define-color ink        #04060c;                   /* text on the selected row */
+
+/* Old names, kept as aliases: a theme redefines the role on the right. */
+@define-color glass      @surface;
+@define-color fg         @text;
+@define-color dim        @text-dim;
+
+* {
+    font-family: "IBM Plex Sans", "Noto Color Emoji", sans-serif;   /* same face as the bar (waybar/style.css) */
+    font-weight: 600;
+    font-size: 16px;
+    box-shadow: none;
+    text-shadow: none;
+    transition: none;
+    outline: none;
+}
+
+/* The toplevel stays transparent: ignore_alpha keys off it. */
+window#window {
+    background: transparent;
+}
+
+/* The scan line: a rainbow twice the card's width, slid along under a 3px
+   strip so the colours travel left to right and wrap seamlessly (the
+   gradient repeats its first colour at the end). */
+@keyframes scan {
+    from { background-position: 0% 0%, 0% 0%; }
+    to   { background-position: 200% 0%, 0% 0%; }
+}
+
+#outer-box {
+    margin: 8px;
+    padding: 22px 22px 16px 22px;
+    border-radius: 4px 22px 4px 22px;
+    color: @text;
+    background-color: @surface;
+    background-image:
+        linear-gradient(to right,
+            @scan-1, @scan-2, @scan-3, @scan-4, @scan-5, @scan-1,
+            @scan-2, @scan-3, @scan-4, @scan-5, @scan-1),
+        linear-gradient(to bottom,
+            alpha(@cyan, 0.07) 0%,
+            alpha(@cyan, 0.00) 30%,
+            alpha(@magenta, 0.00) 75%,
+            alpha(@magenta, 0.06) 100%);
+    background-size: 200% 3px, 100% 100%;
+    background-repeat: repeat-x, no-repeat;
+    border: 1px solid @edge;
+    border-bottom: 2px solid @magenta;
+    animation: scan 4s linear infinite;
+}
+
+/* Search field: a big terminal prompt. Monospace, magenta caret, a hard
+   two-tone underline. background-image is set explicitly to remove GTK's
+   stock entry gradient. */
+#input {
+    font-family: "IBM Plex Sans", sans-serif;
+    font-weight: normal;
+    font-size: 24px;
+    margin: 0px 0px 16px 0px;
+    padding: 12px 16px;
+    min-height: 34px;
+    border-radius: 2px 14px 2px 14px;
+    color: @text-bright;
+    caret-color: @magenta;
+    background-color: @groove;
+    background-image: none;
+    border: 1px solid @edge;
+    border-bottom: 3px solid @cyan;
+}
+
+#input:focus {
+    border-color: @edge-lit;
+    border-bottom-color: @cyan;
+}
+
+#input image {
+    color: @magenta;
+    margin-right: 10px;
+}
+
+#input selection {
+    background-color: alpha(@magenta, 0.55);
+    color: @text-bright;
+}
+
+/* --- Results -------------------------------------------------------------- */
+#scroll {
+    margin: 0px;
+    padding: 0px;
+    background: transparent;
+}
+
+#inner-box {
+    background: transparent;
+}
+
+/* Rows are bare until touched. The left padding is what the selected row
+   animates: its text slides in 10px, like a cursor stepping onto it. */
+#entry {
+    margin: 2px 0px;
+    padding: 8px 14px 8px 14px;
+    border-radius: 2px 12px 2px 12px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-left: 4px solid transparent;
+    transition: padding 140ms ease-out, background-color 140ms ease-out,
+                border-color 140ms ease-out;
+}
+
+#entry:hover {
+    background-color: alpha(@cyan, 0.07);
+    border-color: alpha(@cyan, 0.18);
+}
+
+/* Selected row: a solid neon bar, cyan into magenta, dark text on it -- the
+   loudest thing on screen without a single shadow. */
+#entry:selected {
+    padding-left: 24px;
+    background-color: @cyan;
+    background-image: linear-gradient(to right, @cyan 0%, @sel-mid 45%, @magenta 100%);
+    border: 1px solid @cyan;
+    border-left: 4px solid @text-bright;
+}
+
+#text {
+    color: @text;
+    margin: 0px;
+}
+
+#entry:selected #text {
+    color: @ink;
+    font-weight: bold;
+}
+
+/* The generic name ("Web Browser" after "Firefox") when display_generic is on. */
+#text:disabled {
+    color: @text-dim;
+}
+
+#img {
+    margin-right: 14px;
+}
+
+/* Thin violet scrollbar, in case hide_scroll is ever turned off. */
+scrollbar slider {
+    min-width: 3px;
+    background-color: @violet;
+    border-radius: 2px;
+}

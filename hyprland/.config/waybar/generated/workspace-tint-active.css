@@ -1,0 +1,4 @@
+/* Static: the lit workspace pill in the first screen colour. */
+#workspaces button.active {
+    background-color: @mon1;
+}

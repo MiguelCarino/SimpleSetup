@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Coverage, Flathub identifiers and the Arch repositories
-        run: ./tools/check-packages.sh cheap   # HTTP and text only, no images to pull, so it is affordable on every pull request that touches a package list; a rename used to be able to sit in main for 31 days waiting for the cron
+        run: ./tools/check-packages.sh cheap   # HTTP and text only, affordable on every pull request that touches a package array
 
   containers:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
@@ -29,7 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Resolve every name in a container of the distribution that has to provide it
-        run: ./tools/check-packages.sh containers   # five images and five package managers, minutes rather than seconds, which is why this half stays on the cron
+        run: ./tools/check-packages.sh containers   # Fedora, Debian, Ubuntu, openSUSE, AlmaLinux and Alpine images; minutes, so it stays on the cron
 
   issue:
     needs: [cheap, containers]

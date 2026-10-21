@@ -321,7 +321,7 @@
 
         .refusal { margin-top: 18px; border: 1px solid rgba(239,68,68,0.35); border-left: 3px solid var(--err); border-radius: var(--radius); background: rgba(239,68,68,0.06); padding: 16px 18px; }
         .refusal h4 { font-family: var(--mono); font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--err); margin-bottom: 9px; }
-        .refusal p { font-size: 0.8rem; color: var(--text-sec); line-height: 1.75; }
+        .refusal p { font-size: 0.8rem; color: var(--text-sec); line-height: 1.75; white-space: pre-wrap; } /* the NixOS refusal carries a configuration.nix snippet */
 
         .caution-line { margin-top: 14px; padding-left: 12px; border-left: 2px solid var(--accent-dim); font-family: var(--mono); font-size: 0.68rem; color: var(--warn); line-height: 1.7; }
         .out-label { font-family: var(--mono); font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin: 24px 0 9px; }
@@ -429,7 +429,7 @@
                 <div class="terminal"><code id="linux-cmd"><span class="prompt">$</span> <span class="cmd">bash &lt;(curl -s https://setup.carino.systems/setup.sh)</span></code></div>
                 <button type="button" class="copy-btn term-copy" data-copy="linux-cmd" aria-label="Copy the Linux command"><span data-i18n>Copy</span></button>
             </div>
-            <p class="note"><b>Fedora</b> <span data-i18n>is what it is built and tested on, including the atomic variants. Debian, Ubuntu, Arch, RHEL, CentOS and their derivatives are supported too.</span></p>
+            <p class="note"><b>Fedora</b> <span data-i18n>is what it is built and tested on. Debian, Ubuntu, Arch, openSUSE, RHEL and their derivatives are supported too, and Solus, Alpine, Void, Gentoo and Mageia get the base packages, plus drivers where they are packaged (Gentoo prints the steps).</span></p>
         </section>
 
         <section id="windows-section" class="os-content" role="tabpanel" aria-labelledby="tab-windows" hidden>
@@ -492,7 +492,7 @@
             </div>
 
             <div class="toggles">
-                <label class="toggle" id="b-technical-wrap"><input type="checkbox" id="b-technical" checked> <span data-i18n>Technical Setup</span></label>
+                <label class="toggle" id="b-technical-wrap"><input type="checkbox" id="b-technical" checked> <span data-i18n>Base setup</span></label>
                 <label class="toggle" id="b-drivers-wrap"><input type="checkbox" id="b-drivers"> <span data-i18n>Graphic drivers</span><span id="b-drivers-hint"></span></label>
                 <label class="toggle"><input type="checkbox" id="b-update"> <span data-i18n>System update</span></label>
                 <label class="toggle"><input type="checkbox" id="b-server"> <span data-i18n>Server setup</span></label>
@@ -536,19 +536,21 @@
             <div class="isbox">
                 <h3 data-i18n>What it does</h3>
                 <ul>
-                    <li><b data-i18n>Reads the machine before it touches it.</b> <span data-i18n>Operating system, distribution family and graphics hardware, then it installs what matches instead of a fixed list.</span></li>
+                    <li><b data-i18n>Reads the machine before it touches it.</b> <span data-i18n>Distribution family, CPU, every GPU and its NVIDIA generation, laptop or virtual machine, Secure Boot, free disk and internet, printed as a table before it asks anything.</span></li>
+                    <li><b data-i18n>Base packages and drivers that match.</b> <span data-i18n>The repositories codecs and drivers need, a full upgrade, codecs, firmware and CPU microcode, then the GPU driver: the open NVIDIA module for Turing and newer, the 580 or 470 branch for older cards, Mesa for AMD and Intel, guest tools in a virtual machine.</span></li>
                     <li><b data-i18n>15 purpose profiles.</b> <span data-i18n>Gaming, Corporate, Development, Design, Cybersecurity, Forensics, Scientific, Robotics, Medical Imaging and more — native packages and the Flatpaks that belong with them.</span></li>
-                    <li><b data-i18n>Twelve desktops, where the family has them.</b> <span data-i18n>GNOME through Niri. Where a family has no package list for one, the builder names it and says why rather than letting the install fail halfway.</span></li>
+                    <li><b data-i18n>Twelve desktops, only when none is running.</b> <span data-i18n>GNOME through Niri, where the family has a package list for them. The builder names the ones a family lacks and says why.</span></li>
+                    <li><b data-i18n>Carino Hyprland, if you want it.</b> <span data-i18n>A complete Hyprland desktop configuration (bar, lock screen, launcher, notifications, keys) on the distributions that ship Hyprland 0.55 or newer. Your current configuration is moved to a backup folder first.</span></li>
                     <li><b data-i18n>Rehearses on request.</b> <span data-i18n>A dry run prints every privileged command it would run and installs nothing.</span></li>
-                    <li><b data-i18n>Installer menus in eight languages.</b> <span data-i18n>English, Japanese, Russian, Spanish, Finnish, Chinese, Korean and Hebrew.</span></li>
+                    <li><b data-i18n>One file you can audit.</b> <span data-i18n>About a thousand lines of plain bash in numbered sections, with every package name kept together as data.</span></li>
                 </ul>
             </div>
             <div class="notbox">
                 <h3 data-i18n>What it will not do</h3>
                 <ul>
                     <li><b data-i18n>It is not a configuration manager.</b> <span data-i18n>It installs once. It does not converge a machine to a described state, it does not run again on a schedule, and running it twice does not undo the first run. Ansible and Salt still have a job.</span></li>
-                    <li><b data-i18n>It is not sandboxed.</b> <span data-i18n>It runs privileged commands and adds third-party repositories — RPM Fusion, EPEL, Remi, Flathub, LibreWolf, AnyDesk. Read the dry run before you run the real one.</span></li>
-                    <li><b data-i18n>It is not universal, and it says so.</b> <span data-i18n>A list of distributions is refused by design, each with the reason printed. Source-based, musl, non-systemd and declarative systems are not near misses; supporting them would be a different tool.</span></li>
+                    <li><b data-i18n>It is not sandboxed.</b> <span data-i18n>It runs privileged commands, upgrades the whole system and adds third-party repositories — RPM Fusion, EPEL, Packman, Flathub, and the Hyprland COPR or PPA when you ask for Carino Hyprland. Read the dry run before you run the real one.</span></li>
+                    <li><b data-i18n>It is not universal, and it says so.</b> <span data-i18n>NixOS, SteamOS, transactional openSUSE and anything it does not recognise are refused before anything runs, with the reason printed. On Gentoo it installs only the base packages and prints the rest as steps for you.</span></li>
                     <li><b data-i18n>It is not a backup.</b> <span data-i18n>Run it on a fresh install, not on a machine carrying work you have not copied off somewhere else.</span></li>
                 </ul>
             </div>
@@ -562,11 +564,13 @@
         <form method="dialog"><button class="modal-x" aria-label="Close">✕</button></form>
     </div>
     <div class="modal-body">
-        <p class="note"><b>Fedora family</b> — Fedora, Nobara, Risi, Ultramarine, and the atomic variants Silverblue, Kinoite, Bazzite, Bluefin, Aurora and Universal Blue.</p>
-        <p class="note"><b>Debian family</b> — Debian, Ubuntu and its flavours, Mint, LMDE, Pop!_OS, Zorin, elementary, Kali, Parrot, Devuan, Raspberry Pi OS, MX, Deepin, KDE neon and more.</p>
-        <p class="note"><b>Enterprise</b> — RHEL, CentOS Stream and the rebuilds: Rocky, AlmaLinux, Oracle Linux and others. <b>Arch family</b> — Arch, Manjaro, EndeavourOS, Garuda, CachyOS, ArcoLinux, RebornOS, Archcraft. <b>Amazon Linux</b>, headless only. <b>openSUSE</b> is still under test.</p>
-        <p class="note"><span data-i18n>Refused by design, each with a reason the script prints:</span> SteamOS, Artix, Parabola, Gentoo, Slackware, NixOS, Guix, Alpine, Void, Clear Linux, Solus, Qubes, Mageia, OpenMandriva, Chimera <span data-i18n>and the transactional openSUSE variants.</span></p>
-        <p class="note"><span data-i18n>The Plan Builder prints each of those reasons in full — pick the distribution there to read the one you came for.</span></p>
+        <p class="note"><b>Fedora</b> — Fedora, Nobara, Ultramarine, Risi. <b>Fedora Atomic</b> — Silverblue, Kinoite, Bazzite, Bluefin, Aurora, layered with rpm-ostree. <b>Enterprise</b> — RHEL, AlmaLinux, Rocky, CentOS Stream, Oracle Linux, Amazon Linux.</p>
+        <p class="note"><b>Debian</b> — Debian, LMDE, MX, Kali, Parrot, Devuan, Raspberry Pi OS. <b>Ubuntu</b> — Ubuntu and its flavours, Mint, Pop!_OS, elementary, Zorin, KDE neon, TUXEDO.</p>
+        <p class="note"><b>Arch</b> — Arch, Manjaro, EndeavourOS, CachyOS, Garuda, ArcoLinux. <b>openSUSE</b> — Tumbleweed, Slowroll, Leap, SLES.</p>
+        <p class="note"><span data-i18n>Base packages, plus drivers where they are packaged, with few or no purpose lists:</span> Solus, Alpine, Void, Gentoo, Mageia, OpenMandriva.</p>
+        <p class="note"><span data-i18n>Carino Hyprland:</span> Fedora, Arch, openSUSE Tumbleweed and Slowroll, Debian 13 and newer (and derivatives built on them, such as LMDE 7), Ubuntu 24.04 and 26.04 bases (derivatives included), Ubuntu 26.10+ itself, Solus.</p>
+        <p class="note"><span data-i18n>Refused, with the reason printed:</span> NixOS, SteamOS, MicroOS, Aeon, Kalpa <span data-i18n>and anything it does not recognise.</span></p>
+        <p class="note"><span data-i18n>The Plan Builder shows what each family gets — pick the distribution there to read the one you came for.</span></p>
     </div>
 </dialog>
 
@@ -585,19 +589,41 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td><span class="kbd accent">quick</span></td><td data-i18n>Technical Setup, then the basic user, system and support packages plus the basic and Google flatpaks.</td></tr>
-                    <tr><td><span class="kbd accent">simple</span></td><td data-i18n>Runs the Technical Setup only.</td></tr>
-                    <tr><td><span class="kbd accent">server</span></td><td data-i18n>Minimal server setup with essential dev tools. Skips the full Technical Setup.</td></tr>
-                    <tr><td><span class="kbd accent">nvidia/amd/intel</span></td><td data-i18n>Forces specific graphic driver installation.</td></tr>
-                    <tr><td><span class="kbd accent">desktop</span></td><td data-i18n>Opens a menu to select a new Desktop Environment.</td></tr>
-                    <tr><td><span class="kbd accent">svp</span></td><td data-i18n>Installs Smooth Video Project for frame-interpolated playback.</td></tr>
-                    <tr><td><span class="kbd accent">distrobox</span></td><td data-i18n>Installs Distrobox containers for other distros.</td></tr>
-                    <tr><td><span class="kbd accent">proton</span></td><td data-i18n>Installs the latest ProtonGE release.</td></tr>
-                    <tr><td><span class="kbd accent">librewolf</span></td><td data-i18n>Adds the LibreWolf repository and installs it. Fedora and Debian families only.</td></tr>
+                    <tr><td><em data-i18n>no argument</em></td><td data-i18n>Interactive: checks the system, then the base setup, a desktop if none is running, purpose profiles and Carino Hyprland.</td></tr>
+                    <tr><td><span class="kbd accent">quick</span></td><td data-i18n>Base setup, then the Basic profile's native apps and the basic and Google Flatpaks.</td></tr>
+                    <tr><td><span class="kbd accent">simple</span></td><td data-i18n>Base setup only: repositories, upgrade, base packages, codecs, firmware and drivers.</td></tr>
+                    <tr><td><span class="kbd accent">server</span></td><td data-i18n>Base, server and development packages, then enables SSH and Cockpit.</td></tr>
+                    <tr><td><span class="kbd accent">drivers</span> <span class="kbd accent">nvidia/amd/intel</span></td><td data-i18n>GPU drivers only. All four do the same: the GPU is detected.</td></tr>
+                    <tr><td><span class="kbd accent">desktop</span></td><td data-i18n>Opens the desktop menu, even when a desktop is already running.</td></tr>
+                    <tr><td><span class="kbd accent">hyprland</span></td><td data-i18n>Installs the Carino Hyprland desktop configuration only.</td></tr>
+                    <tr><td><span class="kbd accent">distrobox</span></td><td data-i18n>Creates Fedora, Ubuntu and Debian distrobox containers.</td></tr>
+                    <tr><td><span class="kbd accent">proton</span></td><td data-i18n>Installs the latest GE-Proton for Steam, native or Flatpak.</td></tr>
+                    <tr><td><span class="kbd accent">librewolf</span></td><td data-i18n>Installs LibreWolf: from its repository on Fedora, EL, Debian and Ubuntu, as a Flatpak elsewhere.</td></tr>
                     <tr><td><span class="kbd accent">anydesk</span></td><td data-i18n>Enables Flathub and installs the AnyDesk and RustDesk flatpaks.</td></tr>
-                    <tr><td><span class="kbd accent">anydesk-repo</span></td><td data-i18n>Adds the official AnyDesk repository and installs it natively.</td></tr>
                     <tr><td><span class="kbd accent">share</span></td><td><span data-i18n>Mounts a Windows/CIFS share at</span> <span class="kbd">~/WinFiles</span>.</td></tr>
-                    <tr><td><em data-i18n>no argument</em></td><td data-i18n>Opens the interactive menu, where option 5 updates the system.</td></tr>
+                    <tr><td><span class="kbd accent">update</span></td><td data-i18n>Refreshes and upgrades the packages and Flatpaks.</td></tr>
+                    <tr><td><span class="kbd accent">dry-run</span></td><td data-i18n>Goes before any argument: prints every system-changing command and changes nothing.</td></tr>
+                    <tr><td><span class="kbd accent">help</span></td><td data-i18n>Prints the usage text.</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="out-label">CARINO_SETUP_PLAN</p>
+        <p class="note" data-i18n>Comma-separated tokens, run left to right with no questions. One unknown token refuses the whole plan before anything runs.</p>
+        <div class="table-wrap">
+            <table class="data">
+                <thead>
+                    <tr>
+                        <th scope="col" data-i18n>Token</th>
+                        <th scope="col" data-i18n>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><span class="kbd accent">technical</span></td><td data-i18n>Base setup, including the drivers, then the desktop menu, which takes none under a plan.</td></tr>
+                    <tr><td><span class="kbd accent">drivers</span> <span class="kbd accent">update</span> <span class="kbd accent">server</span></td><td data-i18n>The same as the arguments of the same name.</td></tr>
+                    <tr><td><span class="kbd accent">desktop=&lt;name&gt;</span></td><td><span data-i18n>One desktop:</span> gnome xfce kde lxqt cinnamon mate i3 openbox budgie sway hyprland niri carino-hyprland none.</td></tr>
+                    <tr><td><span class="kbd accent">hyprland</span></td><td data-i18n>The same as desktop=carino-hyprland.</td></tr>
+                    <tr><td><span class="kbd accent">purpose=&lt;name&gt;</span></td><td><span data-i18n>One purpose profile, may repeat:</span> basic gaming corporate corporate-microsoft corporate-google development astronomy compneuro design music cybersecurity forensics scientific robotics imagenology.</td></tr>
+                    <tr><td><span class="kbd accent">reboot=yes|no</span></td><td data-i18n>Whether to reboot at the end. Default: no.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -690,106 +716,95 @@
         }).catch(() => { label.textContent = T('Press Ctrl+C'); setTimeout(() => { label.textContent = T('Copy'); }, 2000); }); /* clipboard API is unavailable on insecure origins and when permission is denied */
     }));
 
-    const DESKTOPS = [['gnome','GNOME'],['xfce','XFCE'],['kde','KDE Plasma'],['lxqt','LXQt'],['cinnamon','Cinnamon'],['mate','MATE'],['i3','i3'],['openbox','Openbox'],['budgie','Budgie'],['sway','Sway'],['hyprland','Hyprland'],['niri','Niri']];
-    const ALLDESKTOPS = DESKTOPS.map(d => d[0]); /* Amazon Linux defines no ${family}${name}Packages variable at all, so every desktop is dropped there rather than listed and then refused */
+    const DESKTOPS = [['gnome','GNOME'],['xfce','XFCE'],['kde','KDE Plasma'],['lxqt','LXQt'],['cinnamon','Cinnamon'],['mate','MATE'],['i3','i3'],['openbox','Openbox'],['budgie','Budgie'],['sway','Sway'],['hyprland','Hyprland'],['niri','Niri'],['carino-hyprland','Carino Hyprland']]; /* DESKTOP_NAMES in setup.sh, minus none, which the select adds itself */
+    const ALLDESKTOPS = DESKTOPS.map(d => d[0]);
+    const HYPR = ['hyprland','carino-hyprland']; /* both go through hyprSupported in setup.sh: Hyprland 0.55 or newer must be obtainable */
 
-    const FAMILIES = { /* drop[] is every desktop this family cannot actually get: usually a ${family}${name}Packages variable that setup.sh defines but leaves empty, which installDesktopEnvironment refuses on, and on CentOS also the four whose lists are non-empty but name packages that no enabled repository carries; dropwhy replaces the default explanation where that second reason applies */
-        fedora:   { label: 'Fedora and derivatives', pkgm: 'dnf', special: true, drop: [],
-                    covers: 'Fedora, Nobara, Risi and Ultramarine, plus the atomic images Silverblue, Kinoite, Sericea, Onyx, Bazzite, Bluefin, Aurora and Universal Blue.',
-                    note: 'On an atomic (rpm-ostree) system the Technical Setup layers only the essential packages: RPM Fusion, the codec swap and the -y flag do not apply there, and niri cannot be installed because rpm-ostree has no copr subcommand.' },
-        debian:   { label: 'Debian, Ubuntu and derivatives', pkgm: 'apt', special: true, drop: ['hyprland','niri'],
-                    covers: 'Debian, Ubuntu and every Ubuntu flavour, Pop!_OS, Linux Mint, LMDE, Zorin, elementary, Kali, Parrot, Devuan, Raspberry Pi OS, MX, antiX, Deepin, KDE neon, Trisquel, PureOS, TUXEDO, PikaOS, Armbian, SparkyLinux and Q4OS.' },
-        arch:     { label: 'Arch and derivatives', pkgm: 'pacman', special: false, drop: [],
-                    covers: 'Arch, Manjaro, EndeavourOS, Garuda, CachyOS, ArcoLinux, RebornOS and Archcraft.',
-                    note: 'Most shared package lists are replaced rather than appended here, because pacman expands no wildcards in an install target. The essential packages are installed one at a time so that an unknown name cannot abort the whole transaction.' },
-        centos:   { label: 'CentOS Stream and the RHEL rebuilds', pkgm: 'dnf', special: false, drop: ['budgie','sway','hyprland','niri'], /* the centos lists for these four are non-empty so installDesktopEnvironment does not refuse them, but sway, waybar, budgie-desktop, hyprland and niri are in no EPEL release, and the CentOS arm's --skip-broken --setopt=strict=0 makes dnf exit 0 having installed nothing and the run then set graphical.target and reported success */
-                    covers: 'CentOS Stream, Rocky, AlmaLinux, Oracle Linux, EuroLinux, Circle Linux, Springdale, Anolis, OpenCloudOS, TencentOS, Alibaba Cloud Linux and CloudLinux.',
-                    dropwhy: 'no EPEL release ships the packages, so dnf resolves nothing, exits 0 under --skip-broken and leaves you with graphical.target set and no session installed',
-                    note: 'The Technical Setup enables CRB (or PowerTools on 8) and EPEL first; without EPEL half the desktop groups, and fastfetch, i3 and openbox, are in no enabled repository at all. i3 and openbox are in EPEL 9 only, they are absent from EPEL 10.' },
-        rhel:     { label: 'Red Hat Enterprise Linux', pkgm: 'dnf', special: false, drop: ['lxqt','cinnamon','mate','i3','openbox','budgie','sway','hyprland','niri'],
-                    covers: 'RHEL 9 and 10.',
-                    note: 'The Technical Setup enables codeready-builder through subscription-manager and installs the matching EPEL release. Only GNOME, XFCE and KDE have a package list on RHEL.' },
-        opensuse: { label: 'openSUSE and SUSE', pkgm: 'zypper', special: false, drop: ['hyprland','niri'],
-                    covers: 'openSUSE Leap and Tumbleweed, SLES and SLED.',
-                    note: 'openSUSE is being tested.' },
-        amazon:   { label: 'Amazon Linux', pkgm: 'dnf', special: false, drop: ALLDESKTOPS,
-                    covers: 'Amazon Linux 2023 and later.',
-                    note: 'Amazon Linux is headless only: it carries no EPEL, no CRB and no desktop environment groups, so only the essential and server paths are supported here.' }
+    const FAMILIES = { /* one entry per family in familyOf/detectFamily of setup.sh. drop[] is every desktop with no desktop_<name>_<family> list (or its fallback), plus both Hyprland choices where hyprSupported says no; hypr is shown when a Hyprland choice is picked on a family where it depends on the release */
+        fedora:   { label: 'Fedora and derivatives', pkgm: 'dnf', drop: [],
+                    covers: 'Fedora, Nobara, Ultramarine and Risi.',
+                    note: 'Base setup adds RPM Fusion free and nonfree and the Cisco OpenH264 repository, swaps in the full ffmpeg and the freeworld VA-API driver, and builds the NVIDIA module with akmods: the open module for Turing and newer, the 580xx branch for Maxwell and Pascal, 470xx for Kepler. Hyprland and Carino Hyprland come from the lionheartp/Hyprland COPR.' },
+        atomic:   { label: 'Fedora Atomic (Silverblue, Kinoite, Bazzite, Bluefin, Aurora)', pkgm: 'rpm-ostree', drop: ALLDESKTOPS, native: false,
+                    dropwhy: 'setup.sh has no desktop list for an image-based system, and Carino Hyprland needs a package-based Fedora or a Hyprland image',
+                    covers: 'Silverblue, Kinoite and any Fedora image booted from ostree, including Bazzite, Bluefin and Aurora.',
+                    note: 'A few base tools are layered with rpm-ostree and apply after a reboot. NVIDIA: RPM Fusion is layered first and the driver on a second run; Bazzite, Bluefin and Aurora are told to rebase to their -nvidia image instead. Profiles install their Flatpaks only (use toolbox or distrobox for the rest).' },
+        rhel:     { label: 'RHEL, AlmaLinux, Rocky and other EL', pkgm: 'dnf', drop: ['i3','openbox','budgie','sway','hyprland','niri','carino-hyprland'],
+                    dropwhy: 'EL 10 does not ship them, and EPEL has no Hyprland',
+                    covers: 'RHEL, AlmaLinux, Rocky Linux, CentOS Stream, Oracle Linux, Amazon Linux, EuroLinux, CloudLinux and Navy Linux.',
+                    note: 'Base setup enables CRB (codeready-builder on RHEL, ol<N>_codeready_builder and oracle-epel-release on Oracle), EPEL and RPM Fusion free; Amazon Linux has no EPEL and is left as it is. The desktops are EL lists only, never the Fedora ones. NVIDIA, Turing and newer: AlmaLinux uses its own NVIDIA repository, the others are shown the NVIDIA repository to add. There are no EL purpose lists, so the Fedora ones are used and the names EL lacks are skipped.' },
+        debian:   { label: 'Debian and derivatives', pkgm: 'apt', drop: ['niri'], dropwhy: 'Debian 13 does not package it',
+                    covers: 'Debian, LMDE, MX, Kali, Parrot, Devuan, Raspberry Pi OS, PureOS and Deepin.',
+                    hypr: 'Hyprland and Carino Hyprland need Debian 13 (trixie, from trixie-backports) or newer; a derivative counts by its DEBIAN_CODENAME (LMDE 7 is trixie). On Debian 12 the script says why not and installs nothing for them.',
+                    note: 'Base setup adds contrib and non-free to the existing Debian sources. NVIDIA: the open module for Turing and newer, the 580 driver for Maxwell and Pascal. Kali and Parrot are treated as Debian with a warning that their own tools may conflict.' },
+        ubuntu:   { label: 'Ubuntu and derivatives', pkgm: 'apt', drop: ['niri'], dropwhy: 'there is no Ubuntu or Debian list for it',
+                    covers: 'Ubuntu and its flavours, Linux Mint, Pop!_OS, elementary OS, Zorin OS, KDE neon and TUXEDO OS.',
+                    hypr: 'Hyprland and Carino Hyprland: Ubuntu 24.04 and 26.04 bases (Mint 22, Pop!_OS 24.04...) from the cppiber/hyprland PPA, Ubuntu 26.10 and newer from universe. Other bases are told why not.',
+                    note: 'Base setup enables universe, multiverse and restricted. NVIDIA goes through ubuntu-drivers (system76-driver-nvidia on Pop!_OS). The purpose lists, and the i3, Openbox, Sway and Hyprland lists, are the Debian ones.' },
+        arch:     { label: 'Arch and derivatives', pkgm: 'pacman', drop: [],
+                    covers: 'Arch, Manjaro, EndeavourOS, CachyOS, Garuda, ArcoLinux, RebornOS and Archcraft.',
+                    note: 'Base setup asks to enable [multilib] (32-bit libraries) when it is off. NVIDIA: nvidia-open-dkms with the headers for your running kernel, Turing and newer; older cards are AUR only and the script says so.' },
+        opensuse: { label: 'openSUSE and SUSE', pkgm: 'zypper', drop: [],
+                    covers: 'openSUSE Tumbleweed, Slowroll and Leap, SLES and SLED.',
+                    hypr: 'Hyprland and Carino Hyprland: Tumbleweed and Slowroll only. On Leap the script says why not and installs nothing for them.',
+                    note: 'Tumbleweed and Slowroll upgrade with zypper dup. Base setup asks to add Packman for full codecs (openSUSE only; on SLES and SLED Packman and the NVIDIA repository are skipped). NVIDIA comes from NVIDIA\'s openSUSE repository: G07 for Turing and newer, G06 for Maxwell and Pascal. Purpose lists exist for Basic, Gaming, Corporate and Development.' },
+        solus:    { label: 'Solus', pkgm: 'eopkg', drop: ALLDESKTOPS.filter(d => HYPR.indexOf(d) === -1), dropwhy: 'setup.sh has no Solus list for them',
+                    covers: 'Solus, every edition.',
+                    note: 'A short base list; NVIDIA uses nvidia-glx-driver-current; no AMD or Intel list. There are no Solus purpose lists, so profiles install their Flatpaks. Hyprland and Carino Hyprland come from the Solus repository.' },
+        alpine:   { label: 'Alpine', pkgm: 'apk', drop: ALLDESKTOPS, dropwhy: 'setup.sh has no Alpine desktop list, and Alpine ships Hyprland 0.54, older than the 0.55 Carino Hyprland needs',
+                    covers: 'Alpine Linux and postmarketOS.',
+                    note: 'Base setup enables the community repository. AMD and Intel get Mesa; there is no NVIDIA driver for musl, so nouveau/NVK drives the card. Purpose lists exist for Basic and Development.' },
+        void:     { label: 'Void', pkgm: 'xbps', drop: ALLDESKTOPS, dropwhy: 'setup.sh has no Void desktop list, and Void does not package Hyprland',
+                    covers: 'Void Linux, glibc and musl.',
+                    note: 'Base setup adds the nonfree repository (and multilib on x86_64). NVIDIA on glibc only, Turing and newer. Services are enabled through runit. Only the Basic purpose list exists.' },
+        gentoo:   { label: 'Gentoo', pkgm: 'emerge', drop: ALLDESKTOPS, dropwhy: 'desktops and Hyprland depend on your profile and USE flags, so the script prints the steps instead',
+                    covers: 'Gentoo and Funtoo.',
+                    note: 'Only the base packages are emerged, after emerge --sync and an @world update. Drivers, firmware and Hyprland depend on your USE flags and kernel, so the script prints the steps instead. Profiles install their Flatpaks.' },
+        mageia:   { label: 'Mageia and OpenMandriva', pkgm: 'dnf', drop: ALLDESKTOPS, dropwhy: 'there is no Mageia desktop list, and no Hyprland 0.55',
+                    covers: 'Mageia and OpenMandriva.',
+                    note: 'Base setup enables the nonfree and tainted repositories on Mageia (on OpenMandriva it says to use om-repo-picker) and installs a short base list. The NVIDIA driver is left to the Mageia Control Center. There are no Mageia purpose lists, so profiles install their Flatpaks.' }
+    };
+    const FALLBACK = { ubuntu: 'debian', rhel: 'fedora' }; /* the FALLBACK table in setup.sh: where a family has no list of its own (EL desktops never fall back) */
+
+    const DECLINED = { /* the refuse() messages of checkSystem in setup.sh; the unknown one is summarised because it quotes your os-release */
+        nixos:    ['NixOS', 'NixOS is configured declaratively, so this script does not install anything on it. Add this instead:\n  # /etc/nixos/configuration.nix, then: sudo nixos-rebuild switch\n  programs.hyprland.enable = true;\n  hardware.graphics.enable = true;\n  services.flatpak.enable = true;\n  services.xserver.videoDrivers = [ "nvidia" ];   # NVIDIA only\n  hardware.nvidia.open = true;                     # Turing (RTX 20 / GTX 16) or newer'],
+        steamos:  ['SteamOS', 'SteamOS is an immutable image: system packages are reset on update. Use Flatpaks from Discover (desktop mode).'],
+        microos:  ['Transactional openSUSE (MicroOS, Aeon, Kalpa)', 'opensuse-microos is a transactional openSUSE: use transactional-update and Flatpaks there.'],
+        unknown:  ['Anything else', 'Unknown distribution: the script prints the ID, ID_LIKE and name it read from /etc/os-release, lists the families it supports, and stops. Supported: Fedora (and Atomic), RHEL/Alma/Rocky, Debian, Ubuntu, Arch, openSUSE, Solus, Alpine, Void, Gentoo, Mageia.']
     };
 
-    const DECLINED = { /* verbatim from identifyDistro in setup.sh; these are the script's own words and are not paraphrased */
-        steamos:  ['SteamOS', 'SteamOS is not supported: pacman is present but / is a read only A/B image, so anything installed here needs steamos-readonly disable and is destroyed by the next system image update.'],
-        artix:    ['Artix', 'Artix is not supported: the packages match Arch but the init does not, it runs OpenRC, runit, s6 or dinit depending on the edition, so the systemctl calls this script chains onto every desktop install cannot enable your session.'],
-        parabola: ['Parabola', 'Parabola is not supported: it is a libre only Arch derivative, so the proprietary NVIDIA driver, Steam and the codec packages this script installs are absent by policy rather than renamed.'],
-        gentoo:   ['Gentoo', 'Gentoo is not supported: it is source based, so installing a desktop is not one emerge but a profile switch that changes global USE flags and forces a full emerge -uDN @world rebuild, package atoms are category qualified (x11-wm/i3, not i3) so no shared name list survives, and USE flag or licence conflicts are resolved interactively with --autounmask-write plus dispatch-conf, which no flag can automate away.'],
-        slackware:['Slackware', 'Slackware is not supported: installpkg, upgradepkg and slackpkg resolve no dependencies at all, so a script whose premise is \'name twenty five packages and let the manager sort out the rest\' would leave half linked, unusable software behind. Anything outside the official tree comes from SlackBuilds.org source scripts that compile locally.'],
-        nixos:    ['NixOS', 'NixOS is not supported: the system is declared in /etc/nixos/configuration.nix and realised with nixos-rebuild switch, there is no imperative system wide install. nix-env writes to a per user profile that the next rebuild ignores, desktops are options rather than packages, and the bootloader is boot.loader.* instead of /etc/default/grub. Supporting it would mean emitting Nix expressions, which is a different tool.'],
-        guix:     ['Guix System', 'Guix System is not supported: like NixOS it is declarative (an operating-system declaration plus guix system reconfigure) and guix install only touches a profile. It is also FSF endorsed, so the NVIDIA driver, Steam and the freeworld codecs are absent by policy, not renamed.'],
-        alpine:   ['Alpine', 'Alpine is not supported: musl libc rules out the proprietary NVIDIA driver and every glibc-only tarball this script downloads, OpenRC means the systemctl calls are hard errors, and the base image has neither GRUB nor sudo.'],
-        void:     ['Void', 'Void is not supported: xbps would fit, but runit means a desktop install needs ln -s /etc/sv/gdm /var/service instead of systemctl, and the same NAME covers both the glibc and the musl package sets, so /etc/os-release cannot tell which one is valid.'],
-        clear:    ['Clear Linux', 'Clear Linux is not supported: swupd manages curated bundles rather than packages, so there is no per package mapping to write, and Intel has discontinued the distribution.'],
-        solus:    ['Solus', 'Solus is not supported yet: it is mid migration off the classic eopkg format and the desktop component names the menu would depend on are exactly what is in flux. It also boots with clr-boot-manager and systemd-boot, so the GRUB paths do not apply.'],
-        qubes:    ['Qubes', 'Qubes is not supported: dom0 has no network by design, updates arrive through qubes-dom0-update, and installing user applications into dom0 is contrary to the security model. Run this script inside a Fedora or Debian template instead, both are already supported.'],
-        mageia:   ['Mageia and OpenMandriva', 'Mageia and OpenMandriva are not supported yet: library packages carry lib64 prefixes that match nothing in the shared lists and the task-* desktop metapackages are renamed between releases, so any mapping written from memory would fail on your machine rather than here.'],
-        chimera:  ['Chimera', 'Chimera is not supported: it combines apk with musl, dinit and a FreeBSD derived userland, so the libc, the init calls and the coreutils all differ at once.'],
-        microos:  ['Transactional openSUSE (MicroOS, Aeon, Kalpa, Leap Micro, SLE Micro, SL Micro)', 'Transactional openSUSE is not supported: transactional-update takes its options before the subcommand and each call branches a fresh snapshot off the running system, so the several sequential installs this script performs would keep only the last one and none of them would be visible until reboot.']
+    const NATIVE = { /* profile_<purpose>_<family> arrays from section 4 of setup.sh; every purpose also installs profile_basic */
+        basic: { fedora: 'gedit yt-dlp ffmpeg tumbler libreoffice pavucontrol vnstat feh wine xrdp htop powertop gtkglext-libs xdotool ncdu scrot xclip tldr xxd', debian: 'gedit yt-dlp ffmpeg tumbler libreoffice pavucontrol vnstat feh wine xrdp htop powertop xdotool ncdu scrot xclip tealdeer xxd', arch: 'gedit yt-dlp ffmpeg tumbler libreoffice-fresh pavucontrol vnstat feh wine htop powertop tealdeer ncdu scrot xclip xdotool', opensuse: 'gedit yt-dlp ffmpeg tumbler libreoffice pavucontrol vnstat feh wine xrdp htop powertop xdotool ncdu scrot xclip tealdeer vim', alpine: 'gedit yt-dlp ffmpeg tumbler libreoffice pavucontrol vnstat feh htop powertop xdotool ncdu scrot xclip xxd', void: 'gedit yt-dlp ffmpeg tumbler libreoffice pavucontrol vnstat feh wine htop powertop xdotool ncdu scrot xclip tealdeer' },
+        gaming: { fedora: 'goverlay mangohud gamemode', debian: 'goverlay mangohud gamemode', arch: 'goverlay mangohud gamemode', opensuse: 'goverlay mangohud gamemode' },
+        corporate: { fedora: 'https://binaries.webex.com/WebexDesktop-CentOS-Official-Package/Webex.rpm vpnc', debian: 'vpnc', arch: 'vpnc', opensuse: 'vpnc' },
+        development: { fedora: 'gcc cargo npm python3-pip nodejs golang conda ncurses-devel podman distrobox bridge-utils virt-manager virt-top @virtualization libvirt libvirt-devel virt-install qemu-kvm qemu-img', debian: 'gcc cargo npm python3-pip nodejs golang libncurses-dev podman distrobox bridge-utils virt-manager virt-top libvirt-daemon-system libvirt-clients virtinst', arch: 'gcc rust npm python-pip nodejs go ncurses podman distrobox virt-manager libvirt virt-install qemu-full qemu-img', opensuse: 'gcc cargo npm python3-pip nodejs golang make podman distrobox bridge-utils virt-manager virt-top', alpine: 'gcc cargo npm py3-pip nodejs go ncurses-dev podman distrobox' },
+        astronomy: { fedora: 'python3-astropy', debian: 'python3-astropy', arch: 'python-astropy' },
+        compneuro: { fedora: 'nest python3-nest python3-nibabel python3-networkx python3-numpy python3-scipy python3-matplotlib python3-pandas python3-scikit-learn python3-h5py jupyterlab', debian: 'neuron python3-brian python3-nibabel python3-networkx python3-numpy python3-scipy python3-matplotlib python3-pandas python3-sklearn python3-h5py jupyter-notebook', arch: 'python-networkx python-numpy python-scipy python-matplotlib python-pandas python-scikit-learn python-h5py jupyterlab' },
+        design: { fedora: 'ImageMagick GraphicsMagick optipng fontforge gmic', debian: 'imagemagick graphicsmagick optipng fontforge gmic', arch: 'imagemagick graphicsmagick optipng fontforge gmic' },
+        music: { fedora: 'audacity lmms hydrogen mixxx qjackctl a2jmidid calf lsp-plugins guitarix fluidsynth qsynth', debian: 'audacity lmms hydrogen mixxx qjackctl a2jmidid calf-plugins lsp-plugins x42-plugins guitarix fluidsynth qsynth', arch: 'audacity lmms hydrogen mixxx qjackctl a2jmidid calf lsp-plugins x42-plugins guitarix fluidsynth qsynth' },
+        cybersecurity: { fedora: 'nmap wireshark tcpdump nmap-ncat john hydra aircrack-ng hashcat masscan binwalk yara whois bind-utils', debian: 'nmap zenmap wireshark tshark tcpdump netcat-openbsd john hydra aircrack-ng hashcat masscan binwalk yara whois bind9-dnsutils sqlmap', arch: 'nmap wireshark-qt tcpdump openbsd-netcat john hydra aircrack-ng hashcat masscan binwalk yara whois bind sqlmap' },
+        forensics: { fedora: 'sleuthkit testdisk foremost ewftools dc3dd ddrescue chkrootkit rkhunter perl-Image-ExifTool binwalk yara', debian: 'sleuthkit autopsy testdisk foremost ewf-tools afflib-tools scalpel safecopy hashdeep dc3dd gddrescue chkrootkit rkhunter libimage-exiftool-perl binwalk yara', arch: 'sleuthkit testdisk ddrescue perl-image-exiftool binwalk yara' },
+        scientific: { fedora: 'octave gnuplot maxima wxMaxima R-core python3-numpy python3-scipy python3-matplotlib python3-pandas python3-sympy python3-scikit-learn python3-h5py jupyterlab paraview gmsh texlive-collection-latexrecommended', debian: 'octave gnuplot-qt maxima wxmaxima r-base python3-numpy python3-scipy python3-matplotlib python3-pandas python3-sympy python3-sklearn python3-h5py jupyter-notebook paraview gmsh texlive-latex-recommended', arch: 'octave gnuplot maxima r python-numpy python-scipy python-matplotlib python-pandas python-sympy python-scikit-learn python-h5py jupyterlab paraview texlive-latexrecommended' },
+        robotics: { fedora: 'avr-gcc avr-libc avrdude stlink dfu-util minicom picocom python3-pyserial esptool openscad kicad platformio', debian: 'gcc-avr avr-libc avrdude stlink-tools dfu-util minicom picocom python3-serial esptool openscad kicad', arch: 'avr-gcc avr-libc avrdude stlink dfu-util minicom picocom python-pyserial esptool openscad kicad' },
+        imagenology: { fedora: 'dcmtk xmedcon dcm2niix python3-gdcm python3-pydicom python3-nibabel gdcm python3-pynetdicom', debian: 'dcmtk xmedcon dcm2niix python3-gdcm python3-pydicom python3-nibabel libgdcm-tools', arch: 'dcmtk python-pydicom' }
     };
 
-    const PKG = { /* a bare string is shared by every family, a "+" prefixed override is appended to it, and any other override replaces it outright, exactly as the arms of identifyDistro do */
-        basicUser:   { _: 'gedit yt-dlp ffmpeg* tumbler libreoffice pavucontrol vnstat feh flatpak',
-                       opensuse: 'gedit yt-dlp ffmpeg tumbler libreoffice pavucontrol vnstat feh flatpak', /* basicUserPackagesOpenSUSE replaces the shared list outright, ffmpeg* is a glob that pulls in an unsatisfiable ffmpeg-7-mini-devel here */
-                       arch: 'gedit yt-dlp ffmpeg tumbler libreoffice-fresh pavucontrol vnstat feh flatpak' },
-        basicSystem: { _: 'wine xrdp htop powertop *gtkglext* libxdo-* ncdu scrot xclip',
-                       fedora: '+tldr', debian: '+tealdeer',
-                       opensuse: 'wine xrdp htop powertop *gtkglext* xdotool ncdu scrot xclip tealdeer', /* basicSystemPackagesOpenSUSE replaces rather than appends: libxdo-* resolves to nothing here and is spelled xdotool */
-                       arch: 'wine htop powertop tealdeer ncdu scrot xclip' },
-        support:     { _: 'xxd', opensuse: 'vim', arch: '' }, /* supportPackagesOpenSUSE, xxd ships inside vim on Leap 15.6 */
-        gaming:      { _: 'goverlay', opensuse: '' }, /* gamingPackagesOpenSUSE is empty, goverlay is in Tumbleweed but not in Leap 15.6 */
-        cisco:       { _: 'https://binaries.webex.com/WebexDesktop-CentOS-Official-Package/Webex.rpm vpnc', arch: 'vpnc' },
-        development: { _: 'gcc cargo npm python3-pip nodejs golang conda* ncurses-dev*',
-                       opensuse: 'gcc cargo npm python3-pip nodejs golang make', /* developmentPackagesOpenSUSE, conda is packaged for no openSUSE release and ncurses-dev* matches nothing on Leap */
-                       arch: 'gcc rust npm python-pip nodejs go ncurses' },
-        virtcon:     { _: 'podman distrobox bridge-utils virt-manager virt-top',
-                       fedora: '+@virtualization libvirt libvirt-devel virt-install qemu-kvm qemu-img',
-                       rhel: '+@virtualization libvirt libvirt-devel virt-install qemu-kvm qemu-img',
-                       centos: '+@virtualization libvirt libvirt-devel virt-install qemu-kvm qemu-img',
-                       amazon: '+@virtualization libvirt libvirt-devel virt-install qemu-kvm qemu-img',
-                       debian: '+libvirt-daemon-system libvirt-clients virtinst',
-                       arch: 'podman distrobox virt-manager libvirt virt-install qemu-full qemu-img' },
-        astronomy:   { _: '', fedora: 'python3-astropy', debian: 'python3-astropy' },
-        compneuro:   { _: '', fedora: 'nest python3-nest python3-nibabel python3-networkx python3-numpy python3-scipy python3-matplotlib python3-pandas python3-scikit-learn python3-h5py jupyterlab',
-                       debian: 'neuron python3-brian python3-nibabel python3-networkx python3-numpy python3-scipy python3-matplotlib python3-pandas python3-sklearn python3-h5py jupyter-notebook' },
-        design:      { _: '', fedora: 'ImageMagick GraphicsMagick optipng fontforge gmic', debian: 'imagemagick graphicsmagick optipng fontforge gmic' },
-        music:       { _: '', fedora: 'audacity lmms hydrogen mixxx qjackctl a2jmidid calf lsp-plugins guitarix fluidsynth qsynth',
-                       debian: 'audacity lmms hydrogen mixxx qjackctl a2jmidid calf-plugins lsp-plugins x42-plugins guitarix fluidsynth qsynth' },
-        security:    { _: '', fedora: 'nmap wireshark tcpdump nmap-ncat john hydra aircrack-ng hashcat masscan binwalk yara whois bind-utils',
-                       debian: 'nmap zenmap wireshark tshark tcpdump netcat-openbsd john hydra aircrack-ng hashcat masscan binwalk yara whois bind9-dnsutils sqlmap' },
-        forensics:   { _: '', fedora: 'sleuthkit testdisk foremost ewftools dc3dd ddrescue chkrootkit rkhunter perl-Image-ExifTool binwalk yara',
-                       debian: 'sleuthkit autopsy testdisk foremost ewf-tools afflib-tools scalpel safecopy hashdeep dc3dd gddrescue chkrootkit rkhunter libimage-exiftool-perl binwalk yara' },
-        scientific:  { _: '', fedora: 'octave gnuplot maxima wxMaxima R-core python3-numpy python3-scipy python3-matplotlib python3-pandas python3-sympy python3-scikit-learn python3-h5py jupyterlab paraview gmsh texlive-collection-latexrecommended',
-                       debian: 'octave gnuplot-qt maxima wxmaxima r-base python3-numpy python3-scipy python3-matplotlib python3-pandas python3-sympy python3-sklearn python3-h5py jupyter-notebook paraview gmsh texlive-latex-recommended' },
-        robotics:    { _: '', fedora: 'avr-gcc avr-libc avrdude stlink dfu-util minicom picocom python3-pyserial esptool openscad kicad platformio',
-                       debian: 'gcc-avr avr-libc avrdude stlink-tools dfu-util minicom picocom python3-serial esptool openscad kicad' },
-        imagenology: { _: 'dcmtk xmedcon dcm2niix python3-gdcm python3-pydicom python3-nibabel', fedora: '+gdcm python3-pynetdicom',
-                       debian: '+libgdcm-tools' } /* python3-pynetdicom has no Debian package and gdcm is spelled libgdcm-tools there, both verified in containers */
-    };
-
-    const FLAT = {
+    const FLAT = { /* flatpak_<group> arrays from setup.sh */
+        astronomy: 'org.kde.kstars org.siril.Siril org.stellarium.Stellarium',
         basic: 'org.mozilla.Thunderbird io.mpv.Mpv com.gitlab.davem.ClamTk com.obsproject.Studio com.transmissionbt.Transmission',
+        compneuro: 'io.github.nest_desktop.nest-desktop org.spyder_ide.spyder',
+        corporate: 'org.onlyoffice.desktopeditors',
+        design: 'org.gimp.GIMP org.inkscape.Inkscape org.kde.krita org.blender.Blender net.scribus.Scribus org.darktable.Darktable org.kde.kdenlive',
+        development: 'io.podman_desktop.PodmanDesktop',
         gaming: 'com.valvesoftware.Steam net.davidotek.pupgui2 com.heroicgameslauncher.hgl com.discordapp.Discord net.lutris.Lutris',
         google: 'com.google.Chrome',
+        imagenology: 'io.github.nroduit.Weasis com.github.AlizaMedicalImaging.AlizaMS br.gov.cti.invesalius',
         microsoft: 'com.microsoft.Edge com.visualstudio.code com.github.IsmaelMartinez.teams_for_linux',
-        development: 'io.podman_desktop.PodmanDesktop',
-        support: 'com.github.tchx84.Flatseal org.keepassxc.KeePassXC org.remmina.Remmina com.github.afrantzis.Bless',
-        remote: 'com.anydesk.Anydesk com.rustdesk.RustDesk',
-        astronomy: 'org.kde.kstars org.siril.Siril org.stellarium.Stellarium',
-        compneuro: 'io.github.nest_desktop.nest-desktop org.spyder_ide.spyder',
-        design: 'org.gimp.GIMP org.inkscape.Inkscape org.kde.krita org.blender.Blender net.scribus.Scribus org.darktable.Darktable',
         music: 'org.ardour.Ardour org.musescore.MuseScore',
-        security: 'org.zaproxy.ZAP org.ghidra_sre.Ghidra',
-        scientific: 'org.spyder_ide.spyder org.scilab.Scilab',
+        remote: 'com.anydesk.Anydesk com.rustdesk.RustDesk',
         robotics: 'org.freecad.FreeCAD cc.arduino.IDE2',
-        imagenology: 'io.github.nroduit.Weasis com.github.AlizaMedicalImaging.AlizaMS br.gov.cti.invesalius'
+        scientific: 'org.spyder_ide.spyder org.scilab.Scilab',
+        security: 'org.zaproxy.ZAP org.ghidra_sre.Ghidra',
+        support: 'com.github.tchx84.Flatseal org.keepassxc.KeePassXC org.remmina.Remmina com.github.afrantzis.Bless'
     };
 
     const APPS = { /* the Flathub id is what actually gets installed, the label is only so a visitor can tell what it is without searching for it */
@@ -801,36 +816,36 @@
         'com.github.IsmaelMartinez.teams_for_linux': 'Microsoft Teams', 'io.podman_desktop.PodmanDesktop': 'Podman Desktop',
         'com.github.tchx84.Flatseal': 'Flatseal', 'org.keepassxc.KeePassXC': 'KeePassXC', 'org.remmina.Remmina': 'Remmina',
         'com.github.afrantzis.Bless': 'Bless', 'com.anydesk.Anydesk': 'AnyDesk', 'com.rustdesk.RustDesk': 'RustDesk',
+        'org.onlyoffice.desktopeditors': 'ONLYOFFICE',
         'org.kde.kstars': 'KStars', 'org.siril.Siril': 'Siril', 'org.stellarium.Stellarium': 'Stellarium',
         'io.github.nest_desktop.nest-desktop': 'NEST Desktop', 'org.spyder_ide.spyder': 'Spyder', 'org.gimp.GIMP': 'GIMP',
         'org.inkscape.Inkscape': 'Inkscape', 'org.kde.krita': 'Krita', 'org.blender.Blender': 'Blender',
-        'net.scribus.Scribus': 'Scribus', 'org.darktable.Darktable': 'darktable', 'org.ardour.Ardour': 'Ardour',
+        'net.scribus.Scribus': 'Scribus', 'org.darktable.Darktable': 'darktable', 'org.kde.kdenlive': 'Kdenlive', 'org.ardour.Ardour': 'Ardour',
         'org.musescore.MuseScore': 'MuseScore', 'org.zaproxy.ZAP': 'OWASP ZAP', 'org.ghidra_sre.Ghidra': 'Ghidra',
         'org.scilab.Scilab': 'Scilab', 'org.freecad.FreeCAD': 'FreeCAD', 'cc.arduino.IDE2': 'Arduino IDE 2'
     };
 
-    const BASE = ['basicUser','basicSystem','support']; /* every profile in purposeMenu starts from these three lists */
-    const PURPOSES = {
-        basic:                 { label: 'Basic', native: BASE, flat: ['basic','google','microsoft','support','remote'] },
-        gaming:                { label: 'Gaming', native: BASE.concat('gaming'), flat: ['basic','gaming','google','microsoft','support','remote'] },
-        corporate:             { label: 'Corporate', native: BASE.concat('cisco'), flat: ['google','microsoft','support','remote'],
+    const PURPOSES = { /* the PURPOSES table of setup.sh, in menu order; list is the profile_<list>_<family> array it installs after profile_basic */
+        basic:                 { label: 'Basic', list: 'basic', flat: ['basic','google','microsoft','support','remote'] },
+        gaming:                { label: 'Gaming', list: 'gaming', flat: ['basic','gaming','google','microsoft','support','remote'] },
+        corporate:             { label: 'Corporate', list: 'corporate', flat: ['google','microsoft','support','remote','corporate'],
                                  extra: 'This is the one profile that does not install the basic Flatpaks (Thunderbird, mpv, ClamTk, OBS Studio, Transmission).' },
-        'corporate-microsoft': { label: 'Corporate, Microsoft only', native: BASE, flat: ['basic','microsoft','support','remote'] },
-        'corporate-google':    { label: 'Corporate, Google only', native: BASE, flat: ['basic','google','support','remote'] },
-        development:           { label: 'Development', native: BASE.concat('development','virtcon'), flat: ['basic','google','development','support','remote'],
-                                 extra: 'Also creates the Distrobox containers for Fedora, Debian, Ubuntu and Alpine.' },
-        astronomy:             { label: 'Astronomy', native: BASE.concat('astronomy'), flat: ['basic','google','astronomy','support','remote'], warn: 'astronomy' },
-        compneuro:             { label: 'Computational Neuroscience', native: BASE.concat('compneuro'), flat: ['basic','compneuro','support','remote'], warn: 'compneuro' },
-        design:                { label: 'Design', native: BASE.concat('design'), flat: ['basic','design','support','remote'], warn: 'design' },
-        music:                 { label: 'Music Production', native: BASE.concat('music'), flat: ['basic','music','support','remote'], warn: 'music' },
-        cybersecurity:         { label: 'Cybersecurity', native: BASE.concat('security'), flat: ['basic','security','support','remote'], warn: 'security',
+        'corporate-microsoft': { label: 'Corporate (Microsoft only)', flat: ['basic','microsoft','support','remote','corporate'] },
+        'corporate-google':    { label: 'Corporate (Google only)', flat: ['basic','google','support','remote','corporate'] },
+        development:           { label: 'Development', list: 'development', flat: ['basic','google','development','support','remote'],
+                                 extra: 'Then it asks to create Fedora, Ubuntu and Debian distrobox containers; the answer defaults to yes, under a plan too.' },
+        astronomy:             { label: 'Astronomy', list: 'astronomy', flat: ['basic','google','astronomy','support','remote'] },
+        compneuro:             { label: 'Computational Neuroscience', list: 'compneuro', flat: ['basic','compneuro','support','remote'] },
+        design:                { label: 'Design', list: 'design', flat: ['basic','design','support','remote'] },
+        music:                 { label: 'Music Production', list: 'music', flat: ['basic','music','support','remote'] },
+        cybersecurity:         { label: 'Cybersecurity', list: 'cybersecurity', flat: ['basic','security','support','remote'],
                                  extra: 'hydra, hashcat, aircrack-ng, masscan and sqlmap are dual use tools. Only run them against systems you are authorised to test, and add yourself to the wireshark group for capture without root.' },
-        forensics:             { label: 'Forensics', native: BASE.concat('forensics'), flat: ['basic','support','remote'], warn: 'forensics',
+        forensics:             { label: 'Forensics', list: 'forensics', flat: ['basic','support','remote'],
                                  extra: 'No forensics specific Flatpak is shipped; the imaging and carving tools are all native packages.' },
-        scientific:            { label: 'Scientific', native: BASE.concat('scientific'), flat: ['basic','scientific','support','remote'], warn: 'scientific',
+        scientific:            { label: 'Scientific', list: 'scientific', flat: ['basic','scientific','support','remote'],
                                  extra: 'ParaView and the TeX Live collection dominate the download size of this profile.' },
-        robotics:              { label: 'Robotics', native: BASE.concat('robotics'), flat: ['basic','robotics','development','support','remote'], warn: 'robotics' },
-        imagenology:           { label: 'Medical Imaging', native: BASE.concat('imagenology'), flat: ['basic','imagenology','support','remote'], warn: 'Medical Imaging',
+        robotics:              { label: 'Robotics', list: 'robotics', flat: ['basic','robotics','development','support','remote'] },
+        imagenology:           { label: 'Medical Imaging', list: 'imagenology', flat: ['basic','imagenology','support','remote'],
                                  extra: 'Viewers and conversion tools only. Nothing here is a medical device and none of it is cleared for diagnosis.' }
     };
 
@@ -838,13 +853,11 @@
     const B = { distro: el('b-distro'), purpose: el('b-purpose'), desktop: el('b-desktop'), technical: el('b-technical'),
                 drivers: el('b-drivers'), update: el('b-update'), server: el('b-server'), reboot: el('b-reboot') };
 
-    function pkgList(key, fam) {
-        const entry = PKG[key];
-        if (!entry) return [];
-        const override = entry[fam];
-        let value = entry._ || '';
-        if (override !== undefined) value = override.charAt(0) === '+' ? (value + ' ' + override.slice(1)).trim() : override;
-        return value ? value.split(' ') : [];
+    function nativeList(list, fam) { /* arrayFor in setup.sh: the family's own array, else its fallback family's, else nothing */
+        const entry = list && NATIVE[list];
+        if (!entry || FAMILIES[fam].native === false) return null;
+        const value = entry[fam] !== undefined ? entry[fam] : entry[FALLBACK[fam]];
+        return value === undefined ? null : value.split(' ');
     }
 
     function chips(items, asApps) {
@@ -859,14 +872,15 @@
 
     function setHash(value) { try { history.replaceState(null, '', '#' + value); } catch (e) { location.hash = value; } } /* replaceState rather than assignment so smooth scroll-behavior does not jump the page on every keystroke, with the assignment kept as the fallback for origins that reject it */
 
+    const SMALL = ['solus','alpine','void','gentoo','mageia'];
     fillSelect(B.distro, [
-        { group: 'Supported', items: Object.keys(FAMILIES).filter(k => k !== 'opensuse' && k !== 'amazon').map(k => [k, FAMILIES[k].label]) },
-        { group: 'Supported with a caveat', items: [['opensuse', FAMILIES.opensuse.label + ' (under test)'], ['amazon', FAMILIES.amazon.label + ' (headless only)']] },
+        { group: 'Supported', items: Object.keys(FAMILIES).filter(k => SMALL.indexOf(k) === -1).map(k => [k, FAMILIES[k].label]) },
+        { group: 'Base and drivers, few profile lists', items: SMALL.map(k => [k, FAMILIES[k].label]) },
         { group: 'Refused by design', items: Object.keys(DECLINED).map(k => ['!' + k, DECLINED[k][0]]) }
     ]);
     fillSelect(B.purpose, [['none', T('None')]].concat(Object.keys(PURPOSES).map(k => [k, PURPOSES[k].label])));
 
-    function dropReason(fam) { return FAMILIES[fam].dropwhy || 'setup.sh defines no package list there'; } /* the default reason is an empty ${family}${name}Packages variable, CentOS overrides it because there the lists exist and the packages do not */
+    function dropReason(fam) { return FAMILIES[fam].dropwhy || 'setup.sh defines no package list there'; }
 
     function refreshDesktops(fam, want) {
         const allowed = DESKTOPS.filter(d => FAMILIES[fam].drop.indexOf(d[0]) === -1);
@@ -876,10 +890,16 @@
         if (want && !lost) B.desktop.value = want;
         const note = el('b-desktop-note');
         if (allowed.length === 0) {
-            note.textContent = 'No desktop environment can be installed on ' + FAMILIES[fam].label + ': the script defines no package list for any of them here, so desktop=<name> would be refused before anything was installed.';
+            note.textContent = 'No desktop is offered on ' + FAMILIES[fam].label + ', because ' + dropReason(fam) + '. Install one with the distribution\'s own tools.';
             note.hidden = false;
         } else if (lost) {
             note.textContent = want + ' is not offered on ' + FAMILIES[fam].label + ' and the selection was reset to none, because ' + dropReason(fam) + '. Available on this family: ' + allowed.map(d => d[0]).join(', ') + '.';
+            note.hidden = false;
+        } else if (HYPR.indexOf(B.desktop.value) !== -1 && FAMILIES[fam].hypr) {
+            note.textContent = FAMILIES[fam].hypr;
+            note.hidden = false;
+        } else if (B.desktop.value === 'carino-hyprland') {
+            note.textContent = 'Carino Hyprland installs Hyprland and its tools, moves any existing ~/.config/hypr, waybar, wofi, mako, kitty and cliphist to ~/.config/carino-backup-<time>/, then copies the configuration into your home folder.';
             note.hidden = false;
         } else if (FAMILIES[fam].drop.length) {
             note.textContent = 'Not offered on ' + FAMILIES[fam].label + ', because ' + dropReason(fam) + ': ' + FAMILIES[fam].drop.join(', ') + '.';
@@ -891,13 +911,16 @@
         const panel = el('b-purpose-panel');
         const p = PURPOSES[B.purpose.value];
         if (!p) { panel.hidden = true; return; }
-        const native = p.native.reduce((acc, k) => acc.concat(pkgList(k, fam)), []);
+        const basic = nativeList('basic', fam);
+        const own = nativeList(p.list, fam);
+        const native = (basic || []).concat(own || []);
         const flat = p.flat.reduce((acc, k) => acc.concat(FLAT[k].split(' ')), []);
         const unique = list => list.filter((v, i) => list.indexOf(v) === i);
         let html = '<h4>' + p.label + ' installs this on ' + FAMILIES[fam].label + '</h4>';
         html += '<p class="panel-sub">Nothing below is installed by looking at it. Change the profile freely and read what it does before you run anything.</p>';
         if (p.extra) html += '<p>' + p.extra + '</p>';
-        if (p.warn && !FAMILIES[fam].special) html += '<p>The specialised ' + p.label + ' package list exists for the Fedora and Debian families only. On ' + FAMILIES[fam].label + ' the script says so and installs the shared base packages and the Flatpaks below instead.</p>';
+        if (FAMILIES[fam].native === false) html += '<p>On an atomic system the native profile packages are skipped (use toolbox or distrobox); only the Flatpaks below are installed.</p>';
+        else if (p.list && p.list !== 'basic' && !own) html += '<p>setup.sh has no ' + p.label + ' package list for ' + FAMILIES[fam].label + '. The script says so and installs the basic applications and the Flatpaks below.</p>';
         html += '<div class="group"><span class="group-label">Native packages via ' + FAMILIES[fam].pkgm + '</span>' + (native.length ? chips(unique(native), false) : '<span class="pk">none</span>') + '</div>';
         html += '<div class="group"><span class="group-label">Flatpaks from Flathub</span>' + chips(unique(flat), true) + '</div>';
         panel.innerHTML = html;
@@ -909,7 +932,7 @@
         if (B.technical.checked) t.push('technical');
         if (!B.desktop.disabled && B.desktop.value !== 'none') t.push('desktop=' + B.desktop.value);
         if (B.purpose.value !== 'none') t.push('purpose=' + B.purpose.value);
-        if (B.drivers.checked && !B.technical.checked) t.push('drivers'); /* techSetup already chains graphicDrivers, so the token is redundant whenever technical is in the plan */
+        if (B.drivers.checked && !B.technical.checked) t.push('drivers'); /* baseSetup already runs driversSetup, so the token is redundant whenever technical is in the plan */
         if (B.update.checked) t.push('update');
         if (B.server.checked) t.push('server');
         if (B.reboot.checked) t.push('reboot=yes'); /* reboot=no is the documented default, so it is left out rather than spelled out */
@@ -933,7 +956,7 @@
 
         el('b-drivers-wrap').classList.toggle('locked', B.technical.checked);
         B.drivers.disabled = B.technical.checked;
-        el('b-drivers-hint').textContent = B.technical.checked ? ' ' + T('— already run by the Technical Setup') : ''; /* techSetup chains graphicDrivers itself, so offering the token as well would only install the drivers twice */
+        el('b-drivers-hint').textContent = B.technical.checked ? ' ' + T('— already run by the base setup') : ''; /* baseSetup runs driversSetup itself, so offering the token as well would only run the driver step twice */
 
         refreshDesktops(fam, linkDesktop || B.desktop.value);
         linkDesktop = ''; /* consumed once, so the explanation belongs to the link that asked for it and not to every later edit */
@@ -942,7 +965,7 @@
         if (FAMILIES[fam].note) { el('b-distro-note').textContent = FAMILIES[fam].note; el('b-distro-note').hidden = false; }
 
         const tokens = planTokens();
-        const actions = tokens.filter(t => t.indexOf('reboot=') !== 0); /* reboot is a modifier on a plan rather than a step in one: planValidate collects it into planReboot and never into planSteps, so a plan whose only token is reboot=yes is refused with "names no action to take" and nothing is installed */
+        const actions = tokens.filter(t => t.indexOf('reboot=') !== 0); /* reboot is a modifier on a plan rather than a step in one: planParse counts no action for it, so a plan whose only token is reboot=yes is refused with "The plan has nothing to do" and nothing is installed */
         const tail = 'bash <(curl -s https://setup.carino.systems/setup.sh)';
         const plan = actions.length ? 'CARINO_SETUP_PLAN=' + tokens.join(',') + ' ' : '';
         el('b-cmd').querySelector('.cmd').textContent = plan + tail;
@@ -964,7 +987,8 @@
         const params = {};
         hash.split('&').forEach(pair => { const i = pair.indexOf('='); if (i > 0) params[pair.slice(0, i)] = pair.slice(i + 1); });
         if (!params.distro) return false;
-        const known = FAMILIES[params.distro] ? params.distro : (DECLINED[params.distro] ? '!' + params.distro : null);
+        const alias = { centos: 'rhel', amazon: 'rhel' }[params.distro] || params.distro; /* family keys an older version of this page put in shared links */
+        const known = FAMILIES[alias] ? alias : (DECLINED[alias] ? '!' + alias : null);
         if (!known) return false;
         B.distro.value = known;
         if (known.charAt(0) !== '!') {
@@ -976,6 +1000,7 @@
                 else if (key === 'drivers') B.drivers.checked = true;
                 else if (key === 'update') B.update.checked = true;
                 else if (key === 'server') B.server.checked = true;
+                else if (key === 'hyprland') { linkDesktop = 'carino-hyprland'; if (B.desktop.querySelector('option[value="carino-hyprland"]')) B.desktop.value = 'carino-hyprland'; }
                 else if (key === 'reboot') B.reboot.checked = value === 'yes';
                 else if (key === 'purpose' && PURPOSES[value]) B.purpose.value = value;
                 else if (key === 'desktop') { linkDesktop = value; if (B.desktop.querySelector('option[value="' + value + '"]')) B.desktop.value = value; }
