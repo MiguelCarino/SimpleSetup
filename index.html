@@ -13,7 +13,18 @@
     <meta property="og:title" content="SimpleSetup">
     <meta property="og:description" content="One command that configures Linux, Windows or macOS: hardware and distribution detection, drivers, and 15 purpose profiles. Nothing to install first.">
     <meta property="og:url" content="https://setup.carino.systems/">
-    <meta property="og:image" content="https://setup.carino.systems/logo.webp">
+    <meta property="og:image" content="https://setup.carino.systems/og.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="SimpleSetup">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="alternate" hreflang="en" href="https://setup.carino.systems/">
+    <link rel="alternate" hreflang="es" href="https://setup.carino.systems/?lang=es">
+    <link rel="alternate" hreflang="pt-BR" href="https://setup.carino.systems/?lang=pt-BR">
+    <link rel="alternate" hreflang="ja" href="https://setup.carino.systems/?lang=ja">
+    <link rel="alternate" hreflang="ru" href="https://setup.carino.systems/?lang=ru">
+    <link rel="alternate" hreflang="x-default" href="https://setup.carino.systems/">
+    <script type="application/json" id="carino-head-i18n">{"es": {"title": "Carino Setup — Automatización universal de sistemas operativos", "desc": "Un solo comando que configura Linux, Windows o macOS: detección de hardware y distribución, controladores y 15 perfiles por uso. Sin instalar nada antes."}, "pt-BR": {"title": "Carino Setup — Automação universal de sistemas operacionais", "desc": "Um único comando que configura Linux, Windows ou macOS: detecção de hardware e distribuição, drivers e 15 perfis por finalidade. Nada para instalar antes."}, "ja": {"title": "Carino Setup — 汎用OSセットアップ自動化", "desc": "1つのコマンドでLinux・Windows・macOSを設定。ハードウェアとディストリビューションの検出、ドライバー、15の用途別プロファイル。事前準備不要。"}, "ru": {"title": "Carino Setup — универсальная автоматизация настройки ОС", "desc": "Одна команда настраивает Linux, Windows или macOS: определение оборудования и дистрибутива, драйверы и 15 профилей под задачи. Ничего не нужно ставить заранее."}}</script>
     <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "SimpleSetup", "url": "https://setup.carino.systems/", "description": "One command that configures Linux, Windows or macOS: hardware and distribution detection, drivers, and 15 purpose profiles. Nothing to install first.", "operatingSystem": "Any (runs in a web browser)", "isAccessibleForFree": true, "author": {"@type": "Person", "name": "Miguel Cariño", "url": "https://carino.systems/"}}</script>
     <!-- /carino:head -->
     <link rel="stylesheet" href="fonts/carino-fonts.css">
@@ -30,7 +41,7 @@
             --border-hv:     #eab308;
             --text:          #ffffff;
             --text-sec:      #a3a3a3;
-            --text-muted:    #666666;
+            --text-muted:    #8a8a8a;
             --ok:            #22c55e;
             --warn:          #eab308;
             --err:           #ef4444;
@@ -376,7 +387,7 @@
      The mark, the argument, the platform picker, the command, and four chips
      that open the rest as dialogs. Nothing has to be scrolled past to reach the
      one line this site exists to hand over. -->
-<header class="hero">
+<header class="hero" role="main">
     <div class="container">
         <!-- The mark sits above the trace, which reads as its underline. Both
              are aria-hidden: the navbar already says "Carino Setup" in text, and

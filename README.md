@@ -4,6 +4,8 @@ Setup scripts **for Linux, Windows and macOS**, so the user does not have to wor
 
 Site: <https://setup.carino.systems>
 
+![Carino Setup](screenshot.webp)
+
 > The GitHub repository is still literally named `SimpleSetup`. Only the owner can rename it, so every `https://github.com/MiguelCarino/SimpleSetup` link is left exactly as it is and keeps working. Renaming the repository is a pending owner action; nothing in this repository depends on it.
 
 ## Read this before you run it
