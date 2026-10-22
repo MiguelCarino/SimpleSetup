@@ -11,24 +11,40 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Syntax, shellcheck, family detection for every distribution, plans, purposes, desktops, arguments and package tables (all dry runs)
+      - name: Syntax, shellcheck, family detection for every distribution, plans, purposes, desktops, arguments, package tables and macos.sh under a fake Mac (all dry runs)
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
           ./test.sh --network   # --network also asks Flathub about every Flatpak id
       - name: Every package array in setup.sh names a known family
         run: ./tools/check-packages.sh coverage   # text only and instant
       - name: shellcheck
-        run: |
-          shellcheck -S warning setup.sh test.sh tools/check-packages.sh
-          shellcheck -S error macos.sh
+        run: shellcheck -S warning setup.sh test.sh macos.sh tools/check-packages.sh tools/check-brew.sh tools/check-winget.sh
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dry run of a plan on a real Mac, under the stock /bin/bash 3.2
+        env:
+          CARINO_SETUP_PLAN: technical,purpose=development
+        run: /bin/bash macos.sh dry-run   # /bin/bash, not the newer bash Homebrew puts first on the runner's PATH
 
   windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: PowerShell parse, cmdlet resolution and menu parity
+      - name: PowerShell parse, cmdlet resolution, purpose parity and fake-hook dry runs
         shell: pwsh
         run: ./test.ps1
       - name: Same checks under Windows PowerShell 5.1
         shell: powershell
         run: ./test.ps1   # 5.1 is what ships on a stock Windows box and is what actually runs setup.ps1, pwsh alone would not catch a 7-only construct
+      - name: Dry run of a plan on real Windows, under Windows PowerShell 5.1
+        shell: powershell
+        env:
+          CARINO_SETUP_DRYRUN: "1"
+          CARINO_SETUP_PLAN: technical,tweaks,purpose=development,reboot=no
+        run: |
+          $out = ./setup.ps1 *>&1 | Out-String
+          Write-Host $out
+          if ($LASTEXITCODE -or $out -match ' xx ') { throw 'the real dry run reported a failure' }

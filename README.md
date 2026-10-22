@@ -19,10 +19,10 @@ iwr -useb https://setup.carino.systems/setup.ps1 | iex     # Windows 10 and 11, 
 ```
 
 ```bash
-bash <(curl -s https://setup.carino.systems/macos.sh)      # macOS, Homebrew, Apple Silicon and Intel
+bash <(curl -s https://setup.carino.systems/macos.sh)      # macOS, Homebrew, Apple Silicon
 ```
 
-The rest of this page is about `setup.sh`: one plain bash file in 14 numbered sections (0–13). All the package names are kept together in section 4 as arrays named `<group>_<family>`. `setup.ps1` (Windows) and `macos.sh` (macOS) are separate and simpler. They take no arguments and have no plan and no dry run.
+Most of this page is about `setup.sh`: one plain bash file in 14 numbered sections (0–13). All the package names are kept together in section 4 as arrays named `<group>_<family>`. `setup.ps1` (Windows) and `macos.sh` (macOS) are separate, shorter files laid out the same way: a system table first, the same 15 purposes, a plan, a dry run, a log and a summary. They have their own sections: [Windows](#windows-setupps1) and [macOS](#macos-macossh).
 
 ## What it does, in order
 
@@ -152,6 +152,81 @@ Carino Hyprland is a complete Hyprland desktop: an ALT-based keymap, a waybar ba
 
 Then log out and choose Hyprland at the login screen. The script does not install a login manager for it: with none, type `Hyprland` on a text console after logging in. To undo, move the folders back from the backup folder. Keys, contents and requirements are in [hyprland/README.md](hyprland/README.md).
 
+## Windows: `setup.ps1`
+
+For Windows 10 and 11, in an elevated PowerShell (Windows PowerShell 5.1 or PowerShell 7). Everything is installed with winget.
+
+```powershell
+iwr -useb https://setup.carino.systems/setup.ps1 | iex                       # interactive
+powershell -ExecutionPolicy Bypass -File .\setup.ps1                         # from a checkout
+$env:CARINO_SETUP_DRYRUN='1'; iwr -useb https://setup.carino.systems/setup.ps1 | iex
+$env:CARINO_SETUP_PLAN='technical,tweaks,purpose=gaming,update,reboot=no'; iwr -useb https://setup.carino.systems/setup.ps1 | iex
+```
+
+`$env:` variables stay set for the rest of that PowerShell window, so a real run after a dry run in the same window is still a dry run. Clear them with `Remove-Item Env:CARINO_SETUP_DRYRUN, Env:CARINO_SETUP_PLAN` or open a new window. Under `iwr | iex` the script never calls `exit`, so it does not close your window.
+
+What it does, in order:
+
+1. **Check the system.** It prints a table: edition and release (such as 24H2), version and build, architecture, CPU, GPUs, laptop, virtual machine, Secure Boot, TPM, BitLocker on `C:`, free disk, winget version, internet and administrator. It refuses builds older than Windows 10 (10240), a shell that is not elevated, and a machine without winget (it links App Installer). If you elevated with a different account than the one at the desktop, it asks before going on (default no), because the per-user tweaks would land in the wrong account. On Windows Server it warns that some desktop apps will not install.
+2. **Base setup** (asks, default yes): `winget source update`, the base apps (7-Zip, Firefox, SumatraPDF, K-Lite Basic, .NET desktop runtimes, Temurin 21 JRE, Git, Notepad++, PowerShell 7, Sysinternals, MediaInfo), the Visual C++ runtimes for the CPU architecture, then the **drivers**:
+   - **NVIDIA** and **AMD** are not in winget, so it prints the vendor's download link and records a skip. Windows Update installs a WHQL driver meanwhile.
+   - **Intel** asks to install Driver & Support Assistant (default yes).
+   - **In a VM**: VirtIO guest tools on QEMU/KVM (asks, default yes), and a one-line note for Hyper-V, VMware and VirtualBox.
+3. **Tweaks** (asks, default yes): dark apps, file extensions shown, no taskbar search box; on Windows 11 also no Task View, Widgets or Chat buttons, and on Windows 10 no News and interests and no "- Shortcut" suffix. Values that are already set are left alone, and Explorer restarts only when one changed. On 24H2 Windows protects the Widgets value; the script warns and goes on.
+4. **Purpose profiles.** The same 15 purposes as `setup.sh`, several numbers allowed (`2 6`, `0` = none, default 1). Each installs its own list plus shared groups (basic, Google, Microsoft, support tools, remote desktop). Development also offers WSL with Ubuntu (default no). Cybersecurity warns that Nmap and Wireshark may need Npcap installed by hand. Corporate (Microsoft only) installs Microsoft 365, which needs a licence.
+5. **Windows Update** (asks, default yes): `winget upgrade --all`, then the PSWindowsUpdate module installs every update with `-IgnoreReboot`. The module is a script module, so the execution policy is set to Bypass for that PowerShell process only (nothing is saved).
+6. **Summary** of ok/skip/fail, then *"Restart now?"* (default no).
+
+A failed winget id never stops the run. winget's "already installed" and "no newer version" codes count as success, and the "installed, finishes after a restart" codes mark the restart as needed.
+
+| Plan token | What it does |
+| --- | --- |
+| `technical` | Base setup, including the drivers |
+| `drivers` | The drivers step alone |
+| `tweaks` | The Explorer tweaks |
+| `update` | winget upgrade and Windows Update |
+| `wsl` | WSL with Ubuntu (needs a restart) |
+| `purpose=<name>` | Same names as `setup.sh` (may repeat) |
+| `reboot=yes` / `reboot=no` | Restart at the end or not; without it the final prompt takes its default, no |
+
+The tokens are comma-separated and run left to right. An unknown token, a bad `reboot=` value or a plan with nothing to do refuses the whole plan with status 2 before anything runs. Under a plan, or when input is redirected, every question takes its default and says so.
+
+| Variable | Effect |
+| --- | --- |
+| `CARINO_SETUP_PLAN` | The plan above |
+| `CARINO_SETUP_DRYRUN=1` | Prints every system-changing command as `(dry-run) >` and runs none. A dry run does not refuse a shell that is not elevated or has no winget; it warns |
+| `CARINO_SETUP_LOG=<file>` | Transcript path. Default `carino-setup-YYYYmmdd-HHmmss.log` in the current folder, or in your user folder when that is under `C:\Windows` (where an elevated shell starts) or not a folder; none on a dry run unless set |
+| `CARINO_SETUP_FAKE=1` | Test hook: skips the Windows queries and always forces a dry run. `CARINO_SETUP_BUILD`, `_GPU`, `_VIRT`, `_ARCH` shape the fake machine |
+
+## macOS: `macos.sh`
+
+For macOS 15 or newer (the oldest Homebrew supports) on Apple Silicon. Homebrew's installer no longer runs on Intel Macs, so an Intel Mac without Homebrew is refused; one that already has it gets a warning that every formula builds from source. Run it as your normal user, not with `sudo`: Homebrew refuses root. It is written for the stock `/bin/bash` 3.2.
+
+```bash
+bash <(curl -s https://setup.carino.systems/macos.sh)                  # interactive
+bash <(curl -s https://setup.carino.systems/macos.sh) dry-run          # or --dry-run, or CARINO_SETUP_DRYRUN=1
+CARINO_SETUP_PLAN=technical,tweaks,purpose=design,reboot=no bash <(curl -s https://setup.carino.systems/macos.sh)
+```
+
+What it does, in order:
+
+1. **Check the Mac.** It prints a table: macOS version and build, architecture, CPU, model, GPU, laptop, virtual machine, FileVault, SIP, free disk, internet, Xcode Command Line Tools and Homebrew. It refuses anything that is not macOS, running as root, macOS older than 15, a shell running under Rosetta, and an Intel Mac without Homebrew.
+2. **Base setup** (asks, default yes): the Command Line Tools if missing (with Homebrew already there this opens Apple's dialog and waits for Return; under a plan it records a skip), Homebrew (unattended under a plan or without a terminal), Homebrew on `PATH` with an offer to add it to the login shell's profile (`${ZDOTDIR:-~}/.zprofile` for zsh, `~/.bash_profile` for bash; default yes, not asked when the installer wrote `/etc/paths.d/homebrew`), `brew update`, the base tools (git, wget, jq, rsync, htop, fastfetch, 7-Zip, The Unarchiver and others) and, on Apple Silicon, Rosetta 2 (default no). Drivers: one line, since macOS ships them through Software Update.
+3. **Finder tweaks** (asks, default no): file extensions, the path bar, no `.DS_Store` on network drives, and screenshots into `~/Pictures/Screenshots`. Each value is written only if it differs, and Finder restarts only when one changed.
+4. **Purpose profiles.** The same 15 purposes, several numbers allowed (`2 6`, `0` = none, default 1). Each installs the basic applications, its own formulae and casks, and the shared groups (Google, Microsoft, support tools, remote desktop). Corporate (Microsoft only) and Corporate (Google only) have no list of their own and get their apps from the shared groups. A profile needs only Homebrew, not the base tools. Packages install one at a time, names Homebrew already has are skipped, and casks use `--adopt`, so an app already in `/Applications` is taken over instead of failing.
+5. **macOS updates.** `softwareupdate -l`, then asks before `sudo softwareupdate -i -a` (default no).
+6. **Summary** of ok/skip/fail, then *"Restart now?"* (default no).
+
+| Plan token | What it does |
+| --- | --- |
+| `technical` | Base setup |
+| `tweaks` | The Finder tweaks; under a plan the question defaults to yes |
+| `update` | `brew upgrade`, then macOS updates; under a plan the install question defaults to yes (it asks for your password) |
+| `purpose=<name>` | Same names as `setup.sh` (may repeat) |
+| `reboot=yes` / `reboot=no` | Restart at the end or not; without it the final prompt takes its default, no |
+
+An unknown token, a bad `reboot=` value, a plan with nothing to do, or a plan combined with an argument is refused with status 2 before anything runs. `CARINO_SETUP_LOG=<file>` picks the log path (default `carino-setup-YYYYmmdd-HHMMSS.log` in the current folder, none on a dry run). Several casks run a macOS installer through `sudo` (Windows App, Microsoft Teams, Google Drive, Wireshark, BasicTeX, Spyder, Weasis), as do the Homebrew install and `softwareupdate -i`. With a terminal, a plan asks for the password once at the start (`sudo -v`) and keeps it fresh until the end. Without a terminal those steps fail unless `sudo` needs no password, and the script says so before it starts. `CARINO_SETUP_FAKE=1` is the test hook: it forces a dry run and skips the macOS probes, and `CARINO_SETUP_MACOS`, `_ARCH` and `_ROOT=1` shape the fake Mac.
+
 ## Tests
 
 ```bash
@@ -159,13 +234,15 @@ Then log out and choose Hyprland at the login screen. The script does not instal
 ./test.sh --network                # also asks Flathub about every Flatpak id
 ./tools/check-packages.sh cheap    # array coverage, Flathub ids, Arch repositories (HTTP only)
 ./tools/check-packages.sh containers   # resolves every name in Fedora, Debian, Ubuntu, openSUSE, AlmaLinux and Alpine containers
+./tools/check-brew.sh              # every macos.sh formula and cask exists on formulae.brew.sh and is not disabled
+./tools/check-winget.sh            # every setup.ps1 winget id exists in winget-pkgs (needs gh or GITHUB_TOKEN; a few minutes)
 ```
 
 ```powershell
-.\test.ps1                         # parses setup.ps1 and checks its profile menu
+.\test.ps1                         # setup.ps1: parse, 5.1 compatibility, ASCII, purposes match setup.sh, package table, dry runs through the fake hook
 ```
 
-`test.sh` runs `setup.sh` only as a dry run, against twenty `os-release` fixtures. CI (`checks.yml`) runs `test.sh --network`, the coverage check and `shellcheck -S warning` on every push and pull request, and runs `test.ps1` under PowerShell 7 and 5.1. `packages.yml` runs the cheap package check when a package list changes. Each month it runs the container check and opens an issue if a name has gone.
+`test.sh` runs `setup.sh` only as a dry run, against twenty `os-release` fixtures. Its section 9 runs `macos.sh` under the fake-Mac hook (plans, refusals including Intel without Homebrew, all 15 purposes, the same purposes as `setup.sh`), and also under bash 3.2 when the `docker.io/library/bash:3.2` image is present. `test.ps1` runs `setup.ps1` under the fake hook: a full plan, the `iwr | iex` form under a caller's StrictMode, Windows 10 and 11 tweak sets, an old build refused, bad plans refused with status 2, all 15 purposes and the non-interactive defaults. CI (`checks.yml`) runs `test.sh --network`, the coverage check and `shellcheck -S warning` on every push and pull request, `test.ps1` under PowerShell 7 and 5.1 plus a real dry run of a plan on `windows-latest`, and a real dry run of a plan under `/bin/bash` on `macos-latest`. `check-brew.sh` and `check-winget.sh` are run by hand for now. `packages.yml` runs the cheap package check when a package list changes. Each month it runs the container check and opens an issue if a name has gone.
 
 ## Licensing
 

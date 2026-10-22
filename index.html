@@ -421,7 +421,7 @@
         <div class="os-picker" role="tablist" aria-label="Operating system">
             <button type="button" class="os-btn active" role="tab" id="tab-linux" data-os="linux" aria-controls="linux-section" aria-selected="true"><span class="rec" data-i18n>detected</span><b>🐧 Linux</b><span class="fmt">Fedora · Debian · Arch</span></button>
             <button type="button" class="os-btn" role="tab" id="tab-windows" data-os="windows" aria-controls="windows-section" aria-selected="false"><span class="rec" data-i18n>detected</span><b>🪟 Windows</b><span class="fmt">10 · 11</span></button>
-            <button type="button" class="os-btn" role="tab" id="tab-mac" data-os="mac" aria-controls="mac-section" aria-selected="false"><span class="rec" data-i18n>detected</span><b> macOS</b><span class="fmt">Apple Silicon · Intel</span></button>
+            <button type="button" class="os-btn" role="tab" id="tab-mac" data-os="mac" aria-controls="mac-section" aria-selected="false"><span class="rec" data-i18n>detected</span><b> macOS</b><span class="fmt">Apple Silicon</span></button>
         </div>
 
         <section id="linux-section" class="os-content" role="tabpanel" aria-labelledby="tab-linux">
@@ -437,7 +437,8 @@
                 <div class="terminal"><code id="win-cmd"><span class="prompt">PS&gt;</span> <span class="cmd">iwr -useb https://setup.carino.systems/setup.ps1 | iex</span></code></div>
                 <button type="button" class="copy-btn term-copy" data-copy="win-cmd" aria-label="Copy the Windows command"><span data-i18n>Copy</span></button>
             </div>
-            <p class="note"><b data-i18n>Run Terminal as Administrator</b> <span data-i18n>— the script stops without it. It detects your build, applies the Windows 10 or 11 tweaks, then asks which profile to install and installs it with winget.</span></p>
+            <p class="note"><b data-i18n>Run Terminal as Administrator</b> <span data-i18n>— the script stops without it. It prints what it found, installs the base apps and drivers with winget, applies the Windows 10 or 11 tweaks, offers the 15 purpose profiles and runs Windows Update.</span></p>
+            <p class="note"><span data-i18n>Rehearse it first:</span> <span class="kbd">$env:CARINO_SETUP_DRYRUN='1'</span> <span data-i18n>before the command. Plans and the other options are under Available Arguments.</span></p>
         </section>
 
         <section id="mac-section" class="os-content" role="tabpanel" aria-labelledby="tab-mac" hidden>
@@ -445,7 +446,8 @@
                 <div class="terminal"><code id="mac-cmd"><span class="prompt">$</span> <span class="cmd">bash &lt;(curl -s https://setup.carino.systems/macos.sh)</span></code></div>
                 <button type="button" class="copy-btn term-copy" data-copy="mac-cmd" aria-label="Copy the macOS command"><span data-i18n>Copy</span></button>
             </div>
-            <p class="note" data-i18n>Installs Homebrew if missing, then a Basic, Gaming, Corporate or FOSS profile. Apple Silicon and Intel.</p>
+            <p class="note"><b data-i18n>Run it as your normal user, not with sudo.</b> <span data-i18n>It prints what it found, installs Homebrew and the base tools, offers the Finder tweaks and the 15 purpose profiles, then lists the macOS updates. macOS 15 or newer.</span></p>
+            <p class="note"><span data-i18n>Rehearse it first:</span> <span class="kbd">dry-run</span> <span data-i18n>after the command. Plans and the other options are under Available Arguments.</span></p>
         </section>
 
         <!-- What used to be four sections below the fold. They are dialogs now,
@@ -541,6 +543,7 @@
                     <li><b data-i18n>15 purpose profiles.</b> <span data-i18n>Gaming, Corporate, Development, Design, Cybersecurity, Forensics, Scientific, Robotics, Medical Imaging and more — native packages and the Flatpaks that belong with them.</span></li>
                     <li><b data-i18n>Twelve desktops, only when none is running.</b> <span data-i18n>GNOME through Niri, where the family has a package list for them. The builder names the ones a family lacks and says why.</span></li>
                     <li><b data-i18n>Carino Hyprland, if you want it.</b> <span data-i18n>A complete Hyprland desktop configuration (bar, lock screen, launcher, notifications, keys) on the distributions that ship Hyprland 0.55 or newer. Your current configuration is moved to a backup folder first.</span></li>
+                    <li><b data-i18n>Windows and macOS too.</b> <span data-i18n>setup.ps1 installs with winget and macos.sh with Homebrew: the same system table first, the same 15 purposes, Explorer or Finder tweaks and the system updates. Windows Update and the GPU vendor supply the Windows drivers; macOS ships its own.</span></li>
                     <li><b data-i18n>Rehearses on request.</b> <span data-i18n>A dry run prints every privileged command it would run and installs nothing.</span></li>
                     <li><b data-i18n>One file you can audit.</b> <span data-i18n>About a thousand lines of plain bash in numbered sections, with every package name kept together as data.</span></li>
                 </ul>
@@ -624,6 +627,34 @@
                     <tr><td><span class="kbd accent">hyprland</span></td><td data-i18n>The same as desktop=carino-hyprland.</td></tr>
                     <tr><td><span class="kbd accent">purpose=&lt;name&gt;</span></td><td><span data-i18n>One purpose profile, may repeat:</span> basic gaming corporate corporate-microsoft corporate-google development astronomy compneuro design music cybersecurity forensics scientific robotics imagenology.</td></tr>
                     <tr><td><span class="kbd accent">reboot=yes|no</span></td><td data-i18n>Whether to reboot at the end. Default: no.</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="out-label">Windows · macOS</p>
+        <p class="note" data-i18n>setup.ps1 and macos.sh read a plan from the same variable; the Linux arguments above do not apply to them. Tokens run left to right, and one unknown token refuses the whole plan before anything runs.</p>
+        <div class="terminal-wrapper">
+            <div class="terminal"><code id="win-plan"><span class="prompt">PS&gt;</span> <span class="cmd">$env:CARINO_SETUP_PLAN='technical,tweaks,purpose=gaming'; iwr -useb https://setup.carino.systems/setup.ps1 | iex</span></code></div>
+            <button type="button" class="copy-btn term-copy" data-copy="win-plan" aria-label="Copy the Windows plan command"><span data-i18n>Copy</span></button>
+        </div>
+        <div class="terminal-wrapper" style="margin-top: 8px">
+            <div class="terminal"><code id="mac-plan"><span class="prompt">$</span> <span class="cmd">CARINO_SETUP_PLAN=technical,tweaks,purpose=design bash &lt;(curl -s https://setup.carino.systems/macos.sh)</span></code></div>
+            <button type="button" class="copy-btn term-copy" data-copy="mac-plan" aria-label="Copy the macOS plan command"><span data-i18n>Copy</span></button>
+        </div>
+        <div class="table-wrap">
+            <table class="data">
+                <thead>
+                    <tr>
+                        <th scope="col" data-i18n>Token</th>
+                        <th scope="col" data-i18n>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><span class="kbd accent">technical</span></td><td data-i18n>Windows: base apps, Visual C++ runtimes and drivers with winget. macOS: Command Line Tools, Homebrew and the base tools.</td></tr>
+                    <tr><td><span class="kbd accent">tweaks</span></td><td data-i18n>Windows: dark apps, file extensions and a cleaner taskbar. macOS: file extensions, the Finder path bar, no .DS_Store on network drives and a screenshots folder.</td></tr>
+                    <tr><td><span class="kbd accent">update</span></td><td data-i18n>Windows: upgrades every winget app, then Windows Update. macOS: brew upgrade, then the macOS updates.</td></tr>
+                    <tr><td><span class="kbd accent">drivers</span> <span class="kbd accent">wsl</span></td><td data-i18n>Windows only: the drivers step alone, and WSL with Ubuntu.</td></tr>
+                    <tr><td><span class="kbd accent">purpose=&lt;name&gt;</span> <span class="kbd accent">reboot=yes|no</span></td><td data-i18n>The same names and defaults as on Linux.</td></tr>
+                    <tr><td><span class="kbd accent">CARINO_SETUP_DRYRUN=1</span></td><td data-i18n>Prints every system-changing command and changes nothing. On macOS, dry-run after the command does the same.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -1015,8 +1046,9 @@
     build();
     /* A shared plan link opens the builder with the plan already in it, and
        lands a Windows or macOS visitor on the Linux tab behind it rather than
-       on a pane that never mentions any of this. CARINO_SETUP_PLAN is read by
-       setup.sh alone, so a plan is a Linux thing by construction. */
+       on a pane that never mentions any of this. The builder writes setup.sh
+       plans only (the Windows and macOS tokens are in the arguments sheet),
+       so a shared plan is a Linux one by construction. */
     if (deepLinked) { el('tab-linux').click(); openSheet('builderDialog'); }
 </script>
 

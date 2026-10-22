@@ -150,7 +150,7 @@ for a in quick simple server nvidia amd intel drivers desktop hyprland distrobox
     setup "$WORK/fedora44" -- "$a"
     check "argument '$a' runs to the end" '(( RC == 0 )) && clean && grep -q "Summary" <<<"$OUT"'
 done
-setup "$WORK/fedora44" -- svp
+setup "$WORK/fedora44" -- frobnicate
 check "an unknown argument prints the usage and exits 2" '(( RC == 2 )) && grep -q "^Usage:" <<<"$OUT"'
 setup "$WORK/fedora44" -- help
 check "help prints the usage and exits 0" '(( RC == 0 )) && grep -q "^Usage:" <<<"$OUT"'
@@ -198,6 +198,57 @@ if (( NETWORK )); then
         check "Flathub $id (HTTP $code)" '[[ $code == 200 ]]'
     done
 fi
+
+# ---- macOS (macos.sh) ---- runs macos.sh with CARINO_SETUP_FAKE=1 (a dry run that skips the macOS probes)
+head2 "9. macOS: macos.sh under a fake Mac"
+mac() { OUT=$(env CARINO_SETUP_FAKE=1 "$@" timeout 60 bash macos.sh </dev/null 2>&1); RC=$?; }   # mac [env...]
+MAC_FORBIDDEN='declare -[aAgilrtux]*[An]|local -[a-z]*[An]|mapfile|readarray|\$\{[A-Za-z_][A-Za-z0-9_]*(,,|\^\^|,|\^)\}|;;&|;&|\[-[0-9]+\]|\$\{[A-Za-z_][A-Za-z0-9_]*: -[0-9]|&>>|\|&|coproc|\$\{![A-Za-z_]+@\}'
+mac_bad=$(sed 's/^[[:space:]]*#.*//' macos.sh | grep -nE "$MAC_FORBIDDEN")
+check "macos.sh uses no bash 4+ construct${mac_bad:+ ($mac_bad)}" '[[ -z $mac_bad ]]'
+if [[ -x $SC ]]; then check "macos.sh: shellcheck -S warning --shell=bash is clean" '"$SC" -S warning --shell=bash macos.sh >/dev/null'; fi
+mac CARINO_SETUP_PLAN=technical,tweaks,update,reboot=no
+check "a good plan is accepted and finishes" '(( RC == 0 )) && clean && grep -q "Plan accepted" <<<"$OUT" && grep -q "CARINO_SETUP_PLAN has finished" <<<"$OUT"'
+check "technical installs Homebrew non-interactively, then the base tools" 'grep -q "env NONINTERACTIVE=1 /bin/bash" <<<"$OUT" && grep -q "brew install --formula git$" <<<"$OUT" && grep -q "brew install --cask the-unarchiver" <<<"$OUT"'
+check "tweaks in a plan write the Finder defaults" 'grep -q "defaults write com.apple.finder ShowPathbar -bool true" <<<"$OUT" && grep -q "killall Finder" <<<"$OUT"'
+check "update upgrades brew and lists macOS updates" 'grep -q "brew upgrade" <<<"$OUT" && grep -q "softwareupdate -l" <<<"$OUT"'
+check "the Apple Silicon prefix is /opt/homebrew" 'grep -q "/opt/homebrew/bin/brew install" <<<"$OUT"'
+mac CARINO_SETUP_ARCH=x86_64 CARINO_SETUP_PLAN=technical
+check "Intel without Homebrew is refused (the installer runs only on Apple Silicon)" '(( RC == 1 )) && grep -q "Intel Mac" <<<"$OUT" && (( $(commands) == 0 ))'
+mac CARINO_SETUP_PLAN=purpose=design
+check "a purpose alone needs Homebrew, not the base tools; casks adopt existing apps" '(( RC == 0 )) && ! grep -q "install --formula git$" <<<"$OUT" && grep -q "install --cask gimp --adopt" <<<"$OUT"'
+for p in technical,bogus purpose=bogus reboot=maybe drivers 'purpose=gaming,,frobnicate'; do
+    mac "CARINO_SETUP_PLAN=$p"
+    check "macOS: bad plan '$p' is refused before anything runs" '(( RC == 2 )) && grep -q "nothing was run" <<<"$OUT" && (( $(commands) == 0 ))'
+done
+OUT=$(CARINO_SETUP_FAKE=1 CARINO_SETUP_PLAN=technical timeout 60 bash macos.sh extra </dev/null 2>&1); RC=$?
+check "macOS: a plan plus an argument is refused" '(( RC == 2 )) && (( $(commands) == 0 ))'
+mac CARINO_SETUP_MACOS=14.7 CARINO_SETUP_PLAN=technical
+check "macOS 14 is refused (older than Homebrew supports)" '(( RC == 1 )) && grep -q "older than macOS 15" <<<"$OUT" && (( $(commands) == 0 ))'
+mac CARINO_SETUP_ROOT=1 CARINO_SETUP_PLAN=technical
+check "running as root is refused" '(( RC == 1 )) && grep -q "Homebrew refuses root" <<<"$OUT" && (( $(commands) == 0 ))'
+for p in $PURPOSES; do
+    mac "CARINO_SETUP_PLAN=purpose=$p"
+    check "macOS purpose=$p: banner and brew installs" '(( RC == 0 )) && clean && grep -q "Purpose: $p " <<<"$OUT" && grep -q "brew install --" <<<"$OUT" && ! grep -q "^  fail" <<<"$OUT"'
+done
+mac
+check "macOS, no terminal: the interactive flow takes every default and ends" '(( RC == 0 )) && clean && grep -q "Purpose: basic " <<<"$OUT" && grep -q "screenshots folder)? (y/n) -> n" <<<"$OUT" && grep -q "Restart now? (y/n) -> n" <<<"$OUT"'
+OUT=$(CARINO_SETUP_FAKE=1 timeout 60 bash macos.sh --bogus </dev/null 2>&1); RC=$?
+check "macOS: an unknown argument prints the usage and exits 2" '(( RC == 2 )) && grep -q "^Usage:" <<<"$OUT"'
+MAC_TABLES=$(awk '/^# ==== 4\./,/^# ==== 5\./' macos.sh)
+MAC_GROUPS="base basic google microsoft support remote ${PURPOSES//-/_}"
+mac_odd=$(grep -oE '^[a-z_]+=\(' <<<"$MAC_TABLES" | tr -d '=(' | while read -r n; do
+    [[ $n == PURPOSES ]] && continue
+    [[ $n =~ ^(brew|cask)_(.+)$ && " $MAC_GROUPS " == *" ${BASH_REMATCH[2]} "* ]] || echo "$n"; done | tr '\n' ' ')
+check "every macOS array is brew_<group> or cask_<group>${mac_odd:+ ($mac_odd)}" '[[ -z $mac_odd ]]'
+mac_dups=$(grep -E '^(brew|cask)_' <<<"$MAC_TABLES" | while read -r l; do d=$(sed -E 's/^[^(]*\(//; s/\).*//' <<<"$l" | tr ' ' '\n' | sed '/^$/d' | sort | uniq -d | tr '\n' ' '); [[ -n $d ]] && echo "${l%%=*}: $d"; done)
+check "no macOS array names a package twice${mac_dups:+ ($mac_dups)}" '[[ -z $mac_dups ]]'
+check "the macOS menu lists the same 15 purposes in order" '[[ $(bash -c "source <(awk \"/^PURPOSES=\\(/,/^\\)/\" macos.sh); printf \"%s \" \"\${PURPOSES[@]%%|*}\"") == "$PURPOSES " ]]'
+if command -v podman >/dev/null && podman image exists docker.io/library/bash:3.2 2>/dev/null; then
+    OUT=$(podman run --rm -v "$PWD:/r:ro,Z" -w /tmp -e CARINO_SETUP_FAKE=1 -e CARINO_SETUP_PLAN=technical,tweaks,update,purpose=robotics,purpose=corporate-google,reboot=no \
+        docker.io/library/bash:3.2 bash /r/macos.sh </dev/null 2>&1); RC=$?
+    check "macos.sh runs under bash 3.2 (container)" '(( RC == 0 )) && clean && grep -q "CARINO_SETUP_PLAN has finished" <<<"$OUT"'
+else printf '  skip  bash 3.2 run (podman pull docker.io/library/bash:3.2 to enable)\n'; fi
+# ---- end macOS ----
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 (( FAIL == 0 ))
