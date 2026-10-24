@@ -56,6 +56,10 @@ fixture void         'NAME="Void"' 'ID="void"' 'PRETTY_NAME="Void Linux"'
 fixture gentoo       'NAME=Gentoo' 'ID=gentoo' 'PRETTY_NAME="Gentoo Linux"' 'VERSION_ID="2.18"'
 fixture mageia9      'NAME="Mageia"' 'VERSION="9"' 'ID="mageia"' 'ID_LIKE="mandriva fedora"' 'VERSION_ID="9"' 'PRETTY_NAME="Mageia 9"'
 fixture nixos        'NAME=NixOS' 'ID=nixos' 'VERSION_ID="25.11"' 'PRETTY_NAME="NixOS 25.11 (Xantusia)"'
+fixture guix         'NAME="Guix System"' 'ID=guix' 'PRETTY_NAME="Guix System"' 'LOGO=guix-icon' 'HOME_URL="https://guix.gnu.org"'
+fixture slackware150 'NAME=Slackware' 'VERSION="15.0"' 'ID=slackware' 'VERSION_ID=15.0' 'PRETTY_NAME="Slackware 15.0 x86_64"' 'VERSION_CODENAME=stable'
+fixture slackwarecur 'NAME=Slackware' 'VERSION="15.0+"' 'ID=slackware' 'VERSION_ID=15.0' 'PRETTY_NAME="Slackware 15.0 x86_64 (post 15.0 -current)"' 'VERSION_CODENAME=current'
+fixture voidnopretty 'NAME="Void"' 'ID="void"'
 # fixture|extra env|family|install command prefix|carino hyprland (yes/no)
 while IFS='|' read -r fx extra fam pm hypr; do
     [[ -n $fx ]] || continue
@@ -85,6 +89,8 @@ alpine||alpine|apk add|no
 void||void|xbps-install -y|no
 gentoo||gentoo|emerge --noreplace --quiet-build|no
 mageia9||mageia|dnf -y install --setopt=strict=0|no
+slackware150||slackware|slackpkg -batch=on -default_answer=y install|no
+slackwarecur||slackware|slackpkg -batch=on -default_answer=y install|no
 FAMILIES
 setup "$WORK/debian13" CARINO_SETUP_PLAN=hyprland
 check "debian13: Hyprland comes from trixie-backports" 'grep -qE "apt-get -y install -t trixie-backports hyprland" <<<"$OUT"'
@@ -100,14 +106,37 @@ setup "$WORK/arch" CARINO_SETUP_NVGEN=580 CARINO_SETUP_PLAN=drivers
 check "arch + Pascal: says AUR only and installs no NVIDIA package" 'grep -q "AUR only" <<<"$OUT" && ! grep -q "nvidia-open-dkms" <<<"$OUT"'
 setup "$WORK/fedora44" CARINO_SETUP_VIRT=kvm CARINO_SETUP_PLAN=technical
 check "fedora44 in a VM: guest tools, no GPU driver, no microcode" 'grep -q "qemu-guest-agent" <<<"$OUT" && ! grep -qE "akmod-nvidia|ucode" <<<"$OUT"'
-for fx in nixos steamos; do
+setup "$WORK/slackware150" CARINO_SETUP_PLAN=technical,desktop=kde,purpose=gaming
+check "slackware: key, update and upgrade-all through slackpkg in batch mode" 'grep -q "slackpkg -batch=on -default_answer=y update gpg" <<<"$OUT" && grep -q "slackpkg -batch=on -default_answer=y install-new" <<<"$OUT" && grep -q "slackpkg -batch=on -default_answer=y upgrade-all" <<<"$OUT"'
+check "slackware: NVIDIA, desktops and profiles get a one-line reason, no Flatpak runs" 'grep -q "nvidia-kernel and nvidia-driver from SlackBuilds.org" <<<"$OUT" && grep -q "Desktops are not for Slackware" <<<"$OUT" && grep -q "Purpose profiles are not for Slackware" <<<"$OUT" && ! grep -q "flatpak install" <<<"$OUT"'
+check "slackware: the SlackBuilds.org notes are printed" 'grep -q "Slackware next steps" <<<"$OUT" && grep -q "sbopkg" <<<"$OUT"'
+setup "$WORK/voidnopretty" CARINO_SETUP_PLAN=update
+check "no PRETTY_NAME: the distribution is shown by NAME" 'grep -qE "^ +Distribution +Void \\(ID=void\\)" <<<"$OUT"'
+for fx in nixos guix steamos; do
     setup "$WORK/$fx" CARINO_SETUP_PLAN=technical
     check "$fx: refused, exit 1, no command printed" '(( RC == 1 )) && grep -q "refused and nothing was installed" <<<"$OUT" && (( $(commands) == 0 ))'
 done
-check "nixos: the configuration.nix snippet is printed" 'grep -q "programs.hyprland.enable = true;" <<<"$OUT" || { setup "$WORK/nixos" CARINO_SETUP_PLAN=technical; grep -q "programs.hyprland.enable = true;" <<<"$OUT"; }'
-fixture unknown 'NAME="Plan 9"' 'ID=plan9'
+setup "$WORK/nixos" CARINO_SETUP_PLAN=technical
+check "nixos: the configuration.nix snippet is printed" 'grep -q "programs.hyprland.enable = true;" <<<"$OUT"'
+setup "$WORK/guix" CARINO_SETUP_PLAN=technical
+check "guix: the config.scm snippet and the reconfigure command are printed" 'grep -q "specification->package \"flatpak\"" <<<"$OUT" && grep -q "guix system reconfigure /etc/config.scm" <<<"$OUT" && grep -q nonguix <<<"$OUT"'
+fixture unknown 'NAME="Plan 9"' 'ID=plan9' 'ID_LIKE=bell'
 setup "$WORK/unknown" CARINO_SETUP_PLAN=technical
-check "unknown distribution: refused and named" '(( RC == 1 )) && grep -q "ID=plan9" <<<"$OUT" && (( $(commands) == 0 ))'
+check "unknown distribution: refused, ID, ID_LIKE and NAME shown, issues link given" '(( RC == 1 )) && grep -q "ID=plan9, ID_LIKE=bell, name .Plan 9." <<<"$OUT" && grep -q "github.com/MiguelCarino/SimpleSetup/issues" <<<"$OUT" && (( $(commands) == 0 ))'
+for k in FreeBSD OpenBSD NetBSD DragonFly Darwin SunOS; do
+    setup "$WORK/fedora44" CARINO_SETUP_UNAME=$k CARINO_SETUP_PLAN=technical
+    check "uname $k: refused as not Linux, exit 1, no command printed" '(( RC == 1 )) && clean && grep -q "Nothing was installed" <<<"$OUT" && (( $(commands) == 0 ))'
+done
+setup "$WORK/fedora44" CARINO_SETUP_UNAME=FreeBSD CARINO_SETUP_PLAN=technical
+check "FreeBSD: points to pkg" 'grep -q "pkg on FreeBSD" <<<"$OUT"'
+setup "$WORK/fedora44" CARINO_SETUP_UNAME=Darwin CARINO_SETUP_PLAN=technical
+check "macOS: points to macos.sh" 'grep -q "setup.carino.systems/macos.sh" <<<"$OUT"'
+FAKEBIN=$WORK/bin; mkdir -p "$FAKEBIN"; printf '#!/bin/sh\n[ "$3" = git ]\n' > "$FAKEBIN/rpm"; chmod +x "$FAKEBIN/rpm"   # rpm knows only git
+OUT=$(PATH="$FAKEBIN:$PATH" bash -c 'source <(sed "\$d" setup.sh); DRYRUN=0 PM=dnf
+    dnfCheck git nope1 @group; echo "partial rc=$? note=$PKG_NOTE"; dnfCheck nope1 nope2; echo "none rc=$?"; DRYRUN=1; dnfCheck nope1; echo "dry rc=$?"
+    PM=slackpkg; pmOk 20 && echo "slackpkg 20 ok"; pmOk 1 || echo "slackpkg 1 fails"' </dev/null 2>&1)
+check "dnf check: partial install is ok (1 of 2), none installed is 3, dry run checks nothing" 'grep -q "partial rc=0 note= (1 of 2)" <<<"$OUT" && grep -q "none rc=3" <<<"$OUT" && grep -q "dry rc=0" <<<"$OUT"'
+check "slackpkg exit 20 (nothing to do) counts as success, 1 does not" 'grep -q "slackpkg 20 ok" <<<"$OUT" && grep -q "slackpkg 1 fails" <<<"$OUT"'
 
 head2 "3. Plan validation"
 setup "$WORK/fedora44" CARINO_SETUP_PLAN=technical,desktop=kde,purpose=gaming,reboot=no
@@ -160,7 +189,7 @@ OUT=$(CARINO_SETUP_OSRELEASE="$WORK/fedora44" CARINO_SETUP_NET=0 CARINO_SETUP_GP
 check "no argument, no terminal: interactive flow takes every default and ends" '(( RC == 0 )) && clean && grep -q "Purpose: basic " <<<"$OUT" && grep -q "Install the Carino Hyprland desktop configuration? (y/n) -> n" <<<"$OUT"'
 
 head2 "7. Package tables"
-RX='^([a-z0-9_]+)_(fedora|atomic|rhel|debian|ubuntu|arch|opensuse|solus|alpine|void|gentoo|mageia)=\('
+RX='^([a-z0-9_]+)_(fedora|atomic|rhel|debian|ubuntu|arch|opensuse|solus|alpine|void|gentoo|slackware|mageia)=\('
 TABLES=$(awk '/^# ==== 4\./,/^# ==== 5\./' setup.sh)
 has() { grep -qE "^$1=\\(" <<<"$TABLES"; }   # has <array name>
 check "section 4 holds only assignments and comments" '! grep -vE "^(#.*|[A-Za-z0-9_]+=\\(.*\\)|[A-Za-z0-9_]+=\\(|    \".*\"|\\)|)$" <<<"$TABLES" | grep -q .'
@@ -247,6 +276,8 @@ if command -v podman >/dev/null && podman image exists docker.io/library/bash:3.
     OUT=$(podman run --rm -v "$PWD:/r:ro,Z" -w /tmp -e CARINO_SETUP_FAKE=1 -e CARINO_SETUP_PLAN=technical,tweaks,update,purpose=robotics,purpose=corporate-google,reboot=no \
         docker.io/library/bash:3.2 bash /r/macos.sh </dev/null 2>&1); RC=$?
     check "macos.sh runs under bash 3.2 (container)" '(( RC == 0 )) && clean && grep -q "CARINO_SETUP_PLAN has finished" <<<"$OUT"'
+    OUT=$(podman run --rm -v "$PWD:/r:ro,Z" -w /tmp -e CARINO_SETUP_UNAME=Darwin docker.io/library/bash:3.2 bash /r/setup.sh </dev/null 2>&1); RC=$?
+    check "setup.sh under bash 3.2 on a Mac: points to macos.sh with no bash error" '(( RC == 1 )) && clean && ! grep -q "invalid option" <<<"$OUT" && grep -q "macos.sh" <<<"$OUT"'
 else printf '  skip  bash 3.2 run (podman pull docker.io/library/bash:3.2 to enable)\n'; fi
 # ---- end macOS ----
 

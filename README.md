@@ -28,7 +28,7 @@ Most of this page is about `setup.sh`: one plain bash file in 14 numbered sectio
 
 Run it as your normal user. It runs each command that changes the system through `sudo`, `doas` or `run0`, prints the command first, and puts user files in the home of the real user (`SUDO_USER` when started with sudo).
 
-1. **Check the system.** It reads `/etc/os-release` and finds the family from `ID`, then from `ID_LIKE`. It then prints a table: distribution, family, package manager, kernel, architecture, CPU, every GPU (with the NVIDIA generation), laptop, virtual machine, Secure Boot, atomic, desktop session, free disk, internet, and which user the files are for. It refuses NixOS (and prints a `configuration.nix` snippet instead), SteamOS, transactional openSUSE (MicroOS, Aeon, Kalpa), any distribution it does not recognise, and a machine with no root and no `sudo`/`doas`/`run0`. When it refuses, nothing has run.
+1. **Check the system.** It reads `/etc/os-release` and finds the family from `ID`, then from `ID_LIKE`. It then prints a table: distribution, family, package manager, kernel, architecture, CPU, every GPU (with the NVIDIA generation), laptop, virtual machine, Secure Boot, atomic, desktop session, free disk, internet, and which user the files are for. It refuses NixOS and Guix System (and prints a `configuration.nix` or `config.scm` snippet instead), SteamOS, transactional openSUSE (MicroOS, Aeon, Kalpa), any distribution it does not recognise (it prints the `ID`, `ID_LIKE` and name it read, and where to report it), a kernel that is not Linux (see [BSD and macOS](#bsd-and-macos)), and a machine with no root and no `sudo`/`doas`/`run0`. When it refuses, nothing has run.
 2. **Base setup and drivers** (asks, default yes):
    - adds the repositories that codecs and drivers need
    - upgrades the whole system
@@ -43,7 +43,7 @@ Run it as your normal user. It runs each command that changes the system through
 5. **Carino Hyprland.** It asks *"Install the Carino Hyprland desktop configuration?"* (default no). It asks only where Hyprland 0.55 or newer can be installed. Everywhere else it prints one line saying why not.
 6. **Summary.** It shows what was done, skipped or failed, then asks whether to reboot (default no).
 
-A failed package never stops the run. Names the package manager cannot find are listed and skipped. If a batch fails, each package is retried on its own.
+A failed package never stops the run. Names the package manager cannot find are listed and skipped. If a batch fails, each package is retried on its own. dnf skips unknown names itself and can exit with success when it installed none of them, so after each dnf install the script asks `rpm` which names are really there: none is recorded as a skip (`none available`), some as `ok (N of M)` with the missing names listed. Groups (`@...`) are taken on dnf's word.
 
 ## Supported distributions
 
@@ -60,10 +60,15 @@ A failed package never stops the run. Names the package manager cannot find are 
 | Alpine | Alpine, postmarketOS | community repository | AMD, Intel (no NVIDIA on musl) | basic, development | no (ships 0.54) |
 | Void | Void, glibc and musl | nonfree (+ multilib) | NVIDIA Turing+ on glibc, AMD, Intel | basic | no |
 | Gentoo | Gentoo, Funtoo | base packages only | printed steps (USE flags) | Flatpaks only | no (steps printed) |
+| Slackware | Slackware 15.0 and -current | base packages, codecs and firmware with `slackpkg` (pick a mirror in `/etc/slackpkg/mirrors` first) | printed steps (SlackBuilds.org) | none (one line: SlackBuilds.org) | no |
 | Mageia | Mageia, OpenMandriva | nonfree + tainted on Mageia (OpenMandriva: enable non-free in `om-repo-picker`) | NVIDIA via the Control Center | Flatpaks only | no |
-| *refused* | NixOS, SteamOS, MicroOS / Aeon / Kalpa, anything unknown | — | — | — | — |
+| *refused* | NixOS, Guix System, SteamOS, MicroOS / Aeon / Kalpa, anything unknown, FreeBSD / OpenBSD / NetBSD / DragonFly, macOS (use `macos.sh`) | — | — | — | — |
 
 "All" means every purpose that has a list of its own: 13 of the 15. Corporate (Microsoft only) and Corporate (Google only) install the basic applications plus Flatpaks on every family. The desktops have package lists on Fedora, Arch and openSUSE (all 12), Debian and Ubuntu (all but Niri), EL (GNOME, XFCE, KDE, LXQt, Cinnamon, MATE) and Solus (Hyprland); Mageia has none. The [plan builder](https://setup.carino.systems) shows the exact packages for each family and profile.
+
+### BSD and macOS
+
+`setup.sh` is for Linux only. It checks `uname -s` before anything else, and on FreeBSD, OpenBSD, NetBSD or DragonFly it stops with one paragraph saying so and naming the system's own tool (`pkg`, `pkg_add`, `pkgin`). On macOS it points to `macos.sh`. Note that the BSDs do not install bash by default, so `bash <(curl ...)` fails there with "bash: not found" before the script can say anything; with bash installed you get the message above.
 
 ## Arguments
 
@@ -138,7 +143,7 @@ Each run writes `carino-setup-YYYYmmdd-HHMMSS.log` in the current directory, wit
 | `CARINO_SETUP_DRYRUN=1` | Same as `dry-run` |
 | `CARINO_SETUP_LOG=<file>` | Log path |
 | `CARINO_SETUP_OSRELEASE=<file>` | Read this instead of `/etc/os-release`, to see what another distribution would get |
-| `CARINO_SETUP_ATOMIC`, `_GPU`, `_NVGEN`, `_VIRT`, `_NET` | Test hooks: force atomic, the GPU list (`"nvidia amd intel"`), the NVIDIA branch (`open`, `580`, `470`) or the VM type; `_NET=0` skips the internet check |
+| `CARINO_SETUP_ATOMIC`, `_GPU`, `_NVGEN`, `_VIRT`, `_NET`, `_UNAME` | Test hooks: force atomic, the GPU list (`"nvidia amd intel"`), the NVIDIA branch (`open`, `580`, `470`) or the VM type; `_NET=0` skips the internet check; `_UNAME` pretends to be another kernel (`FreeBSD`, `Darwin`, ...) |
 
 ## Carino Hyprland
 
@@ -232,8 +237,8 @@ An unknown token, a bad `reboot=` value, a plan with nothing to do, or a plan co
 ```bash
 ./test.sh                          # syntax, shellcheck, every distribution fixture, plans, purposes, desktops, arguments, package tables
 ./test.sh --network                # also asks Flathub about every Flatpak id
-./tools/check-packages.sh cheap    # array coverage, Flathub ids, Arch repositories (HTTP only)
-./tools/check-packages.sh containers   # resolves every name in Fedora, Debian, Ubuntu, openSUSE, AlmaLinux and Alpine containers
+./tools/check-packages.sh cheap    # array coverage, Flathub ids, Arch repositories, Slackware PACKAGES.TXT (HTTP only)
+./tools/check-packages.sh containers   # resolves every name in Fedora, Debian, Ubuntu, openSUSE, AlmaLinux, Alpine and Void (glibc and musl) containers
 ./tools/check-brew.sh              # every macos.sh formula and cask exists on formulae.brew.sh and is not disabled
 ./tools/check-winget.sh            # every setup.ps1 winget id exists in winget-pkgs (needs gh or GITHUB_TOKEN; a few minutes)
 ```
@@ -242,7 +247,7 @@ An unknown token, a bad `reboot=` value, a plan with nothing to do, or a plan co
 .\test.ps1                         # setup.ps1: parse, 5.1 compatibility, ASCII, purposes match setup.sh, package table, dry runs through the fake hook
 ```
 
-`test.sh` runs `setup.sh` only as a dry run, against twenty `os-release` fixtures. Its section 9 runs `macos.sh` under the fake-Mac hook (plans, refusals including Intel without Homebrew, all 15 purposes, the same purposes as `setup.sh`), and also under bash 3.2 when the `docker.io/library/bash:3.2` image is present. `test.ps1` runs `setup.ps1` under the fake hook: a full plan, the `iwr | iex` form under a caller's StrictMode, Windows 10 and 11 tweak sets, an old build refused, bad plans refused with status 2, all 15 purposes and the non-interactive defaults. CI (`checks.yml`) runs `test.sh --network`, the coverage check and `shellcheck -S warning` on every push and pull request, `test.ps1` under PowerShell 7 and 5.1 plus a real dry run of a plan on `windows-latest`, and a real dry run of a plan under `/bin/bash` on `macos-latest`. `check-brew.sh` and `check-winget.sh` are run by hand for now. `packages.yml` runs the cheap package check when a package list changes. Each month it runs the container check and opens an issue if a name has gone.
+`test.sh` runs `setup.sh` only as a dry run, against twenty-five `os-release` fixtures, plus the non-Linux refusals through `CARINO_SETUP_UNAME` and the dnf check against a stand-in `rpm`. Its section 9 runs `macos.sh` under the fake-Mac hook (plans, refusals including Intel without Homebrew, all 15 purposes, the same purposes as `setup.sh`), and also under bash 3.2 when the `docker.io/library/bash:3.2` image is present. `test.ps1` runs `setup.ps1` under the fake hook: a full plan, the `iwr | iex` form under a caller's StrictMode, Windows 10 and 11 tweak sets, an old build refused, bad plans refused with status 2, all 15 purposes and the non-interactive defaults. CI (`checks.yml`) runs `test.sh --network`, the coverage check and `shellcheck -S warning` on every push and pull request, `test.ps1` under PowerShell 7 and 5.1 plus a real dry run of a plan on `windows-latest`, and a real dry run of a plan under `/bin/bash` on `macos-latest`. `check-brew.sh` and `check-winget.sh` are run by hand for now. `packages.yml` runs the cheap package check when a package list changes. Each month it runs the container check and opens an issue if a name has gone.
 
 ## Licensing
 
@@ -258,6 +263,7 @@ relicense. Each keeps its own terms, and each carries its own notice.
 | --- | --- | --- | --- |
 | [`fonts/`](fonts/) | IBM Plex Mono, IBM Plex Sans, Red Hat Display | SIL OFL 1.1 | [`fonts/OFL.txt`](fonts/OFL.txt) |
 | [`hyprland/.local/share/fonts/carino/`](hyprland/.local/share/fonts/carino/) | Orbitron, Rajdhani SemiBold, Share Tech Mono | SIL OFL 1.1 | `OFL-Orbitron.txt`, `OFL-Rajdhani.txt`, `OFL-ShareTechMono.txt` (beside the fonts) |
+| `index.html` (`#osFloat` symbols) | Linux, Fedora, Debian, Ubuntu, Arch, openSUSE, Mint, Manjaro and Apple logos from [Simple Icons](https://simpleicons.org) 13.21.0 (the Windows mark is drawn by hand) | CC0 1.0 (the logos remain their owners' trademarks) | [Simple Icons licence](https://github.com/simple-icons/simple-icons/blob/develop/LICENSE.md) |
 
 Those files travel with any fork, mirror or repackaging of this repository, and
 their notices must travel with them.

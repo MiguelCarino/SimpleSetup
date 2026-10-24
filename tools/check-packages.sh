@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Checks that the package names in setup.sh (section 4, arrays <group>_<family>) still resolve.
-# Usage: tools/check-packages.sh [coverage|flathub|arch|fedora|debian|ubuntu|opensuse|el|alpine|cheap|containers|all]
-#   cheap      = coverage + flathub + arch (HTTP only)      containers = fedora debian ubuntu opensuse el alpine
+# Usage: tools/check-packages.sh [coverage|flathub|arch|slackware|fedora|debian|ubuntu|opensuse|el|alpine|void|void-musl|cheap|containers|all]
+#   cheap      = coverage + flathub + arch + slackware (HTTP only)
+#   containers = fedora debian ubuntu opensuse el alpine void void-musl
 # A single unknown name used to abort a whole transaction; setup.sh now skips unknown names, so a
 # name that rots silently drops a feature instead. This script is how that is noticed.
 cd "$(dirname "$0")/.." || exit 1
@@ -12,14 +13,14 @@ here() { CHECKED=$((CHECKED + 1)); }
 skip() { UNPROVEN=$((UNPROVEN + 1)); printf '  unproven  %s\n' "$1"; }
 want() { [[ $WHAT == all || " $2 " == *" $WHAT "* || $WHAT == "$1" ]]; }   # want <leg> "<groups that include it>"
 # names known to be absent from the release a leg checks; setup.sh skips them there, so they are not failures
-declare -A EXPECTED=([ubuntu]="fastfetch")
+declare -A EXPECTED=([ubuntu]="fastfetch" [slackware]="jq intel-microcode" [void-musl]="nvidia nvidia-libs-32bit")
 SENTINEL=carino-setup-sentinel-not-a-package   # every container query must report this one missing, or it proved nothing
 CRT=''; have() { command -v "$1" >/dev/null 2>&1; }
 have podman && CRT=podman; [[ -z $CRT ]] && have docker && CRT=docker
 
 # shellcheck source=/dev/null  # section 4 of setup.sh is plain data: arrays only
 source <(awk '/^# ==== 4\./,/^# ==== 5\./' setup.sh)
-FAMILIES="fedora atomic rhel debian ubuntu arch opensuse solus alpine void gentoo mageia"
+FAMILIES="fedora atomic rhel debian ubuntu arch opensuse solus alpine void gentoo slackware mageia"
 RX="^([a-z0-9_]+)_(${FAMILIES// /|})$"
 arrays() { compgen -A arrayvar | grep -E "$RX"; }
 names() { # names <family> [fallback family]: every checkable name the family installs (URLs, @groups, atoms dropped)
@@ -69,6 +70,9 @@ zypper -n -q ar -cfp 90 https://ftp.gwdg.de/pub/linux/misc/packman/suse/openSUSE
 zypper -n -q --gpg-auto-import-keys refresh >/dev/null 2>&1
 for p; do zypper -n -q --no-refresh search -x --provides "$p" >/dev/null 2>&1 || echo "$p"; done'
 APK='apk update -q >/dev/null 2>&1; for p; do apk search -e "$p" 2>/dev/null | grep -q . || echo "$p"; done'
+XBPS='xbps-install -Syu xbps >/dev/null 2>&1; xbps-install -Sy void-repo-nonfree >/dev/null 2>&1
+case $(xbps-uhelper arch) in x86_64) xbps-install -Sy void-repo-multilib void-repo-multilib-nonfree >/dev/null 2>&1 ;; esac
+xbps-install -S >/dev/null 2>&1; for p; do xbps-query -R "$p" >/dev/null 2>&1 || echo "$p"; done'
 
 if want coverage "cheap"; then
     printf '\nCoverage: every array in section 4 names a known family\n'
@@ -76,7 +80,7 @@ if want coverage "cheap"; then
         [[ $a =~ $RX || $a == flatpak_* || $a == FALLBACK || $a == DONE_* ]] && { here; continue; }
         grep -qE "^$a=\(" setup.sh && gone "coverage  $a is not <group>_<family> or flatpak_<group>"
     done
-    for f in atomic solus void gentoo mageia; do
+    for f in atomic solus gentoo mageia; do
         n=$(names "$f" | grep -c .)
         (( n )) && skip "$f: $n names have no automated leg here (no official container or index to ask)"
     done
@@ -103,12 +107,29 @@ except Exception: print(-1)')
     done
 fi
 
+if want slackware "cheap"; then
+    rel=${SLACKWARE_RELEASE:-15.0}
+    printf '\nSlackware %s (PACKAGES.TXT from mirrors.slackware.com)\n' "$rel"
+    idx=$(curl -sL --max-time 120 "https://mirrors.slackware.com/slackware/slackware64-$rel/PACKAGES.TXT" |
+        sed -n 's/^PACKAGE NAME: *//p' | sed -E 's/-[^-]+-[^-]+-[^-]+\.t[gx]z$//' | sort -u)
+    if (( $(grep -c . <<<"$idx") < 1000 )); then skip "slackware: the package index could not be read"
+    else
+        for p in $(names slackware); do
+            if grep -qxF -- "$p" <<<"$idx"; then here
+            elif [[ " ${EXPECTED[slackware]} " == *" $p "* ]]; then printf '  expected  slackware  %s (absent in %s)\n' "$p" "$rel"; here
+            else gone "slackware  $p"; fi
+        done
+    fi
+fi
+
 want fedora   "containers" && leg fedora   "docker.io/library/fedora:${FEDORA_RELEASE:-44}"      "$DNF_FEDORA" fedora
 want debian   "containers" && leg debian   "docker.io/library/debian:${DEBIAN_SUITE:-trixie}"    "$APT_DEBIAN" debian
 want ubuntu   "containers" && leg ubuntu   "docker.io/library/ubuntu:${UBUNTU_SUITE:-24.04}"     "$APT_UBUNTU" ubuntu debian
 want opensuse "containers" && leg opensuse "docker.io/opensuse/${OPENSUSE_RELEASE:-tumbleweed}"  "$ZYPPER" opensuse
 want el       "containers" && leg el       "${EL_IMAGE:-docker.io/library/almalinux:10}"         "$DNF_EL" rhel
 want alpine   "containers" && leg alpine   "docker.io/library/alpine:${ALPINE_RELEASE:-latest}"  "$APK" alpine
+want void     "containers" && leg void     "ghcr.io/void-linux/void-glibc-full:latest"           "$XBPS" void
+want void-musl "containers" && leg void-musl "ghcr.io/void-linux/void-musl-full:latest"          "$XBPS" void
 
 printf '\n%d names resolve, %d missing, %d unproven\n' "$CHECKED" "$MISSING" "$UNPROVEN"
 (( MISSING == 0 ))

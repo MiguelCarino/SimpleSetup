@@ -12,11 +12,21 @@
 #   CARINO_SETUP_PLAN=technical,desktop=kde,purpose=gaming,reboot=no bash setup.sh      unattended
 # Environment: CARINO_SETUP_DRYRUN=1, CARINO_SETUP_PLAN, CARINO_SETUP_LOG=<file>, CARINO_SETUP_OSRELEASE=<file>.
 # Test hooks: CARINO_SETUP_ATOMIC=0|1, CARINO_SETUP_GPU="nvidia amd intel", CARINO_SETUP_NVGEN=open|580|470,
-#             CARINO_SETUP_VIRT=none|kvm|vmware|..., CARINO_SETUP_NET=0 (skip the internet check).
+#             CARINO_SETUP_VIRT=none|kvm|vmware|..., CARINO_SETUP_NET=0 (skip the internet check),
+#             CARINO_SETUP_UNAME=Linux|Darwin|FreeBSD|... (pretend to be another kernel).
 # Licence: AGPL-3.0-or-later, see LICENSE. Source: https://github.com/MiguelCarino/SimpleSetup
 
 # ==== 1. Settings & args ====
 set -uo pipefail
+UNAME=${CARINO_SETUP_UNAME:-$(uname -s)}
+if [[ $UNAME != Linux ]]; then   # checked before anything that needs bash 4 (macOS ships bash 3.2)
+    case $UNAME in
+        Darwin) echo "setup.sh is for Linux. On macOS run macos.sh instead: bash <(curl -s https://setup.carino.systems/macos.sh)" ;;
+        *BSD|DragonFly) echo "setup.sh is for Linux only, and $UNAME is not supported. Install software with the system's own tool: pkg on FreeBSD and DragonFly, pkg_add on OpenBSD, pkgin on NetBSD." ;;
+        *) echo "setup.sh is for Linux only, and this system reports '$UNAME'. Windows has setup.ps1 and macOS has macos.sh." ;;
+    esac
+    echo "Nothing was installed."; exit 1
+fi
 DRYRUN=0
 if [[ ${1:-} == dry-run || ${1:-} == --dry-run ]]; then DRYRUN=1; shift; fi
 [[ ${CARINO_SETUP_DRYRUN:-0} == 1 ]] && DRYRUN=1
@@ -32,7 +42,7 @@ LOG=''
 OS_ID='' OS_LIKE='' OS_NAME='' OS_VER='' OS_CODE='' UBU_CODE='' DEB_CODE=''
 FAMILY='' PM='' ATOMIC=0 CPU=other GPUS='' NVGEN=open VIRT=none LAPTOP=no SECUREBOOT=unknown
 HAS_DESKTOP=no TARGET_USER='' TARGET_HOME='' HYPR_HOW='' HYPR_WHY='' HYPR_SRC='' REBOOT='' NEED_REBOOT=0
-REFRESHED=0 FLATHUB_READY=0
+REFRESHED=0 FLATHUB_READY=0 PKG_NOTE='' SLACK_READY='' SLACK_KERNEL=0
 SUDO=() PM_INSTALL=() PM_UPGRADE=() PM_REFRESH=() PM_TARGET=() RESULTS=()
 declare -A DONE_GROUP=() DONE_FLATPAK=()
 declare -A FALLBACK=([ubuntu]=debian [rhel]=fedora)   # where a family has no list of its own (EL: not for desktops)
@@ -96,6 +106,8 @@ setPackageManager() { # the pacman refresh is a full upgrade on purpose: -Sy the
         alpine)  PM=apk; PM_INSTALL=(apk add); PM_UPGRADE=(apk upgrade); PM_REFRESH=(apk update) ;;
         void)    PM=xbps-install; PM_INSTALL=(xbps-install -y); PM_UPGRADE=(xbps-install -y -Su); PM_REFRESH=(xbps-install -S) ;;
         gentoo)  PM=emerge; PM_INSTALL=(emerge --noreplace --quiet-build); PM_UPGRADE=(emerge --update --deep --newuse @world); PM_REFRESH=(emerge --sync) ;;
+        slackware) PM=slackpkg; PM_INSTALL=(slackpkg -batch=on -default_answer=y install)
+                 PM_UPGRADE=(slackpkg -batch=on -default_answer=y upgrade-all); PM_REFRESH=(slackpkg -batch=on -default_answer=y update) ;;
     esac
     [[ $OS_ID == *tumbleweed* || $OS_ID == *slowroll* ]] && PM_UPGRADE=(zypper -n dup --auto-agree-with-licenses)
     [[ $OS_ID == openmandriva ]] && PM_UPGRADE=(dnf -y distro-sync)
@@ -108,16 +120,70 @@ pkgAvail() { # pkgAvail <name>: true when the package manager can find it (for m
         zypper)  zypper -n -q --no-refresh search -x --provides "$1" >/dev/null 2>&1 ;;
         apk)     apk search -e "$1" 2>/dev/null | grep -q . ;;
         xbps-install) xbps-query -R "$1" >/dev/null 2>&1 ;;
+        slackpkg) awk -v p="$1" '$2 == p {f=1} END {exit !f}' /var/lib/slackpkg/pkglist 2>/dev/null ;;
         *)       return 0 ;;
     esac
 }
-pkgRefresh() { REFRESHED=1; root "${PM_REFRESH[@]}" || warn "Refreshing the package index failed."; }
+pmOk() { (( $1 == 0 )) || [[ $PM == slackpkg && $1 == 20 ]]; }   # slackpkg exits 20 when there is nothing to do
+slackpkgReady() { # slackpkg exits 0 when it did nothing (no mirror, -current not confirmed), so check first
+    [[ -n $SLACK_READY ]] && return "$SLACK_READY"
+    SLACK_READY=1
+    (( DRYRUN )) && { SLACK_READY=0; return 0; }
+    local m; m=$(grep -m1 -E '^[[:space:]]*(https?|ftp|file|cdrom)://' /etc/slackpkg/mirrors 2>/dev/null)
+    if [[ -z $m ]]; then
+        warn "No slackpkg mirror is selected: uncomment one line in /etc/slackpkg/mirrors, then run this again."
+        record fail "slackpkg mirror"; return 1
+    fi
+    if [[ $m == *-current/* && ! -e /var/lib/slackpkg/current ]]; then   # else slackpkg asks with a raw read
+        if ! confirm "The slackpkg mirror is Slackware -current, the development tree. Use it?" n || ! root touch /var/lib/slackpkg/current; then
+            record fail "slackpkg mirror (-current not confirmed)"; return 1
+        fi
+    fi
+    SLACK_READY=0
+}
+slackKernels() { printf '%s\n' /var/log/packages/kernel-*; }
+pkgRefresh() {
+    local before=''
+    REFRESHED=1
+    if [[ $PM == slackpkg ]]; then slackpkgReady || return 1; before=$(stat -c %Y /var/lib/slackpkg/pkglist 2>/dev/null); fi
+    root "${PM_REFRESH[@]}" || { warn "Refreshing the package index failed."; return 1; }
+    if [[ $PM == slackpkg ]] && (( ! DRYRUN )) && [[ $(stat -c %Y /var/lib/slackpkg/pkglist 2>/dev/null) == "$before" ]]; then
+        warn "slackpkg update did not write a new package list, so it did not run."; return 1
+    fi
+}
 pkgUpgrade() {
+    local rc kernels=''
     [[ $FAMILY == void ]] && root xbps-install -y -Su xbps   # xbps must update itself before the rest
-    root "${PM_UPGRADE[@]}"
+    if [[ $PM == slackpkg ]]; then   # install-new first: -current adds packages that upgraded ones need
+        slackpkgReady || return 1
+        kernels=$(slackKernels)
+        root slackpkg -batch=on -default_answer=y install-new; pmOk $? || return 1
+    fi
+    root "${PM_UPGRADE[@]}"; rc=$?
+    if [[ $PM == slackpkg && $rc == 50 ]]; then   # 50: slackpkg upgraded itself and must run again
+        say "slackpkg upgraded itself, running the upgrade again."; pkgRefresh; root "${PM_UPGRADE[@]}"; rc=$?
+    fi
+    if [[ $PM == slackpkg ]] && (( ! DRYRUN )) && [[ $(slackKernels) != "$kernels" ]]; then
+        warn "The kernel was upgraded: run mkinitrd (if you use an initrd) and lilo, eliloconfig or grub-mkconfig before rebooting."
+        SLACK_KERNEL=1
+    fi
+    pmOk "$rc"
+}
+dnfCheck() { # dnfCheck <names...>: dnf can exit 0 after skipping every name, so ask rpm what is really installed
+    local p n=0 m=0; local -a miss=()
+    (( DRYRUN )) && return 0
+    for p in "$@"; do
+        [[ $p == @* || $p == */* ]] && continue   # groups and URLs: dnf's own result is trusted
+        m=$((m + 1))
+        if rpm -q --whatprovides "$p" >/dev/null 2>&1; then n=$((n + 1)); else miss+=("$p"); fi
+    done
+    (( n == m )) && return 0
+    (( n )) || { warn "dnf reported success, but none of the $m packages is installed."; return 3; }
+    warn "Installed $n of $m; not available: ${miss[*]}"; PKG_NOTE=" ($n of $m)"
 }
 pkgInstall() { # pkgInstall <names...>: installs what this system can find, lists and skips the rest
-    local p bad=0; local -a want=() gone=()
+    local p rc bad=0; local -a want=() gone=()
+    PKG_NOTE=''
     (( $# )) || return 0
     (( REFRESHED )) || pkgRefresh
     for p in "$@"; do
@@ -125,10 +191,11 @@ pkgInstall() { # pkgInstall <names...>: installs what this system can find, list
     done
     (( ${#gone[@]} )) && warn "Not available here, skipped: ${gone[*]}"
     (( ${#want[@]} )) || return 3   # 3 = none of the names exists here
-    root "${PM_INSTALL[@]}" "${PM_TARGET[@]}" "${want[@]}" && return 0
+    root "${PM_INSTALL[@]}" "${PM_TARGET[@]}" "${want[@]}"; rc=$?
+    if pmOk "$rc"; then [[ $PM == dnf ]] && { dnfCheck "${want[@]}"; return; }; return 0; fi
     [[ $PM == dnf ]] && return 1   # dnf already skipped the unknown names, a failure here is real
     warn "The batch install failed, retrying one package at a time."
-    for p in "${want[@]}"; do root "${PM_INSTALL[@]}" "${PM_TARGET[@]}" "$p" || bad=1; done
+    for p in "${want[@]}"; do root "${PM_INSTALL[@]}" "${PM_TARGET[@]}" "$p"; pmOk $? || bad=1; done
     return "$bad"
 }
 arrayFor() { # arrayFor <group>: prints <group>_<family> (or the fallback family's) when it exists
@@ -148,13 +215,14 @@ installGroup() { # installGroup <group> [label]: installs the package array for 
     say "Installing $label (${#list[@]} packages, $name)"
     pkgInstall "${list[@]}"; rc=$?
     case $rc in
-        0) record ok "$label" ;;
+        0) record ok "$label$PKG_NOTE" ;;
         3) record skip "$label (none available)"; return 3 ;;
         *) record fail "$label"; return 1 ;;
     esac
 }
 flatpakSetup() {
     (( FLATHUB_READY )) && return 0
+    if [[ $FAMILY == slackware ]] && ! have flatpak; then warn "Slackware: build desktop/flatpak from SlackBuilds.org first."; return 1; fi
     have flatpak || pkgInstall flatpak
     root flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo && FLATHUB_READY=1
 }
@@ -172,6 +240,7 @@ enableService() { # enableService <unit>: systemd, OpenRC or runit
     if have systemctl; then root systemctl enable --now "$1"
     elif have rc-update; then root rc-update add "${1%.*}" default
     elif [[ -d /etc/sv/${1%.*} ]]; then root ln -sf "/etc/sv/${1%.*}" /var/service/
+    elif [[ -e /etc/rc.d/rc.${1%.*} ]]; then root chmod +x "/etc/rc.d/rc.${1%.*}"   # Slackware: starts at the next boot
     else warn "No service manager found to enable $1."; fi
 }
 
@@ -182,21 +251,38 @@ NIXOS_SNIPPET='  # /etc/nixos/configuration.nix, then: sudo nixos-rebuild switch
   services.flatpak.enable = true;
   services.xserver.videoDrivers = [ "nvidia" ];   # NVIDIA only
   hardware.nvidia.open = true;                     # Turing (RTX 20 / GTX 16) or newer'
+GUIX_SNIPPET='  ;; /etc/config.scm, then: sudo guix system reconfigure /etc/config.scm
+  ;; Merge into the existing packages and services fields (add to their lists), never add a second field.
+  (use-service-modules desktop)                     ; at the top, next to use-modules
+  (packages (append (list (specification->package "flatpak")
+                          (specification->package "hyprland"))
+                    %base-packages))
+  (services (append (list (service gnome-desktop-service-type))
+                    %desktop-services))
+  ;; Non-free firmware and NVIDIA: add the nonguix channel, https://gitlab.com/nonguix/nonguix'
+SLACKWARE_VERSION=/etc/slackware-version
 
 readOsRelease() {
-    [[ -r $OSRELEASE ]] || die "Cannot read $OSRELEASE, so the distribution is unknown. Nothing was installed."
-    local k v
-    while IFS='=' read -r k v; do
-        v=${v%\"}; v=${v#\"}; v=${v%\'}; v=${v#\'}
-        case $k in
-            ID) OS_ID=$v ;; ID_LIKE) OS_LIKE=$v ;; PRETTY_NAME) OS_NAME=$v ;; VERSION_ID) OS_VER=$v ;;
-            VERSION_CODENAME) OS_CODE=$v ;; UBUNTU_CODENAME) UBU_CODE=$v ;; DEBIAN_CODENAME) DEB_CODE=$v ;;
-        esac
-    done < "$OSRELEASE"
+    local k v name=''
+    if [[ -r $OSRELEASE ]]; then
+        while IFS='=' read -r k v; do
+            v=${v%\"}; v=${v#\"}; v=${v%\'}; v=${v#\'}
+            case $k in
+                ID) OS_ID=$v ;; ID_LIKE) OS_LIKE=$v ;; NAME) name=$v ;; PRETTY_NAME) OS_NAME=$v ;; VERSION_ID) OS_VER=$v ;;
+                VERSION_CODENAME) OS_CODE=$v ;; UBUNTU_CODENAME) UBU_CODE=$v ;; DEBIAN_CODENAME) DEB_CODE=$v ;;
+            esac
+        done < "$OSRELEASE"
+    elif [[ ! -r $SLACKWARE_VERSION ]]; then
+        die "Cannot read $OSRELEASE, so the distribution is unknown. Nothing was installed."
+    fi
+    if [[ -z $OS_ID && -r $SLACKWARE_VERSION ]]; then   # old Slackware releases have no os-release
+        OS_ID=slackware; name=$(<"$SLACKWARE_VERSION"); OS_VER=${name##* }
+    fi
+    OS_NAME=${OS_NAME:-${name:-$OS_ID}}
 }
 familyOf() { # familyOf <os-release id>
     case $1 in
-        nixos) echo nixos ;;
+        nixos) echo nixos ;; guix) echo guix ;;
         steamos|holo) echo steamos ;;
         fedora|nobara|ultramarine|bazzite|bluefin|aurora|risi) echo fedora ;;
         rhel|centos|almalinux|rocky|ol|amzn|eurolinux|circle|cloudlinux|navy) echo rhel ;;
@@ -205,6 +291,7 @@ familyOf() { # familyOf <os-release id>
         arch|archarm|manjaro|manjaro-arm|endeavouros|cachyos|garuda|arcolinux|rebornos|archcraft) echo arch ;;
         opensuse*|suse|sles|sled) echo opensuse ;;
         solus) echo solus ;; alpine|postmarketos) echo alpine ;; void) echo void ;; gentoo|funtoo) echo gentoo ;;
+        slackware) echo slackware ;;
         mageia|openmandriva|mandriva) echo mageia ;;
         *) return 1 ;;
     esac
@@ -278,7 +365,7 @@ printFacts() {
         if curl -sI --max-time 6 https://flathub.org >/dev/null 2>&1; then net=yes; else net=no; fi
     fi
     banner "System"
-    printf '  %-17s %s\n' "Distribution" "${OS_NAME:-$OS_ID} (ID=$OS_ID${OS_VER:+, version $OS_VER})" \
+    printf '  %-17s %s\n' "Distribution" "$OS_NAME (ID=$OS_ID${OS_VER:+, version $OS_VER})" \
         "Family" "$FAMILY" "Package manager" "${PM_INSTALL[*]}" "Kernel" "$(uname -r)" "Architecture" "$(uname -m)" \
         "CPU" "$CPU${model:+ ($model)}" \
         "GPU" "${GPUS:-none found}$([[ $GPUS == *nvidia* ]] && echo " (NVIDIA branch: $NVGEN)")" \
@@ -291,9 +378,11 @@ checkSystem() {
     detectFamily
     case $FAMILY in
         nixos)   refuse "NixOS is configured declaratively, so this script does not install anything on it. Add this instead:" "$NIXOS_SNIPPET" ;;
+        guix)    refuse "Guix System is configured declaratively, so this script does not install anything on it. Add this instead:" "$GUIX_SNIPPET" ;;
         steamos) refuse "SteamOS is an immutable image: system packages are reset on update. Use Flatpaks from Discover (desktop mode)." ;;
-        '')      refuse "Unknown distribution (ID=${OS_ID:-?}, ID_LIKE=${OS_LIKE:-none}, ${OS_NAME:-no name})." \
-                     "Supported: Fedora (and Atomic), RHEL/Alma/Rocky, Debian, Ubuntu, Arch, openSUSE, Solus, Alpine, Void, Gentoo, Mageia." ;;
+        '')      refuse "Unknown distribution: ID=${OS_ID:-none}, ID_LIKE=${OS_LIKE:-none}, name '${OS_NAME:-none}'${OS_VER:+, version $OS_VER}." \
+                     "Supported: Fedora (and Atomic), RHEL/Alma/Rocky, Debian, Ubuntu, Arch, openSUSE, Solus, Alpine, Void, Gentoo, Slackware, Mageia.
+If this distribution is based on one of them, report it with the line above: https://github.com/MiguelCarino/SimpleSetup/issues" ;;
     esac
     [[ $FAMILY == opensuse && $OS_ID =~ micro|aeon|kalpa ]] && refuse "$OS_ID is a transactional openSUSE: use transactional-update and Flatpaks there."
     setPrivilege
@@ -304,6 +393,7 @@ checkSystem() {
     case $OS_ID in kali|parrot) warn "$OS_ID is a security distribution: it is treated as Debian, but its own tools may conflict." ;; esac
     [[ $FAMILY == atomic ]] && warn "Atomic system: packages are layered with rpm-ostree and apply after a reboot."
     [[ $FAMILY == gentoo ]] && warn "Gentoo: only the base packages are emerged; drivers and profiles depend on your USE flags (guidance is printed)."
+    [[ $FAMILY == slackware ]] && warn "Slackware: base packages, codecs and firmware are installed with slackpkg; the rest comes from SlackBuilds.org (guidance is printed)."
     return 0
 }
 
@@ -325,6 +415,9 @@ base_solus=( git curl wget nano jq rsync lsof flatpak )
 # unverified on solus: pciutils lshw smartmontools fastfetch rclone
 base_gentoo=( sys-apps/pciutils dev-vcs/git dev-build/cmake net-misc/wget app-editors/nano net-misc/curl app-misc/jq net-misc/rsync sys-process/lsof sys-apps/smartmontools sys-apps/flatpak )
 base_mageia=( pciutils git cmake wget nano curl jq rsync lsof smartmontools lm_sensors flatpak )
+# a full Slackware install already has most of these; jq is in -current only (15.0 skips it)
+# slackpkg matches names as words: cmake also takes extra-cmake-modules, NetworkManager NetworkManager-openvpn
+base_slackware=( pciutils usbutils git cmake wget nano curl jq nasm lm_sensors rsync cifs-utils ntfs-3g lsof procps-ng gnupg2 openssh smartmontools NetworkManager htop infozip dmidecode hdparm ethtool mc )
 
 # -- codecs (Fedora also swaps ffmpeg-free and mesa-va-drivers, see codecsSetup)
 codecs_fedora=( gstreamer1-plugins-bad-freeworld gstreamer1-plugins-ugly gstreamer1-plugin-openh264 libavcodec-freeworld )
@@ -334,6 +427,7 @@ codecs_arch=( ffmpeg gst-plugins-ugly gst-plugins-bad gst-libav )
 codecs_opensuse=( ffmpeg gstreamer-plugins-ugly gstreamer-plugins-bad gstreamer-plugins-libav )
 codecs_alpine=( ffmpeg gst-plugins-ugly gst-plugins-bad gst-libav )
 codecs_void=( ffmpeg gst-plugins-ugly1 gst-plugins-bad1 gst-libav )
+codecs_slackware=( ffmpeg gst-plugins-good gst-plugins-bad-free gst-plugins-libav )
 
 # -- firmware and CPU microcode (microcode is skipped inside a VM)
 firmware_fedora=( linux-firmware )
@@ -344,6 +438,7 @@ firmware_arch=( linux-firmware )
 firmware_opensuse=( kernel-firmware-all )
 firmware_alpine=( linux-firmware )
 firmware_void=( linux-firmware )
+firmware_slackware=( kernel-firmware )
 microcode_intel_fedora=( microcode_ctl )
 microcode_amd_fedora=( amd-ucode-firmware )
 microcode_intel_rhel=( microcode_ctl )
@@ -357,6 +452,8 @@ microcode_intel_alpine=( intel-ucode )
 microcode_amd_alpine=( amd-ucode )
 microcode_intel_void=( intel-ucode )
 microcode_amd_void=( linux-firmware-amd )
+# Slackware: intel-microcode is in -current only; AMD microcode comes with firmware_slackware (kernel-firmware)
+microcode_intel_slackware=( intel-microcode )
 
 # -- graphics drivers. nvidia = Turing or newer (open module), nvidia580 = Maxwell/Pascal, nvidia470 = Kepler
 drivers_nvidia_fedora=( akmod-nvidia xorg-x11-drv-nvidia-cuda libva-nvidia-driver libva-utils vdpauinfo vulkan-tools )
@@ -630,13 +727,17 @@ repoVoid() {
     [[ $(xbps-uhelper arch 2>/dev/null) == x86_64 ]] && root xbps-install -y void-repo-multilib void-repo-multilib-nonfree
     REFRESHED=0
 }
+repoSlackware() { # slackpkg needs one mirror picked by hand, then the Slackware key once
+    slackpkgReady || return 1
+    root "${PM_REFRESH[@]}" gpg
+}
 repositoriesSetup() {
     [[ -n ${DONE_GROUP[repos]:-} ]] && return 0
     DONE_GROUP[repos]=1
     say "Repositories needed for codecs and drivers"
     case $FAMILY in
         fedora) repoFedora ;; rhel) repoRhel ;; debian) repoDebian ;; ubuntu) repoUbuntu ;; arch) repoArch ;;
-        opensuse) repoOpensuse ;; void) repoVoid ;;
+        opensuse) repoOpensuse ;; void) repoVoid ;; slackware) repoSlackware ;;
         alpine) root sed -i -E '/edge/! s|^#(.*/community)$|\1|' /etc/apk/repositories; REFRESHED=0 ;;
         # repository ids unverified: Mageia 9/10 name them mageia-<arch>-nonfree / -tainted
         mageia) if [[ $OS_ID == mageia ]]; then
@@ -662,6 +763,14 @@ gentooNote() {
         'Firmware and microcode: emerge sys-kernel/linux-firmware sys-firmware/intel-microcode' \
         'Hyprland: eselect repository enable hyproverlay && emaint sync -r hyproverlay && emerge gui-wm/hyprland'
 }
+slackwareNote() {
+    say "Slackware next steps (not automated, they are built from SlackBuilds.org):"
+    printf '  %s\n' 'A kernel upgrade: rebuild the initrd if you use one (mkinitrd) and run lilo or update GRUB before rebooting' \
+        'SlackBuilds.org tools: sbopkg (sbopkg.org) or slpkg (on SlackBuilds.org); add desktop/flatpak for Flatpaks' \
+        'CPU microcode loads early only when the initrd or the bootloader carries it (see mkinitrd -P)' \
+        'NVIDIA: system/nvidia-kernel + system/nvidia-driver (nvidia-legacy580-* for Maxwell/Pascal, legacy470 for Kepler)' \
+        'Mesa, Vulkan and VA-API for AMD and Intel ship with a full install'
+}
 baseSetup() {
     banner "Base setup"
     repositoriesSetup
@@ -675,9 +784,11 @@ baseSetup() {
         installGroup firmware "firmware"
         [[ $CPU != other ]] && installGroup "microcode_$CPU" "$CPU CPU microcode"
     fi
-    flatpakSetup || record fail "Flathub"
+    if [[ $FAMILY == slackware ]]; then say "Slackware: Flatpak is not in the distribution, it is skipped (see the notes below)."
+    else flatpakSetup || record fail "Flathub"; fi
     driversSetup
     [[ $FAMILY == gentoo ]] && gentooNote
+    [[ $FAMILY == slackware ]] && slackwareNote
     [[ $FAMILY == atomic ]] && NEED_REBOOT=1
     return 0
 }
@@ -735,6 +846,7 @@ nvidiaSetup() {
         debian|arch|solus|void) nvidiaPackaged "$g" ;;
         alpine)   warn "Alpine (musl) has no NVIDIA driver package; Mesa's nouveau/NVK drives the card."; record skip "NVIDIA driver" ;;
         gentoo)   warn "Gentoo: emerge x11-drivers/nvidia-drivers yourself (see the notes below)."; record skip "NVIDIA driver" ;;
+        slackware) warn "Slackware: build nvidia-kernel and nvidia-driver from SlackBuilds.org (see the notes below)."; record skip "NVIDIA driver" ;;
         *)        warn "$FAMILY: install the NVIDIA driver with the distribution's own tool (Mageia: the Control Center)."; record skip "NVIDIA driver" ;;
     esac
 }
@@ -780,6 +892,7 @@ driversSetup() {
     [[ -n $GPUS ]] || { say "No GPU was detected (no lspci and nothing in /sys/class/drm)."; return 0; }
     local v
     for v in $GPUS; do
+        if [[ $FAMILY == slackware && $v != nvidia ]]; then say "Slackware: Mesa, Vulkan and VA-API for $v ship with a full install."; continue; fi
         case $v in
             nvidia) nvidiaSetup ;;
             amd)    installGroup drivers_amd "AMD graphics (Mesa, Vulkan, VA-API, OpenCL)" ;;
@@ -802,6 +915,9 @@ enableDisplayManager() {
 }
 installDesktop() { # installDesktop <name from DESKTOP_NAMES>
     local de=$1
+    if [[ $FAMILY == slackware && $de != none && $de != *hyprland ]]; then   # the Hyprland choices give their own reason
+        say "Desktops are not for Slackware here: a full install has KDE Plasma and Xfce, others come from SlackBuilds.org."; record skip "$de desktop"; return 0
+    fi
     case $de in
         none) say "No desktop installed."; return 0 ;;
         carino-hyprland) carinoHyprland; return ;;
@@ -837,6 +953,9 @@ installPurpose() {
     entry=$(purposeEntry "$1") || { fail "Unknown purpose '$1'."; return 1; }
     IFS='|' read -r name label groups <<<"$entry"
     banner "Purpose: $name ($label)"
+    if [[ $FAMILY == slackware ]]; then
+        say "Purpose profiles are not for Slackware: build the applications from SlackBuilds.org (sbopkg or slpkg)."; record skip "$label (not for Slackware)"; return 0
+    fi
     [[ $name == cybersecurity ]] && warn "Dual-use tools: use them only where you are allowed to. Packet capture: sudo usermod -aG wireshark $TARGET_USER"
     if [[ $FAMILY == atomic ]]; then say "Atomic: native profile packages are skipped (use toolbox or distrobox); Flatpaks follow."
     else
@@ -885,6 +1004,7 @@ hyprSupported() { # sets HYPR_HOW (copr|repo|backports|ppa) or HYPR_WHY; Carino 
         alpine)   HYPR_WHY="Alpine ships Hyprland 0.54, older than the 0.55 the Lua configuration needs." ;;
         void)     HYPR_WHY="Void does not package Hyprland (only a third-party repository exists)." ;;
         gentoo)   HYPR_WHY="Gentoo: emerge gui-wm/hyprland from hyproverlay yourself, then copy the hyprland/ bundle." ;;
+        slackware) HYPR_WHY="Slackware does not package Hyprland 0.55 or newer." ;;
         *)        HYPR_WHY="$FAMILY ships no Hyprland 0.55+ in its stable release." ;;
     esac
     [[ -z $HYPR_WHY ]]
@@ -1110,6 +1230,7 @@ finish() {
     [[ -n $LOG ]] && say "Log: $LOG"
     (( DRYRUN )) && say "Dry run: nothing was changed."
     (( NEED_REBOOT )) && warn "A reboot is needed to apply the layered packages."
+    if (( SLACK_KERNEL )); then warn "No reboot from here: update the initrd and the bootloader for the new kernel first."; return 0; fi
     case $REBOOT in
         yes) root reboot ;;
         no)  say "Reboot: no (plan)." ;;
