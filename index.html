@@ -10,13 +10,13 @@
     <link rel="canonical" href="https://setup.carino.systems/">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Carino Systems">
-    <meta property="og:title" content="SimpleSetup">
+    <meta property="og:title" content="Carino Setup">
     <meta property="og:description" content="One command that configures Linux, Windows or macOS: hardware and distribution detection, drivers, and 15 purpose profiles. Nothing to install first.">
     <meta property="og:url" content="https://setup.carino.systems/">
     <meta property="og:image" content="https://setup.carino.systems/og.jpg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="SimpleSetup">
+    <meta property="og:image:alt" content="Carino Setup">
     <meta name="twitter:card" content="summary_large_image">
     <link rel="alternate" hreflang="en" href="https://setup.carino.systems/">
     <link rel="alternate" hreflang="es" href="https://setup.carino.systems/?lang=es">
@@ -25,56 +25,24 @@
     <link rel="alternate" hreflang="ru" href="https://setup.carino.systems/?lang=ru">
     <link rel="alternate" hreflang="x-default" href="https://setup.carino.systems/">
     <script type="application/json" id="carino-head-i18n">{"es": {"title": "Carino Setup — Cualquier computadora, un comando", "desc": "Un solo comando que configura Linux, Windows o macOS: detección de hardware y distribución, controladores y 15 perfiles por uso. Sin instalar nada antes."}, "pt-BR": {"title": "Carino Setup — Qualquer computador, um comando", "desc": "Um único comando que configura Linux, Windows ou macOS: detecção de hardware e distribuição, drivers e 15 perfis por finalidade. Nada para instalar antes."}, "ja": {"title": "Carino Setup — どのPCも、コマンド1つで", "desc": "1つのコマンドでLinux・Windows・macOSを設定。ハードウェアとディストリビューションの検出、ドライバー、15の用途別プロファイル。事前準備不要。"}, "ru": {"title": "Carino Setup — любой компьютер, одна команда", "desc": "Одна команда настраивает Linux, Windows или macOS: определение оборудования и дистрибутива, драйверы и 15 профилей под задачи. Ничего не нужно ставить заранее."}}</script>
-    <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "SimpleSetup", "url": "https://setup.carino.systems/", "description": "One command that configures Linux, Windows or macOS: hardware and distribution detection, drivers, and 15 purpose profiles. Nothing to install first.", "operatingSystem": "Any (runs in a web browser)", "isAccessibleForFree": true, "author": {"@type": "Person", "name": "Miguel Cariño", "url": "https://carino.systems/"}}</script>
+    <script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "Carino Setup", "url": "https://setup.carino.systems/", "description": "One command that configures Linux, Windows or macOS: hardware and distribution detection, drivers, and 15 purpose profiles. Nothing to install first.", "operatingSystem": "Linux, Windows, macOS", "isAccessibleForFree": true, "author": {"@type": "Person", "name": "Miguel Cariño", "url": "https://carino.systems/"}}</script>
     <!-- /carino:head -->
     <link rel="stylesheet" href="fonts/carino-fonts.css">
+    <!-- Tokens and the shared components (landing hero, terminal, copy button,
+         privacy line, footer) come from carino-ui.css; only this page's own
+         names are declared below. -->
+    <link rel="stylesheet" href="carino-ui.css">
     <style>
         :root {
-            --bg:            #050505;
-            --bg-elev:       #0d0d0d;
-            --bg-card:       #0b0b0b;
-            --accent:        #eab308;
-            --accent-faint:  rgba(234,179,8,0.05);
-            --accent-glow:   rgba(234,179,8,0.15);
-            --accent-dim:    rgba(234,179,8,0.30);
-            --border:        #262626;
-            --border-hv:     #eab308;
-            --text:          #ffffff;
-            --text-sec:      #a3a3a3;
-            --text-muted:    #8a8a8a;
-            --ok:            #22c55e;
-            --warn:          #eab308;
-            --err:           #ef4444;
-            --stage-grad:    radial-gradient(1200px 520px at 50% -12%, rgba(234,179,8,0.08) 0%, transparent 60%), linear-gradient(180deg,#0b0b0b 0%,#050505 100%);
-            --gold-text:     linear-gradient(130deg,#fef08a 0%,#eab308 50%,#b45309 100%);
-            --sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
-            --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-            --display: 'Red Hat Display', var(--sans);
-            --radius: 10px;
             --i18n: 'Noto Sans JP', 'Noto Sans CJK JP', 'Hiragino Sans', 'Yu Gothic UI', 'Noto Sans SC', 'Noto Sans CJK SC', 'PingFang SC', 'Microsoft YaHei UI', 'Noto Sans KR', 'Noto Sans CJK KR', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans Hebrew', 'Arial Hebrew'; /* fonts/carino-fonts.css ships latin + latin-ext only, so the ja/zh/ko/he/ru strings below can never be Plex; these are the real system faces they land on instead of a generic */
             --sans-i18n: 'IBM Plex Sans', var(--i18n), system-ui, -apple-system, sans-serif; /* brand face first, so latin text in a translated string still renders in Plex */
             --mono-i18n: 'IBM Plex Mono', var(--i18n), ui-monospace, SFMono-Regular, Menlo, monospace;
             --display-i18n: 'Red Hat Display', var(--sans-i18n);
         }
 
-        :root { scrollbar-width: thin; scrollbar-color: #3a3a3a transparent; } /* Firefox has no scrollbar pseudo-elements, only these two inherited properties */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 6px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--accent-dim); }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
-        [hidden] { display: none !important; }
-        body {
-            font-family: var(--sans);
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-        }
-        a { color: var(--accent); }
-        code, .mono { font-family: var(--mono); }
+        body { font-size: 16px; } /* carino-ui's 15px base; every size here was measured at 16 */
         button { font-family: inherit; }
 
         .container { max-width: 1080px; margin: 0 auto; padding: 0 1.5rem; }
@@ -96,24 +64,19 @@
            above 900px is already too steep below it. */
         :root { --tall: max(0px, 100vh - 900px); }
         body { min-height: 100dvh; display: flex; flex-direction: column; }
-        .hero { flex: 1 0 auto; display: flex; background: var(--stage-grad); text-align: center;
-            padding: min(60px, calc(clamp(10px, 2vh, 38px) + var(--tall) * .055)) 0 clamp(10px, 2vh, 30px); }
+        .hero { flex: 1 0 auto; display: flex; }
         /* Top-anchored, not centred: surplus height collects at the bottom where
            it is quiet, instead of opening a gap between the navbar and the mark. */
         .hero > .container { margin-block: 0 auto; width: 100%; }
+        /* .lh-wrap's 90% would add a second gutter inside .container's own. */
+        .hero > .container.lh-wrap { width: 100%; max-width: 1080px; }
 
         /* The mark, and under it the one piece of motion on the page: a row of
            pixel blocks, cut from the same grid as the mark, lighting up one by
            one like packages landing, then clearing to start again. Sized off
            viewport HEIGHT: height is the scarce dimension on a one-screen page,
            so the decoration shrinks with the thing it competes against. */
-        .hero-mark { display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: min(28px, calc(8px + var(--tall) * .042));
-            margin: 0 auto min(46px, calc(clamp(3px, .7vh, 11px) + var(--tall) * .09)); }
-        .hero-mark .mark { width: auto; display: block; aspect-ratio: 1 / 1;
-            height: min(132px, calc(clamp(30px, 5.6vh, 66px) + var(--tall) * .15)); }
-        .steps { display: block; margin: 0; width: auto; aspect-ratio: 5 / 1; overflow: visible;
-            height: min(70px, calc(clamp(18px, 3.6vh, 44px) + var(--tall) * .07)); }
+        .hero-mark .mark { aspect-ratio: 1 / 1; }
         .steps rect { fill: var(--accent); opacity: .12; animation: land 3.2s ease-out infinite; }
         @keyframes land {
             0%, 6%    { opacity: .12; filter: none; }
@@ -141,25 +104,15 @@
         }
         @media (prefers-reduced-motion: reduce) { .os-float { display: none; } }
 
-        .hero h1 {
-            font-family: var(--display); font-weight: 900; line-height: 1.02;
-            text-transform: uppercase; letter-spacing: 0.5px;
-            font-size: min(3.4rem, calc(clamp(1.5rem, 3.4vw + .4vh, 2.6rem) + var(--tall) * .032));
-            margin: 0 0 min(52px, calc(clamp(8px, 1.4vh, 15px) + var(--tall) * .09));
-        }
-        .hero h1 .gold {
-            background: var(--gold-text); -webkit-background-clip: text; background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .lede { color: #d4d4d4; font-family: var(--sans-i18n);
-            max-width: min(820px, calc(660px + var(--tall) * .35));
-            font-size: min(1.28rem, calc(clamp(.9rem, .55rem + .5vh, 1.02rem) + var(--tall) * .012));
-            line-height: 1.6;
-            margin: 0 auto min(44px, calc(clamp(11px, 2.2vh, 24px) + var(--tall) * .06)); }
-        .lede strong { color: var(--text); }
+        /* Headline, lede and situations are Branding's .landing-hero: sentence
+           case, the second line solid gold. Only the i18n font stacks are ours. */
+        .hero h1 { font-family: var(--sans-i18n); }
+        .hero h1 .gold { color: var(--accent); }
+        .lh-lede, .lh-situations { font-family: var(--sans-i18n); }
 
         /* Above the buttons, so it reads as their label rather than as a
            footnote: it says which one is already selected and why. */
+        .sys-line { font-family: var(--mono-i18n); }
         .platform { margin: 0 0 min(24px, calc(clamp(6px, 1.1vh, 12px) + var(--tall) * .03));
             font-family: var(--mono-i18n); font-size: min(.95rem, calc(.74rem + var(--tall) * .008)); color: var(--text-muted); }
         .platform strong { color: var(--accent); font-weight: 700; }
@@ -195,20 +148,9 @@
            page, so it gets the space the download buttons get on PACS. */
         .os-content { margin-top: min(34px, calc(clamp(12px, 2vh, 18px) + var(--tall) * .04)); text-align: left; }
 
-        .terminal-wrapper { position: relative; }
-        .terminal { background: #000; border: 1px solid var(--border); border-radius: 12px; padding: 1.4rem 1.6rem; overflow-x: auto; } /* no position:relative — the copy button anchors to the wrapper so it cannot scroll away with the command */
-        .terminal code { display: block; font-family: var(--mono); font-size: 0.8rem; line-height: 1.7; color: var(--ok); white-space: pre; }
-        .terminal .prompt { color: var(--accent); user-select: none; }
-        .copy-btn {
-            flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px;
-            font-family: var(--mono); font-size: 0.62rem; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 0.08em;
-            padding: 7px 11px; border-radius: 6px; cursor: pointer; white-space: nowrap;
-            border: 1px solid var(--border); background: transparent; color: var(--text-sec); transition: 0.18s;
-        }
-        .copy-btn:hover { border-color: var(--border-hv); color: var(--accent); background: var(--accent-faint); }
-        .copy-btn.done { border-color: var(--ok); color: var(--ok); background: rgba(34,197,94,0.08); }
-        .term-copy { position: absolute; top: 10px; right: 10px; background: rgba(5,5,5,0.85); }
+        /* .terminal-wrapper > .terminal > code and .copy-btn.term-copy are
+           Branding's command block (carino-ui.css): it keeps the Copy button
+           off the command at every width. */
 
         .note { font-family: var(--mono); font-size: 0.7rem; color: var(--text-muted); margin-top: 10px; line-height: 1.6; }
 
@@ -227,12 +169,15 @@
         }
         .chip:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-faint); }
         .chip.primary { color: var(--accent); border-color: var(--accent-dim); }
-        .foot-note { font-family: var(--mono-i18n); color: var(--text-muted); line-height: 1.7;
+        /* The privacy line (Branding's), centred as a block under the chips;
+           its own text stays left-aligned beside the lock. */
+        .foot-note { display: inline-block; font-family: var(--mono-i18n);
             max-width: min(760px, 94vw);
-            font-size: min(.82rem, calc(.66rem + var(--tall) * .006));
             margin: min(30px, calc(clamp(10px, 1.8vh, 16px) + var(--tall) * .04)) auto 0; }
         .foot-note a { color: var(--accent); text-decoration: none; }
         .foot-note a:hover { text-decoration: underline; }
+        .page-foot { width: 100%; max-width: 1080px; margin: 0 auto; padding: 0 1.5rem; }
+        .site-foot { margin-top: min(28px, calc(10px + var(--tall) * .03)); }
 
         /* ---- modal ----
            The branding system's component (branding.carino.systems §17), built
@@ -241,6 +186,7 @@
            none of which a div gets for free. */
         /* `display` only when open. A bare `display: flex` overrides the UA's
            `dialog:not([open]) { display: none }` and every sheet renders inline. */
+        dialog.modal:not([open]) { display: none; } /* carino-ui's .modal is display:flex for a scrim div */
         .modal[open] { display: flex; }
         .modal {
             /* `margin: auto` is what centres a top-layer <dialog>, and the
@@ -249,7 +195,7 @@
                explicitly rather than by carving dialog out of the reset. */
             margin: auto;
             flex-direction: column; padding: 0; overflow: hidden; text-align: left;
-            width: min(92vw, 680px); max-height: min(88vh, 900px);
+            width: min(92vw, 680px); max-width: none; max-height: min(88vh, 900px);
             background: var(--bg-elev); border: 1px solid var(--border); border-radius: 14px;
             box-shadow: 0 30px 80px rgba(0,0,0,0.75); color: var(--text);
         }
@@ -262,7 +208,7 @@
         .modal-x { border: none; background: transparent; color: var(--text-muted); font-size: 1.05rem; line-height: 1;
             cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: 0.15s; }
         .modal-x:hover { color: var(--accent); background: var(--accent-faint); }
-        .modal-body { padding: 18px; overflow-y: auto; }
+        .modal-body { padding: 18px; overflow-y: auto; color: var(--text); font-size: inherit; }
         .modal-body > .note:first-child { margin-top: 0; }
 
         /* Two columns that collapse to one, and they collapse in the right
@@ -348,7 +294,6 @@
            Removed rather than hidden, so it gives its height back. */
         @media (max-width: 640px) {
             .steps { display: none; }
-            .hero-mark .mark { height: clamp(44px, 12vw, 74px); }
         }
         /* Short screens, any width. Russian and Portuguese both run about a line
            longer than English here, which is enough to push a 1366×768 laptop
@@ -357,7 +302,6 @@
            max-width would wrap the lede to MORE lines and make it taller. */
         @media (max-height: 780px) {
             .lede { font-size: 0.94rem; max-width: 720px; }
-            .terminal { padding: 1rem 1.2rem; }
         }
         /* 1024×600 is the floor this page is measured against — a netbook, a
            VM console, a projector. Everything above still fits there on the
@@ -374,21 +318,21 @@
             .platform { margin-bottom: 8px; }
             .os-btn { padding: 8px 18px; }
             .os-content { margin-top: 12px; }
-            .terminal { padding: 0.8rem 1.05rem; }
             .note { margin-top: 7px; }
             .chips { margin-top: 11px; }
-            .foot-note { font-size: 0.62rem; line-height: 1.5; margin-top: 8px; }
+            .foot-note { margin-top: 8px; }
         }
         @media (max-width: 600px) {
             .os-btn { min-width: 112px; padding: 9px 14px; gap: 0; }
             .os-btn b { font-size: 0.95rem; }
             .os-picker { gap: 8px; }
             .lede { font-size: 0.88rem; }
-            .terminal { padding: 1.1rem 1rem; }
-            .term-copy { top: 6px; right: 6px; }
             .chips { gap: 6px; }
             .chip { padding: 6px 12px; font-size: 0.66rem; }
             .build-grid { grid-template-columns: 1fr; }
+            /* A phone has no side margins for the drifting logos to live in,
+               so they would sit on the buttons. */
+            .os-float { display: none; }
         }
     </style>
 </head>
@@ -405,12 +349,12 @@
      The mark, the argument, the platform picker, the command, and four chips
      that open the rest as dialogs. Nothing has to be scrolled past to reach the
      one line this site exists to hand over. -->
-<header class="hero" role="main">
-    <div class="container">
+<header class="hero landing-hero" role="main">
+    <div class="container lh-wrap">
         <!-- The mark sits above the block row, which reads as its underline. Both
              are aria-hidden: the navbar already says "Carino Setup" in text, and
              a logo announced twice is noise. -->
-        <div class="hero-mark" aria-hidden="true">
+        <div class="hero-mark lh-mark" aria-hidden="true">
             <!-- The Carino mark, inline rather than as a file: logo.webp is a
                  50×50 raster that exists to be a favicon and goes soft the
                  moment it is drawn larger than that, and an inline path costs
@@ -419,7 +363,7 @@
                 <path d="M 56.61 32.37 A 25.38 25.38 0 1 0 56.61 67.63" fill="none" stroke="var(--accent)" stroke-width="11.94" stroke-linecap="butt"/>
                 <path d="M 69.71 34.47 H 73.59 V 38.35 H 69.71 Z M 73.59 34.47 H 77.47 V 38.35 H 73.59 Z M 73.59 38.35 H 77.47 V 42.23 H 73.59 Z M 77.47 38.35 H 81.35 V 42.23 H 77.47 Z M 77.47 42.23 H 81.35 V 46.11 H 77.47 Z M 81.35 42.23 H 85.23 V 46.11 H 81.35 Z M 77.47 46.11 H 81.35 V 49.99 H 77.47 Z M 81.35 46.11 H 85.23 V 49.99 H 81.35 Z M 73.59 49.99 H 77.47 V 53.87 H 73.59 Z M 77.47 49.99 H 81.35 V 53.87 H 77.47 Z M 69.71 53.87 H 73.59 V 57.75 H 69.71 Z M 73.59 53.87 H 77.47 V 57.75 H 73.59 Z M 77.47 61.63 H 81.35 V 65.51 H 77.47 Z M 81.35 61.63 H 85.23 V 65.51 H 81.35 Z M 85.23 61.63 H 89.11 V 65.51 H 85.23 Z M 89.11 61.63 H 92.99 V 65.51 H 89.11 Z M 77.47 65.51 H 81.35 V 69.39 H 77.47 Z M 81.35 65.51 H 85.23 V 69.39 H 81.35 Z M 85.23 65.51 H 89.11 V 69.39 H 85.23 Z M 89.11 65.51 H 92.99 V 69.39 H 89.11 Z" fill="var(--accent)"/>
             </svg>
-            <svg class="steps" viewBox="0 0 200 40" preserveAspectRatio="xMidYMid meet">
+            <svg class="steps lh-motif" viewBox="0 0 200 40" preserveAspectRatio="xMidYMid meet">
                 <rect x="11.1" y="13" width="14" height="14" style="animation-delay:0.00s"/>
                 <rect x="29.3" y="13" width="14" height="14" style="animation-delay:0.16s"/>
                 <rect x="47.5" y="13" width="14" height="14" style="animation-delay:0.32s"/>
@@ -433,11 +377,17 @@
             </svg>
         </div>
         <h1><span data-i18n>Any computer.</span><br><span class="gold" data-i18n>One command.</span></h1>
-        <p class="lede">
+        <p class="lede lh-lede">
             <strong>Carino Setup</strong>
-            <span data-i18n>is one command. It reads your machine and installs the drivers, codecs and software it needs, with 15 purpose profiles to choose from.</span>
-            <span data-i18n>Linux, Windows and macOS, nothing to install first. A dry run shows every command before anything changes.</span>
+            <span data-i18n>is one command that reads your machine and installs the drivers, codecs and software it needs.</span>
         </p>
+        <ul class="lh-situations">
+            <li data-i18n>A fresh install? It adds the repositories, codecs, firmware and the right graphics driver.</li>
+            <li data-i18n>Setting a machine up for one job? Pick one of 15 purpose profiles, from gaming to medical imaging.</li>
+            <li data-i18n>Not sure what it will change? A dry run prints every command and changes nothing.</li>
+        </ul>
+        <!-- The systems line (Branding .sys-line): what it runs on and its licence. -->
+        <p class="sys-line"><span data-i18n>Linux · Windows 10 and 11 · macOS 15 or newer</span> · AGPL-3.0</p>
 
         <!-- Above the buttons, so it reads as their label rather than as a
              footnote. Written by script: the detected platform cannot come from
@@ -490,7 +440,7 @@
         <!-- The last line before somebody pastes a curl into a root shell. It
              is the one claim on this page a visitor can check for themselves,
              so it links to the file rather than asking to be believed. -->
-        <p class="foot-note">
+        <p class="foot-note privacy-line">
             <span data-i18n>This page runs entirely in your browser and sends nothing anywhere. The script is one readable file:</span>
             <a href="https://github.com/MiguelCarino/SimpleSetup/blob/main/setup.sh" target="_blank" rel="noopener">setup.sh</a> ·
             <a href="https://github.com/MiguelCarino/SimpleSetup/blob/main/setup.ps1" target="_blank" rel="noopener">setup.ps1</a> ·
@@ -498,6 +448,23 @@
         </p>
     </div>
 </header>
+
+<!-- The Product footer (Branding #footer). The hero grows to fill the screen,
+     so this sits at its bottom edge. -->
+<div class="page-foot">
+    <footer class="site-foot">
+        <div class="sf-links">
+            <a href="https://github.com/MiguelCarino/SimpleSetup" target="_blank" rel="noopener" data-i18n>Source</a>
+            <a href="https://github.com/MiguelCarino/SimpleSetup/commits/main" target="_blank" rel="noopener" data-i18n>Changelog</a>
+            <a href="https://github.com/MiguelCarino/SimpleSetup#readme" target="_blank" rel="noopener" data-i18n>Docs</a>
+            <a href="https://github.com/MiguelCarino/SimpleSetup/blob/main/setup.sh" target="_blank" rel="noopener">setup.sh</a>
+            <a href="https://github.com/MiguelCarino/SimpleSetup/blob/main/setup.ps1" target="_blank" rel="noopener">setup.ps1</a>
+            <a href="https://github.com/MiguelCarino/SimpleSetup/blob/main/macos.sh" target="_blank" rel="noopener">macos.sh</a>
+            <a href="https://carino.systems/legal.html" data-i18n>Legal &amp; privacy</a>
+        </div>
+        <div class="sf-line"><span>Carino Setup · AGPL-3.0 · </span><span data-i18n>part of carino.systems</span></div>
+    </footer>
+</div>
 
 <!-- ── The sheets ────────────────────────────────────────────────────
      One <dialog> each. The browser supplies the focus trap, Escape, the
@@ -687,8 +654,6 @@
         </div>
     </div>
 </dialog>
-<!-- No footer: the header already carries the GitHub button, and it points at
-     this repository (carino-navbar.js resolves it from the page). -->
 
 
 <script>
