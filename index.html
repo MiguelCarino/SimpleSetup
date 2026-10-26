@@ -394,7 +394,7 @@
              markup, so this line is re-rendered on carino:langchange too. -->
         <p class="platform" id="platform"><span data-i18n>Pick the machine you are setting up.</span></p>
 
-        <div class="os-picker" role="tablist" aria-label="Operating system">
+        <div class="os-picker" role="tablist" data-i18n-aria aria-label="Operating system">
             <button type="button" class="os-btn active" role="tab" id="tab-linux" data-os="linux" aria-controls="linux-section" aria-selected="true"><span class="rec" data-i18n>detected</span><b>🐧 Linux</b><span class="fmt">Fedora · Debian · Arch</span></button>
             <button type="button" class="os-btn" role="tab" id="tab-windows" data-os="windows" aria-controls="windows-section" aria-selected="false"><span class="rec" data-i18n>detected</span><b>🪟 Windows</b><span class="fmt">10 · 11</span></button>
             <button type="button" class="os-btn" role="tab" id="tab-mac" data-os="mac" aria-controls="mac-section" aria-selected="false"><span class="rec" data-i18n>detected</span><b> macOS</b><span class="fmt">Apple Silicon</span></button>
@@ -403,7 +403,7 @@
         <section id="linux-section" class="os-content" role="tabpanel" aria-labelledby="tab-linux">
             <div class="terminal-wrapper">
                 <div class="terminal"><code id="linux-cmd"><span class="prompt">$</span> <span class="cmd">bash &lt;(curl -s https://setup.carino.systems/setup.sh)</span></code></div>
-                <button type="button" class="copy-btn term-copy" data-copy="linux-cmd" aria-label="Copy the Linux command"><span data-i18n>Copy</span></button>
+                <button type="button" class="copy-btn term-copy" data-copy="linux-cmd" data-i18n-aria aria-label="Copy the Linux command"><span data-i18n>Copy</span></button>
             </div>
             <p class="note"><b>Fedora</b> <span data-i18n>is what it is built and tested on. Debian, Ubuntu, Arch, openSUSE, RHEL and their derivatives are supported too, and Solus, Alpine, Void, Gentoo, Slackware and Mageia get the base packages, plus drivers where they are packaged (Gentoo and Slackware print the steps). Linux only: the BSDs are refused.</span></p>
         </section>
@@ -411,7 +411,7 @@
         <section id="windows-section" class="os-content" role="tabpanel" aria-labelledby="tab-windows" hidden>
             <div class="terminal-wrapper">
                 <div class="terminal"><code id="win-cmd"><span class="prompt">PS&gt;</span> <span class="cmd">iwr -useb https://setup.carino.systems/setup.ps1 | iex</span></code></div>
-                <button type="button" class="copy-btn term-copy" data-copy="win-cmd" aria-label="Copy the Windows command"><span data-i18n>Copy</span></button>
+                <button type="button" class="copy-btn term-copy" data-copy="win-cmd" data-i18n-aria aria-label="Copy the Windows command"><span data-i18n>Copy</span></button>
             </div>
             <p class="note"><b data-i18n>Run Terminal as Administrator</b> <span data-i18n>— the script stops without it. It prints what it found, installs the base apps and drivers with winget, applies the Windows 10 or 11 tweaks, offers the 15 purpose profiles and runs Windows Update.</span></p>
             <p class="note"><span data-i18n>Rehearse it first:</span> <span class="kbd">$env:CARINO_SETUP_DRYRUN='1'</span> <span data-i18n>before the command. Plans and the other options are under Available Arguments.</span></p>
@@ -420,7 +420,7 @@
         <section id="mac-section" class="os-content" role="tabpanel" aria-labelledby="tab-mac" hidden>
             <div class="terminal-wrapper">
                 <div class="terminal"><code id="mac-cmd"><span class="prompt">$</span> <span class="cmd">bash &lt;(curl -s https://setup.carino.systems/macos.sh)</span></code></div>
-                <button type="button" class="copy-btn term-copy" data-copy="mac-cmd" aria-label="Copy the macOS command"><span data-i18n>Copy</span></button>
+                <button type="button" class="copy-btn term-copy" data-copy="mac-cmd" data-i18n-aria aria-label="Copy the macOS command"><span data-i18n>Copy</span></button>
             </div>
             <p class="note"><b data-i18n>Run it as your normal user, not with sudo.</b> <span data-i18n>It prints what it found, installs Homebrew and the base tools, offers the Finder tweaks and the 15 purpose profiles, then lists the macOS updates. macOS 15 or newer.</span></p>
             <p class="note"><span data-i18n>Rehearse it first:</span> <span class="kbd">dry-run</span> <span data-i18n>after the command. Plans and the other options are under Available Arguments.</span></p>
@@ -430,7 +430,7 @@
              opened from here, so the page is one screen and nothing has to be
              scrolled past to reach the command. The content did not go anywhere:
              a dialog is markup, not a fetch. -->
-        <nav class="chips" aria-label="More about Carino Setup">
+        <nav class="chips" data-i18n-aria aria-label="More about Carino Setup">
             <button class="chip primary" type="button" data-sheet="builderDialog" data-i18n>Build a plan</button>
             <button class="chip" type="button" data-sheet="whatDialog" data-i18n>What it does (and refuses)</button>
             <button class="chip" type="button" data-sheet="distroDialog" data-i18n>Every distribution it knows</button>
@@ -474,7 +474,7 @@
 <dialog class="modal wide" id="builderDialog" aria-labelledby="builderTitle">
     <div class="modal-head">
         <h2 class="modal-title" id="builderTitle" data-i18n>Plan Builder</h2>
-        <form method="dialog"><button class="modal-x" aria-label="Close">✕</button></form>
+        <form method="dialog"><button class="modal-x" data-i18n-aria aria-label="Close">✕</button></form>
     </div>
     <div class="modal-body">
         <section id="builder-mount">
@@ -504,14 +504,14 @@
                 <p class="out-label" data-i18n>Your command</p>
                 <div class="terminal-wrapper">
                     <div class="terminal"><code id="b-cmd"><span class="prompt">$</span> <span class="cmd"></span></code></div>
-                    <button type="button" class="copy-btn term-copy" data-copy="b-cmd" aria-label="Copy the built command"><span data-i18n>Copy</span></button>
+                    <button type="button" class="copy-btn term-copy" data-copy="b-cmd" data-i18n-aria aria-label="Copy the built command"><span data-i18n>Copy</span></button>
                 </div>
                 <p class="note" id="b-cmd-note"></p>
 
                 <p class="out-label" data-i18n>Rehearse it first</p>
                 <div class="terminal-wrapper">
                     <div class="terminal"><code id="b-dry"><span class="prompt">$</span> <span class="cmd"></span></code></div>
-                    <button type="button" class="copy-btn term-copy" data-copy="b-dry" aria-label="Copy the dry-run command"><span data-i18n>Copy</span></button>
+                    <button type="button" class="copy-btn term-copy" data-copy="b-dry" data-i18n-aria aria-label="Copy the dry-run command"><span data-i18n>Copy</span></button>
                 </div>
                 <p class="note" data-i18n>Prints every privileged command instead of running it. Nothing is installed and nothing is changed.</p>
 
@@ -524,7 +524,7 @@
 <dialog class="modal wide" id="whatDialog" aria-labelledby="whatTitle">
     <div class="modal-head">
         <h2 class="modal-title" id="whatTitle" data-i18n>What it does (and refuses)</h2>
-        <form method="dialog"><button class="modal-x" aria-label="Close">✕</button></form>
+        <form method="dialog"><button class="modal-x" data-i18n-aria aria-label="Close">✕</button></form>
     </div>
     <div class="modal-body">
         <div class="contrast">
@@ -557,14 +557,14 @@
 <dialog class="modal" id="distroDialog" aria-labelledby="distroTitle">
     <div class="modal-head">
         <h2 class="modal-title" id="distroTitle" data-i18n>Every distribution it knows</h2>
-        <form method="dialog"><button class="modal-x" aria-label="Close">✕</button></form>
+        <form method="dialog"><button class="modal-x" data-i18n-aria aria-label="Close">✕</button></form>
     </div>
     <div class="modal-body">
-        <p class="note"><b>Fedora</b> — Fedora, Nobara, Ultramarine, Risi. <b>Fedora Atomic</b> — Silverblue, Kinoite, Bazzite, Bluefin, Aurora, layered with rpm-ostree. <b>Enterprise</b> — RHEL, AlmaLinux, Rocky, CentOS Stream, Oracle Linux, Amazon Linux.</p>
-        <p class="note"><b>Debian</b> — Debian, LMDE, MX, Kali, Parrot, Devuan, Raspberry Pi OS. <b>Ubuntu</b> — Ubuntu and its flavours, Mint, Pop!_OS, elementary, Zorin, KDE neon, TUXEDO.</p>
+        <p class="note"><b>Fedora</b> — Fedora, Nobara, Ultramarine, Risi. <b>Fedora Atomic</b> — Silverblue, Kinoite, Bazzite, Bluefin, Aurora, <span data-i18n>layered with rpm-ostree</span>. <b data-i18n>Enterprise</b> — RHEL, AlmaLinux, Rocky, CentOS Stream, Oracle Linux, Amazon Linux.</p>
+        <p class="note"><b>Debian</b> — Debian, LMDE, MX, Kali, Parrot, Devuan, Raspberry Pi OS. <b>Ubuntu</b> — <span data-i18n>Ubuntu and its flavours</span>, Mint, Pop!_OS, elementary, Zorin, KDE neon, TUXEDO.</p>
         <p class="note"><b>Arch</b> — Arch, Manjaro, EndeavourOS, CachyOS, Garuda, ArcoLinux. <b>openSUSE</b> — Tumbleweed, Slowroll, Leap, SLES.</p>
         <p class="note"><span data-i18n>Base packages, plus drivers where they are packaged, with few or no purpose lists:</span> Solus, Alpine, Void, Gentoo, Slackware, Mageia, OpenMandriva.</p>
-        <p class="note"><span data-i18n>Carino Hyprland:</span> Fedora, Arch, openSUSE Tumbleweed and Slowroll, Debian 13 and newer (and derivatives built on them, such as LMDE 7), Ubuntu 24.04 and 26.04 bases (derivatives included), Ubuntu 26.10+ itself, Solus.</p>
+        <p class="note"><span data-i18n>Carino Hyprland:</span> <span data-i18n>Fedora, Arch, openSUSE Tumbleweed and Slowroll, Debian 13 and newer (and derivatives built on them, such as LMDE 7), Ubuntu 24.04 and 26.04 bases (derivatives included), Ubuntu 26.10+ itself, Solus.</span></p>
         <p class="note"><span data-i18n>Refused, with the reason printed:</span> NixOS, Guix System, SteamOS, MicroOS, Aeon, Kalpa <span data-i18n>and anything it does not recognise.</span></p>
         <p class="note"><span data-i18n>setup.sh is for Linux only. On FreeBSD, OpenBSD, NetBSD and DragonFly it stops and names the system's own tool (pkg, pkg_add, pkgin); on macOS it points to macos.sh. The BSDs do not ship bash by default, so install it first to see that message.</span></p>
         <p class="note"><span data-i18n>The Plan Builder shows what each family gets — pick the distribution there to read the one you came for.</span></p>
@@ -574,7 +574,7 @@
 <dialog class="modal wide" id="argsDialog" aria-labelledby="argsTitle">
     <div class="modal-head">
         <h2 class="modal-title" id="argsTitle" data-i18n>Available Arguments</h2>
-        <form method="dialog"><button class="modal-x" aria-label="Close">✕</button></form>
+        <form method="dialog"><button class="modal-x" data-i18n-aria aria-label="Close">✕</button></form>
     </div>
     <div class="modal-body">
         <div class="table-wrap">
@@ -628,11 +628,11 @@
         <p class="note" data-i18n>setup.ps1 and macos.sh read a plan from the same variable; the Linux arguments above do not apply to them. Tokens run left to right, and one unknown token refuses the whole plan before anything runs.</p>
         <div class="terminal-wrapper">
             <div class="terminal"><code id="win-plan"><span class="prompt">PS&gt;</span> <span class="cmd">$env:CARINO_SETUP_PLAN='technical,tweaks,purpose=gaming'; iwr -useb https://setup.carino.systems/setup.ps1 | iex</span></code></div>
-            <button type="button" class="copy-btn term-copy" data-copy="win-plan" aria-label="Copy the Windows plan command"><span data-i18n>Copy</span></button>
+            <button type="button" class="copy-btn term-copy" data-copy="win-plan" data-i18n-aria aria-label="Copy the Windows plan command"><span data-i18n>Copy</span></button>
         </div>
         <div class="terminal-wrapper" style="margin-top: 8px">
             <div class="terminal"><code id="mac-plan"><span class="prompt">$</span> <span class="cmd">CARINO_SETUP_PLAN=technical,tweaks,purpose=design bash &lt;(curl -s https://setup.carino.systems/macos.sh)</span></code></div>
-            <button type="button" class="copy-btn term-copy" data-copy="mac-plan" aria-label="Copy the macOS plan command"><span data-i18n>Copy</span></button>
+            <button type="button" class="copy-btn term-copy" data-copy="mac-plan" data-i18n-aria aria-label="Copy the macOS plan command"><span data-i18n>Copy</span></button>
         </div>
         <div class="table-wrap">
             <table class="data">
@@ -893,10 +893,11 @@
         return items.map(n => asApps && APPS[n] ? '<span class="pk"><b>' + APPS[n] + '</b> <i>' + n + '</i></span>' : '<span class="pk">' + n + '</span>').join('');
     }
 
-    function fillSelect(select, entries) {
+    const opt = i => '<option value="' + i[0] + '" data-i18n data-i18n-key="' + i[1] + '">' + T(i[1]) + '</option>';
+    function fillSelect(select, entries) { /* data-i18n(-label): i18n.js translates the labels; the values stay the setup.sh names */
         select.innerHTML = entries.map(e => e.group
-            ? '<optgroup label="' + e.group + '">' + e.items.map(i => '<option value="' + i[0] + '">' + i[1] + '</option>').join('') + '</optgroup>'
-            : '<option value="' + e[0] + '">' + e[1] + '</option>').join('');
+            ? '<optgroup data-i18n-label="' + e.group + '" label="' + T(e.group) + '">' + e.items.map(opt).join('') + '</optgroup>'
+            : opt(e)).join('');
     }
 
     function setHash(value) { try { history.replaceState(null, '', '#' + value); } catch (e) { location.hash = value; } } /* replaceState rather than assignment so smooth scroll-behavior does not jump the page on every keystroke, with the assignment kept as the fallback for origins that reject it */
@@ -907,13 +908,13 @@
         { group: 'Base and drivers, few profile lists', items: SMALL.map(k => [k, FAMILIES[k].label]) },
         { group: 'Refused by design', items: Object.keys(DECLINED).map(k => ['!' + k, DECLINED[k][0]]) }
     ]);
-    fillSelect(B.purpose, [['none', T('None')]].concat(Object.keys(PURPOSES).map(k => [k, PURPOSES[k].label])));
+    fillSelect(B.purpose, [['none', 'None']].concat(Object.keys(PURPOSES).map(k => [k, PURPOSES[k].label])));
 
     function dropReason(fam) { return FAMILIES[fam].dropwhy || 'setup.sh defines no package list there'; }
 
     function refreshDesktops(fam, want) {
         const allowed = DESKTOPS.filter(d => FAMILIES[fam].drop.indexOf(d[0]) === -1);
-        fillSelect(B.desktop, [['none', T('None')]].concat(allowed));
+        fillSelect(B.desktop, [['none', 'None']].concat(allowed));
         B.desktop.disabled = allowed.length === 0;
         const lost = want && want !== 'none' && !B.desktop.querySelector('option[value="' + want + '"]');
         if (want && !lost) B.desktop.value = want;
