@@ -2,7 +2,8 @@
 # shellcheck disable=SC2034  # the package arrays in section 4 are read by name ("${!ref}"), which shellcheck cannot follow
 # ==== 0. Header ====
 # Carino SimpleSetup: checks a Linux system, installs the base packages, codecs, firmware and drivers,
-# offers a desktop and purpose profiles, and can install the Carino Hyprland desktop configuration.
+# offers a desktop and purpose profiles, and can install the Carino Hyprland desktop: Atrium
+# (github.com/MiguelCarino/Atrium, its own install.sh), made for Fedora 44+ only; other systems are told why not.
 #
 # Usage:
 #   bash <(curl -s https://setup.carino.systems/setup.sh)           interactive
@@ -13,7 +14,8 @@
 # Environment: CARINO_SETUP_DRYRUN=1, CARINO_SETUP_PLAN, CARINO_SETUP_LOG=<file>, CARINO_SETUP_OSRELEASE=<file>.
 # Test hooks: CARINO_SETUP_ATOMIC=0|1, CARINO_SETUP_GPU="nvidia amd intel", CARINO_SETUP_NVGEN=open|580|470,
 #             CARINO_SETUP_VIRT=none|kvm|vmware|..., CARINO_SETUP_NET=0 (skip the internet check),
-#             CARINO_SETUP_UNAME=Linux|Darwin|FreeBSD|... (pretend to be another kernel).
+#             CARINO_SETUP_UNAME=Linux|Darwin|FreeBSD|... (pretend to be another kernel),
+#             CARINO_SETUP_ATRIUM_DIR=<dir> (where Atrium goes; default ~/Atrium of the real user).
 # Licence: AGPL-3.0-or-later, see LICENSE. Source: https://github.com/MiguelCarino/SimpleSetup
 
 # ==== 1. Settings & args ====
@@ -37,11 +39,12 @@ OSRELEASE=${CARINO_SETUP_OSRELEASE:-/etc/os-release}
 NONINTERACTIVE=0
 [[ -n $PLAN || ! -t 0 ]] && NONINTERACTIVE=1
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)
-BUNDLE_URL=https://codeload.github.com/MiguelCarino/SimpleSetup/tar.gz/refs/heads/main
+ATRIUM_GIT=https://github.com/MiguelCarino/Atrium.git
+ATRIUM_TAR=https://codeload.github.com/MiguelCarino/Atrium/tar.gz/refs/heads/main
 LOG=''
 OS_ID='' OS_LIKE='' OS_NAME='' OS_VER='' OS_CODE='' UBU_CODE='' DEB_CODE=''
 FAMILY='' PM='' ATOMIC=0 CPU=other GPUS='' NVGEN=open VIRT=none LAPTOP=no SECUREBOOT=unknown
-HAS_DESKTOP=no TARGET_USER='' TARGET_HOME='' HYPR_HOW='' HYPR_WHY='' HYPR_SRC='' REBOOT='' NEED_REBOOT=0
+HAS_DESKTOP=no TARGET_USER='' TARGET_HOME='' HYPR_HOW='' HYPR_WHY='' CARINO_WHY='' REBOOT='' NEED_REBOOT=0
 REFRESHED=0 FLATHUB_READY=0 PKG_NOTE='' SLACK_READY='' SLACK_KERNEL=0
 SUDO=() PM_INSTALL=() PM_UPGRADE=() PM_REFRESH=() PM_TARGET=() RESULTS=()
 declare -A DONE_GROUP=() DONE_FLATPAK=()
@@ -563,15 +566,6 @@ desktopi3extra_debian=( rofi i3blocks picom kitty nitrogen lxappearance )
 desktopi3extra_arch=( rofi i3blocks picom kitty lxappearance )
 desktopi3extra_opensuse=( rofi i3blocks picom kitty nitrogen lxappearance )
 
-# -- Carino Hyprland runtime (derived from hyprland/packages.txt, Fedora names there)
-hypr_fedora=( hyprland xdg-desktop-portal-hyprland xdg-desktop-portal-gtk hyprpolkitagent waybar hyprpaper hyprlock hypridle mako wofi kitty nautilus xdg-utils pavucontrol htop NetworkManager-tui procps-ng grim slurp wl-clipboard cliphist jq wireplumber pipewire-pulseaudio playerctl brightnessctl fontconfig ibm-plex-sans-fonts ibm-plex-mono-fonts fontawesome-6-free-fonts fontawesome-6-brands-fonts google-noto-color-emoji-fonts python3 )
-hypr_arch=( hyprland xdg-desktop-portal-hyprland xdg-desktop-portal-gtk hyprpolkitagent waybar hyprpaper hyprlock hypridle mako wofi kitty nautilus xdg-utils pavucontrol htop networkmanager procps-ng grim slurp wl-clipboard cliphist jq wireplumber pipewire-pulse playerctl brightnessctl fontconfig ttf-ibm-plex otf-font-awesome noto-fonts-emoji python )
-hypr_opensuse=( hyprland xdg-desktop-portal-hyprland xdg-desktop-portal-gtk hyprpolkitagent waybar hyprpaper hyprlock hypridle mako wofi kitty nautilus xdg-utils pavucontrol htop NetworkManager procps grim slurp wl-clipboard cliphist jq wireplumber pipewire-pulseaudio playerctl brightnessctl fontconfig fontawesome-fonts google-noto-coloremoji-fonts python3 )
-# unverified on opensuse: ibm-plex-sans-fonts ibm-plex-mono-fonts
-hypr_debian=( hyprland xdg-desktop-portal-hyprland xdg-desktop-portal-gtk hyprpolkitagent waybar hyprpaper hyprlock hypridle mako-notifier wofi kitty nautilus xdg-utils pavucontrol htop network-manager procps grim slurp wl-clipboard cliphist jq wireplumber pipewire-pulse playerctl brightnessctl fontconfig fonts-ibm-plex fonts-font-awesome fonts-noto-color-emoji python3 )
-# names unverified on solus except hyprland; one that is missing fails alone in the one-at-a-time retry
-hypr_solus=( hyprland xdg-desktop-portal-hyprland waybar hyprpaper hyprlock hypridle mako wofi kitty grim slurp wl-clipboard cliphist jq playerctl brightnessctl )
-
 # -- purpose profiles: profile_basic is installed with every purpose, profile_<name> on top
 profile_basic_fedora=( gedit yt-dlp ffmpeg tumbler libreoffice pavucontrol vnstat feh wine xrdp htop powertop gtkglext-libs xdotool ncdu scrot xclip tldr xxd )
 profile_basic_debian=( gedit yt-dlp ffmpeg tumbler libreoffice pavucontrol vnstat feh wine xrdp htop powertop xdotool ncdu scrot xclip tealdeer xxd )
@@ -980,11 +974,13 @@ profileMenu() {
 }
 
 # ==== 10. carinoHyprland ====
-hyprSupported() { # sets HYPR_HOW (copr|repo|backports|ppa) or HYPR_WHY; Carino Hyprland needs Hyprland >= 0.55 (Lua)
+hyprSupported() { # sets HYPR_HOW (copr|repo|backports|ppa) or HYPR_WHY: where the plain "hyprland" desktop gets Hyprland 0.55+
     local c=${UBU_CODE:-$OS_CODE} d=${DEB_CODE:-$OS_CODE}   # derivatives name their base release
     HYPR_HOW='' HYPR_WHY=''
     case $FAMILY in
-        fedora)   HYPR_HOW=copr ;;
+        fedora)   # the copr builds for Fedora 44, 45 and rawhide only; Fedora's own repositories have no Hyprland
+            if [[ ! ${OS_VER%%.*} =~ ^[0-9]+$ ]] || (( ${OS_VER%%.*} >= 44 )); then HYPR_HOW=copr
+            else HYPR_WHY="Fedora $OS_VER has no Hyprland 0.55+ (the lionheartp copr builds for 44 and newer); upgrade to Fedora 44 or newer first."; fi ;;
         arch|solus) HYPR_HOW=repo ;;
         opensuse)
             if [[ $OS_ID == *tumbleweed* || $OS_ID == *slowroll* ]]; then HYPR_HOW=repo
@@ -1001,9 +997,9 @@ hyprSupported() { # sets HYPR_HOW (copr|repo|backports|ppa) or HYPR_WHY; Carino 
             else HYPR_WHY="Ubuntu base '${c:-$OS_VER}' has no Hyprland 0.55+; 24.04 and 26.04 (PPA) or 26.10+ do."; fi ;;
         atomic)   HYPR_WHY="Fedora Atomic: use a package-based Fedora or a Hyprland image." ;;
         rhel)     HYPR_WHY="EPEL has no Hyprland and the EL libraries are too old." ;;
-        alpine)   HYPR_WHY="Alpine ships Hyprland 0.54, older than the 0.55 the Lua configuration needs." ;;
+        alpine)   HYPR_WHY="Alpine ships Hyprland 0.54, older than the 0.55 setup.sh asks for." ;;
         void)     HYPR_WHY="Void does not package Hyprland (only a third-party repository exists)." ;;
-        gentoo)   HYPR_WHY="Gentoo: emerge gui-wm/hyprland from hyproverlay yourself, then copy the hyprland/ bundle." ;;
+        gentoo)   HYPR_WHY="Gentoo: emerge gui-wm/hyprland from hyproverlay yourself." ;;
         slackware) HYPR_WHY="Slackware does not package Hyprland 0.55 or newer." ;;
         *)        HYPR_WHY="$FAMILY ships no Hyprland 0.55+ in its stable release." ;;
     esac
@@ -1026,58 +1022,64 @@ Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp"
             PM_TARGET=(-t trixie-backports) ;;
     esac
 }
-hyprVersionCheck() {
-    (( DRYRUN )) && return 0
-    local v; v=$(Hyprland --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1)
-    if [[ -z $v ]]; then warn "Hyprland did not report a version; check that it installed."
-    elif verGe "$v" 0.55.0; then ok "Hyprland $v (0.55 or newer, the Lua configuration loads)."
-    else warn "Hyprland $v is older than 0.55: the Lua configuration will not load."; fi
-}
-hyprBundle() { # sets HYPR_SRC to the bundle: beside this script, else downloaded from GitHub
-    if [[ -d $SCRIPT_DIR/hyprland/.config/hypr ]]; then HYPR_SRC=$SCRIPT_DIR/hyprland; return 0; fi
-    local tmp=/tmp/carino-hyprland-dry-run
-    (( DRYRUN )) || tmp=$(mktemp -d) || return 1
-    run curl -fsSL -o "$tmp/simplesetup.tar.gz" "$BUNDLE_URL" &&
-        run tar -xzf "$tmp/simplesetup.tar.gz" -C "$tmp" SimpleSetup-main/hyprland || return 1
-    HYPR_SRC=$tmp/SimpleSetup-main/hyprland
-}
-hyprCopy() { # backs up the folders the bundle replaces, then copies it into the real user's home
-    local src=$1 home=$TARGET_HOME d moved=0 backup
-    backup=$home/.config/carino-backup-$(date +%Y%m%d-%H%M%S)
-    asUser mkdir -p "$home/.config" "$home/.local/share" "$home/Pictures/Screenshots"   # as the user, never root-owned
-    for d in "$src"/.config/*/; do   # every ~/.config folder the bundle ships
-        d=$(basename "$d")
-        [[ -e $home/.config/$d ]] || continue
-        (( moved )) || asUser mkdir -p "$backup" || return 1
-        moved=1
-        run mv "$home/.config/$d" "$backup/" || { fail "Could not move ~/.config/$d aside, nothing was copied."; return 1; }
-    done
-    (( moved )) && say "Your previous configuration was moved to $backup"
-    for d in .config .local Pictures; do
-        [[ -e $src/$d ]] && run cp -a --no-preserve=ownership "$src/$d" "$home/"
-    done
-    if (( EUID == 0 )) && [[ $TARGET_USER != root ]]; then
-        run chown -R "$TARGET_USER:" "$home/.config" "$home/.local/share/fonts" "$home/Pictures"
+atriumFetch() { # atriumFetch <dir>: Atrium's main branch into <dir> as the real user (git when there is git, else the tarball)
+    local dir=$1
+    if [[ -d $dir/.git ]]; then
+        if have git; then asUser git -C "$dir" pull --ff-only || warn "$dir could not be updated (local changes?); its current files are used."; fi
+        return 0
     fi
-    if have fc-cache || (( DRYRUN )); then asUser fc-cache -f; fi
+    if [[ -e $dir && ! -e $dir/install.sh ]]; then fail "$dir exists and is not Atrium; move it aside first."; return 1; fi
+    if [[ ! -e $dir ]] && have git; then asUser git clone --depth 1 "$ATRIUM_GIT" "$dir"; return; fi
+    have curl || pkgInstall curl
+    asUser mkdir -p "$dir" &&   # a new folder, or an earlier tarball copy: its files are replaced, nothing is removed
+        asUser bash -c 'curl -fsSL "$1" | tar -xz -C "$2" --strip-components=1' _ "$ATRIUM_TAR" "$dir"
+}
+atriumInstall() { # Fedora: Atrium, the full desktop, with its own install.sh run as the real user (it asks for sudo itself)
+    local dir=${CARINO_SETUP_ATRIUM_DIR:-$TARGET_HOME/Atrium} rc
+    local -a flags=(--replace-desktop) cmd=()   # choosing Carino Hyprland means a Hyprland-only machine: install.sh still asks, default yes
+    if [[ $TARGET_USER == root ]]; then
+        fail "Atrium is installed for an ordinary account, not root: run setup.sh from that account (it uses sudo)."
+        record fail "Atrium (Carino Hyprland)"; return 1
+    fi
+    (( NONINTERACTIVE )) && flags+=(--yes)
+    (( DRYRUN )) && flags+=(--dry-run)
+    say "Atrium, the Carino Hyprland desktop for Fedora: $ATRIUM_GIT into $dir"
+    atriumFetch "$dir" || { record fail "Atrium download"; return 1; }
+    cmd=("$dir/install.sh" "${flags[@]}")
+    if (( EUID == 0 )); then   # install.sh refuses root; and the user's own session folder, not root's
+        have runuser || { fail "runuser is missing: run setup.sh from $TARGET_USER's account instead."; record fail "Atrium (Carino Hyprland)"; return 1; }
+        cmd=(runuser -u "$TARGET_USER" -- env -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS "${cmd[@]}")
+    fi
+    if (( DRYRUN )); then   # install.sh --dry-run changes nothing, so it really runs when it is there
+        run "${cmd[@]}"
+        if [[ -x $dir/install.sh ]]; then "${cmd[@]}"; rc=$?
+        else say "Atrium is not downloaded in a dry run; its own dry run shows once $dir exists."; rc=0; fi
+    else
+        run "${cmd[@]}"; rc=$?
+    fi
+    if (( rc == 0 )); then record ok "Atrium (Carino Hyprland) for $TARGET_USER"
+    else record fail "Atrium (Carino Hyprland): install.sh exited $rc; run $dir/install.sh again to finish"; fi
+    return "$rc"
+}
+carinoSupported() { # sets CARINO_WHY unless this is Fedora 44+ (not atomic): the only system Atrium is made for
+    local plain
+    CARINO_WHY=''
+    if [[ $FAMILY == fedora ]] && { [[ ! ${OS_VER%%.*} =~ ^[0-9]+$ ]] || (( ${OS_VER%%.*} >= 44 )); }; then return 0; fi
+    if hyprSupported; then plain='the plain "hyprland" desktop choice installs stock Hyprland here instead.'
+    else plain="stock Hyprland is not offered here either: $HYPR_WHY"; fi
+    case $FAMILY in
+        fedora) CARINO_WHY="Atrium is made for Fedora 44 or newer and this is Fedora $OS_VER; upgrade to Fedora 44 or newer first." ;;
+        atomic) CARINO_WHY="Atrium is made for Fedora 44 or newer with dnf, not the atomic editions; $plain" ;;
+        *)      CARINO_WHY="Atrium is made for Fedora 44 or newer only; $plain" ;;
+    esac
+    return 1
 }
 carinoHyprland() {
     [[ -n ${DONE_GROUP[carino]:-} ]] && return 0
     DONE_GROUP[carino]=1
     banner "Carino Hyprland"
-    if ! hyprSupported; then warn "Carino Hyprland is not available here: $HYPR_WHY"; record skip "Carino Hyprland"; return 0; fi
-    hyprRepo
-    installGroup hypr "Carino Hyprland packages"
-    PM_TARGET=()
-    hyprVersionCheck
-    hyprBundle || { fail "The Carino Hyprland bundle could not be found or downloaded."; record fail "Carino Hyprland bundle"; return 1; }
-    hyprCopy "$HYPR_SRC" || { record fail "Carino Hyprland configuration"; return 1; }
-    record ok "Carino Hyprland configuration for $TARGET_USER"
-    say "Log out and choose Hyprland at the login screen (no login screen: type Hyprland on a text console)."
-    say "Main keys (ALT is the main modifier):"
-    printf '  %s\n' "ALT+Q terminal    ALT+E app launcher    ALT+C close window" \
-        "ALT+1..9 workspaces    ALT+S screenshot    SUPER+Escape power menu (SUPER+ALT+L locks)" \
-        "Every key: https://github.com/MiguelCarino/SimpleSetup/tree/main/hyprland"
+    if ! carinoSupported; then warn "Carino Hyprland is not available here: $CARINO_WHY"; record skip "Carino Hyprland"; return 0; fi
+    atriumInstall
 }
 
 # ==== 11. Extras ====
@@ -1197,7 +1199,7 @@ Usage: setup.sh [dry-run] [argument]
   server      base + server + development packages, enables SSH and Cockpit
   drivers     repositories + GPU drivers (nvidia, amd and intel are the same: the GPU is detected)
   desktop     desktop menu, even when a desktop is present
-  hyprland    the Carino Hyprland desktop configuration only
+  hyprland    the Carino Hyprland desktop only: Atrium, Fedora 44+ (elsewhere: desktop menu, "hyprland")
   distrobox   Fedora, Ubuntu and Debian distrobox containers
   anydesk     AnyDesk and RustDesk (Flatpak)
   librewolf   LibreWolf browser
@@ -1218,9 +1220,9 @@ interactive() {
     desktopMenu
     profileMenu
     if [[ -n ${DONE_GROUP[carino]:-} ]]; then :   # already chosen in the desktop menu
-    elif hyprSupported; then
-        if confirm "Install the Carino Hyprland desktop configuration?" n; then carinoHyprland; fi
-    else say "Carino Hyprland is not offered here: $HYPR_WHY"; fi
+    elif carinoSupported; then
+        if confirm "Install the Carino Hyprland desktop (Atrium)?" n; then carinoHyprland; fi
+    else say "Carino Hyprland is not offered here: $CARINO_WHY"; fi
 }
 finish() {
     banner "Summary"

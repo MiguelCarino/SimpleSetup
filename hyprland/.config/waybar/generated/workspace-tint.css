@@ -1,4 +1,0 @@
-/* Static: every unlit workspace number in the first screen colour. */
-#workspaces button {
-    color: @mon1-dim;
-}

@@ -40,16 +40,16 @@ Run it as your normal user. It runs each command that changes the system through
      - **In a VM**, it installs guest tools instead.
 3. **Desktop.** The menu appears only when no desktop session or display manager is found. It lists the 12 desktops, `none` and Carino Hyprland, and the default is `none`.
 4. **Purpose profiles.** It lists the 15 purposes and accepts several numbers (`2 6`). Each profile installs the basic applications, its own native list where the family has one, and its Flatpaks.
-5. **Carino Hyprland.** It asks *"Install the Carino Hyprland desktop configuration?"* (default no). It asks only where Hyprland 0.55 or newer can be installed. Everywhere else it prints one line saying why not.
+5. **Carino Hyprland.** It asks *"Install the Carino Hyprland desktop (Atrium)?"* (default no). It asks only on Fedora 44 or newer, the one system Atrium is made for. Everywhere else it prints one line saying why not, and where stock Hyprland can be installed it points to the plain `hyprland` desktop instead.
 6. **Summary.** It shows what was done, skipped or failed, then asks whether to reboot (default no).
 
 A failed package never stops the run. Names the package manager cannot find are listed and skipped. If a batch fails, each package is retried on its own. dnf skips unknown names itself and can exit with success when it installed none of them, so after each dnf install the script asks `rpm` which names are really there: none is recorded as a skip (`none available`), some as `ok (N of M)` with the missing names listed. Groups (`@...`) are taken on dnf's word.
 
 ## Supported distributions
 
-| Family | Examples | Base | Drivers | Profiles (native lists) | Carino Hyprland |
+| Family | Examples | Base | Drivers | Profiles (native lists) | Hyprland (plain `hyprland` desktop) |
 | --- | --- | --- | --- | --- | --- |
-| Fedora | Fedora, Nobara, Ultramarine, Risi | RPM Fusion, OpenH264, full ffmpeg | NVIDIA open / 580xx / 470xx (akmods), AMD, Intel | all | yes, COPR `lionheartp/Hyprland` |
+| Fedora | Fedora, Nobara, Ultramarine, Risi | RPM Fusion, OpenH264, full ffmpeg | NVIDIA open / 580xx / 470xx (akmods), AMD, Intel | all | 44 and newer (COPR `lionheartp/Hyprland`); Carino Hyprland = [Atrium](https://github.com/MiguelCarino/Atrium), here only |
 | Fedora Atomic | Silverblue, Kinoite, Bazzite, Bluefin, Aurora | a few tools, layered with `rpm-ostree` (reboot) | NVIDIA layered (Universal Blue images: rebase to `-nvidia`); Mesa comes with the image | Flatpaks only | no |
 | Enterprise Linux | RHEL, AlmaLinux, Rocky, CentOS Stream, Oracle, Amazon | CRB, EPEL, RPM Fusion free (Oracle: its own EPEL and CodeReady repositories; Amazon: none) | NVIDIA Turing+ (AlmaLinux repository; others get instructions), AMD, Intel | Fedora lists, missing names skipped | no |
 | Debian | Debian, LMDE, MX, Kali, Parrot, Devuan, Raspberry Pi OS | contrib + non-free | NVIDIA open / 580, AMD, Intel | all | Debian 13 (backports), forky, sid, and derivatives that name one of them in `DEBIAN_CODENAME` (LMDE 7) |
@@ -85,7 +85,7 @@ bash <(curl -s https://setup.carino.systems/setup.sh) <argument>
 | `server` | Base, server and development packages, then enables SSH and Cockpit and opens them in firewalld |
 | `drivers`, `nvidia`, `amd`, `intel` | GPU drivers only, after the repositories they need. All four are the same, because the GPU is detected |
 | `desktop` | The desktop menu, even when a desktop is already running |
-| `hyprland` | Carino Hyprland only |
+| `hyprland` | Carino Hyprland only (Atrium: Fedora 44 and newer; elsewhere it says why not) |
 | `distrobox` | Fedora, Ubuntu and Debian distrobox containers |
 | `anydesk` | AnyDesk and RustDesk Flatpaks |
 | `librewolf` | LibreWolf: repository on Fedora/EL/Debian/Ubuntu, Flatpak elsewhere |
@@ -109,7 +109,7 @@ The tokens are comma-separated and run left to right:
 | `technical` | Base setup (including drivers), then the desktop menu, which takes `none` |
 | `drivers`, `update`, `server` | Same as the arguments |
 | `desktop=<name>` | `gnome` `xfce` `kde` `lxqt` `cinnamon` `mate` `i3` `openbox` `budgie` `sway` `hyprland` `niri` `carino-hyprland` `none` |
-| `hyprland` | Same as `desktop=carino-hyprland`. (`desktop=hyprland` installs plain Hyprland, without the Carino configuration.) |
+| `hyprland` | Same as `desktop=carino-hyprland`: Atrium, Fedora 44 and newer only. (`desktop=hyprland` installs plain, stock Hyprland wherever the table above says it can.) |
 | `purpose=<name>` | `basic` `gaming` `corporate` `corporate-microsoft` `corporate-google` `development` `astronomy` `compneuro` `design` `music` `cybersecurity` `forensics` `scientific` `robotics` `imagenology` (may repeat) |
 | `reboot=yes` / `reboot=no` | Reboot at the end or not. Without it, the final prompt takes its default, no |
 
@@ -144,18 +144,25 @@ Each run writes `carino-setup-YYYYmmdd-HHMMSS.log` in the current directory, wit
 | `CARINO_SETUP_LOG=<file>` | Log path |
 | `CARINO_SETUP_OSRELEASE=<file>` | Read this instead of `/etc/os-release`, to see what another distribution would get |
 | `CARINO_SETUP_ATOMIC`, `_GPU`, `_NVGEN`, `_VIRT`, `_NET`, `_UNAME` | Test hooks: force atomic, the GPU list (`"nvidia amd intel"`), the NVIDIA branch (`open`, `580`, `470`) or the VM type; `_NET=0` skips the internet check; `_UNAME` pretends to be another kernel (`FreeBSD`, `Darwin`, ...) |
+| `CARINO_SETUP_ATRIUM_DIR=<dir>` | Where Atrium is downloaded on Fedora (default `~/Atrium` of the real user) |
 
 ## Carino Hyprland
 
-Carino Hyprland is a complete Hyprland desktop: an ALT-based keymap, a waybar bar, a lock screen, idle handling, notifications, a launcher, clipboard history, screenshots, fonts and a wallpaper. It needs Hyprland **0.55 or newer**, because the configuration is `hyprland.lua`. Use the `hyprland` argument, the `desktop=carino-hyprland` (or `hyprland`) plan token, the desktop menu, or answer yes at the end of the interactive run. Steps:
+Use the `hyprland` argument, the `desktop=carino-hyprland` (or `hyprland`) plan token, the desktop menu, or answer yes at the end of the interactive run. Carino Hyprland is [Atrium](https://github.com/MiguelCarino/Atrium), and Atrium is made for **Fedora 44 or newer** only.
 
-1. Adds the Hyprland source where one is needed (COPR on Fedora, `trixie-backports` on Debian 13, the PPA on Ubuntu 24.04/26.04 bases).
-2. Installs the `hypr_<family>` packages, then checks that `Hyprland --version` is at least 0.55.
-3. Finds the bundle: [`hyprland/`](hyprland/) next to the script, or downloaded from this repository.
-4. Moves any existing `~/.config` folder that the bundle also ships (`hypr`, `waybar`, `wofi`, `mako`, `kitty`, `cliphist`, `themes`) to `~/.config/carino-backup-<timestamp>/`.
-5. Copies the bundle into your home folder, creates `~/Pictures/Screenshots`, runs `fc-cache -f` and prints the main keys.
+### On Fedora 44 and newer: Atrium
 
-Then log out and choose Hyprland at the login screen. The script does not install a login manager for it: with none, type `Hyprland` on a text console after logging in. To undo, move the folders back from the backup folder. Keys, contents and requirements are in [hyprland/README.md](hyprland/README.md).
+On Fedora, Carino Hyprland is [Atrium](https://github.com/MiguelCarino/Atrium), the full desktop (bar, panels, settings, themes, smart features), installed by Atrium's own `install.sh`:
+
+1. Downloads Atrium to `~/Atrium` of the real user: `git clone` when git is there, else the GitHub tarball of `main`; an existing `~/Atrium` is updated (`git pull --ff-only`, or the tarball over it).
+2. Runs `~/Atrium/install.sh` as that user (never root; it asks for sudo itself), with the terminal attached so its questions work: `--yes` when setup.sh runs without a terminal or under a plan, `--dry-run` in a dry run. A dry run runs Atrium's own dry run when `~/Atrium` is already there, and only prints the download otherwise.
+3. `install.sh` adds RPM Fusion and the COPR `lionheartp/Hyprland`, swaps `ffmpeg-free` for `ffmpeg`, installs the packages, backs up any configuration it replaces to `~/.local/share/atrium/backup-<date>/`, and offers to remove the desktop that was there (GNOME, KDE Plasma, COSMIC, Xfce...): setup.sh passes `--replace-desktop`, so the default answer is yes (and under a plan it is removed); Atrium's own `install.sh --yes`, run by hand without that flag, keeps the old desktop. It first marks Atrium's packages and the system's essentials (kernel, firmware, NetworkManager, sudo, dnf, the bootloader, storage tools) as user-installed, shows what the removal takes and refuses it if that list touches any of them, then replaces the old login screen with greetd + tuigreet. From inside a running session the removal is an offline transaction done at the next reboot (`sudo dnf offline reboot`). `~/Atrium/uninstall.sh` puts the configuration backup back (not the removed desktop).
+
+Fedora 43 and older are told to upgrade first, and the atomic editions are refused, as by `install.sh` itself.
+
+### Everywhere else: declined
+
+Atrium is made for Fedora 44 or newer, so on every other family `carino-hyprland` installs nothing and prints why, for example *"Atrium is made for Fedora 44 or newer only; the plain "hyprland" desktop choice installs stock Hyprland here instead."* Where stock Hyprland is not available either (Void, Alpine, Enterprise Linux...) the line says that too. The plain `hyprland` desktop (`desktop=hyprland`, or the desktop menu) still installs stock Hyprland where the family table above says it can, adding `trixie-backports` on Debian 13 or the PPA on Ubuntu 24.04/26.04 bases; it copies no configuration. (The smaller `hyprland/` configuration bundle that used to be copied there is retired.)
 
 ## Windows: `setup.ps1`
 
@@ -262,7 +269,6 @@ relicense. Each keeps its own terms, and each carries its own notice.
 | Path | What it is | Licence | Notice |
 | --- | --- | --- | --- |
 | [`fonts/`](fonts/) | IBM Plex Mono, IBM Plex Sans, Red Hat Display | SIL OFL 1.1 | [`fonts/OFL.txt`](fonts/OFL.txt) |
-| [`hyprland/.local/share/fonts/carino/`](hyprland/.local/share/fonts/carino/) | Orbitron, Rajdhani SemiBold, Share Tech Mono | SIL OFL 1.1 | `OFL-Orbitron.txt`, `OFL-Rajdhani.txt`, `OFL-ShareTechMono.txt` (beside the fonts) |
 | `index.html` (`#osFloat` symbols) | Linux, Fedora, Debian, Ubuntu, Arch, openSUSE, Mint, Manjaro and Apple logos from [Simple Icons](https://simpleicons.org) 13.21.0 (the Windows mark is drawn by hand) | CC0 1.0 (the logos remain their owners' trademarks) | [Simple Icons licence](https://github.com/simple-icons/simple-icons/blob/develop/LICENSE.md) |
 
 Those files travel with any fork, mirror or repackaging of this repository, and

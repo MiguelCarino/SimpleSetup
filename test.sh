@@ -19,7 +19,7 @@ setup() {
     while (( $# )) && [[ $1 != -- ]]; do envs+=("$1"); shift; done
     [[ ${1:-} == -- ]] && shift
     OUT=$(env CARINO_SETUP_OSRELEASE="$osr" CARINO_SETUP_NET=0 CARINO_SETUP_ATOMIC=0 CARINO_SETUP_VIRT=none \
-        CARINO_SETUP_GPU="nvidia amd intel" CARINO_SETUP_NVGEN=open CARINO_SETUP_DRYRUN=1 XDG_CURRENT_DESKTOP= \
+        CARINO_SETUP_GPU="nvidia amd intel" CARINO_SETUP_NVGEN=open CARINO_SETUP_DRYRUN=1 XDG_CURRENT_DESKTOP= CARINO_SETUP_ATRIUM_DIR="$WORK/no-atrium" \
         "${envs[@]}" timeout 60 bash setup.sh "$@" </dev/null 2>&1)
     RC=$?
 }
@@ -37,6 +37,7 @@ else printf '  skip  shellcheck not installed\n'; fi
 head2 "2. Every family: detection, package manager line, Carino Hyprland support"
 fixture() { printf '%s\n' "${@:2}" > "$WORK/$1"; }
 fixture fedora44     'NAME="Fedora Linux"' 'VERSION="44 (Workstation Edition)"' 'ID=fedora' 'VERSION_ID=44' 'PRETTY_NAME="Fedora Linux 44 (Workstation Edition)"'
+fixture fedora43     'NAME="Fedora Linux"' 'VERSION="43 (KDE Plasma Desktop Edition)"' 'ID=fedora' 'VERSION_ID=43' 'PRETTY_NAME="Fedora Linux 43 (KDE Plasma Desktop Edition)"'
 fixture silverblue44 'NAME="Fedora Linux"' 'VERSION="44.20261001.0 (Silverblue)"' 'ID=fedora' 'VERSION_ID=44' 'VARIANT_ID=silverblue' 'PRETTY_NAME="Fedora Linux 44.20261001.0 (Silverblue)"'
 fixture alma10       'NAME="AlmaLinux"' 'VERSION="10.0 (Purple Lion)"' 'ID="almalinux"' 'ID_LIKE="rhel centos fedora"' 'VERSION_ID="10.0"' 'PRETTY_NAME="AlmaLinux 10.0 (Purple Lion)"'
 fixture debian13     'PRETTY_NAME="Debian GNU/Linux 13 (trixie)"' 'NAME="Debian GNU/Linux"' 'VERSION_ID="13"' 'VERSION="13 (trixie)"' 'VERSION_CODENAME=trixie' 'ID=debian'
@@ -60,7 +61,7 @@ fixture guix         'NAME="Guix System"' 'ID=guix' 'PRETTY_NAME="Guix System"' 
 fixture slackware150 'NAME=Slackware' 'VERSION="15.0"' 'ID=slackware' 'VERSION_ID=15.0' 'PRETTY_NAME="Slackware 15.0 x86_64"' 'VERSION_CODENAME=stable'
 fixture slackwarecur 'NAME=Slackware' 'VERSION="15.0+"' 'ID=slackware' 'VERSION_ID=15.0' 'PRETTY_NAME="Slackware 15.0 x86_64 (post 15.0 -current)"' 'VERSION_CODENAME=current'
 fixture voidnopretty 'NAME="Void"' 'ID="void"'
-# fixture|extra env|family|install command prefix|carino hyprland (yes/no)
+# fixture|extra env|family|install command prefix|carino hyprland: yes (Atrium), plain (declined, stock Hyprland offered), no
 while IFS='|' read -r fx extra fam pm hypr; do
     [[ -n $fx ]] || continue
     setup "$WORK/$fx" ${extra:+"$extra"} CARINO_SETUP_PLAN=technical,purpose=basic,hyprland
@@ -68,23 +69,26 @@ while IFS='|' read -r fx extra fam pm hypr; do
     check "$fx: family $fam" 'grep -qE "^ +Family +$fam\$" <<<"$OUT"'
     check "$fx: package manager '$pm'" 'grep -qF "Package manager   $pm" <<<"$OUT"'
     check "$fx: an install command is printed" 'grep -qE "^ +\(dry-run\) \\$ (sudo )?$(sed "s/[.]/\\\\./g" <<<"$pm") " <<<"$OUT"'
-    if [[ $hypr == yes ]]; then check "$fx: Carino Hyprland is installed" 'grep -q "Installing Carino Hyprland packages" <<<"$OUT"'
-    else check "$fx: Carino Hyprland is declined with a reason" 'grep -q "Carino Hyprland is not available here: ." <<<"$OUT"'; fi
+    if [[ $hypr == yes && $fam == fedora ]]; then check "$fx: Carino Hyprland is Atrium" 'grep -q "Atrium, the Carino Hyprland desktop for Fedora" <<<"$OUT"'
+    else check "$fx: Carino Hyprland is declined with a reason" 'grep -q "Carino Hyprland is not available here: ." <<<"$OUT" && ! grep -q "Atrium, the Carino" <<<"$OUT"'
+        if [[ $hypr == plain ]]; then check "$fx: the decline points to the plain hyprland desktop" 'grep -q "the plain \"hyprland\" desktop choice installs stock Hyprland here" <<<"$OUT"'; fi
+    fi
 done <<'FAMILIES'
 fedora44||fedora|dnf -y install --skip-unavailable|yes
+fedora43||fedora|dnf -y install --skip-unavailable|no
 silverblue44|CARINO_SETUP_ATOMIC=1|atomic|rpm-ostree install --idempotent --allow-inactive|no
 alma10||rhel|dnf -y install --setopt=strict=0|no
-debian13||debian|env DEBIAN_FRONTEND=noninteractive apt-get -y install|yes
+debian13||debian|env DEBIAN_FRONTEND=noninteractive apt-get -y install|plain
 debian12||debian|env DEBIAN_FRONTEND=noninteractive apt-get -y install|no
-ubuntu2404||ubuntu|env DEBIAN_FRONTEND=noninteractive apt-get -y install|yes
-mint22||ubuntu|env DEBIAN_FRONTEND=noninteractive apt-get -y install|yes
-pop2404||ubuntu|env DEBIAN_FRONTEND=noninteractive apt-get -y install|yes
-arch||arch|pacman -S --needed --noconfirm|yes
-manjaro||arch|pacman -S --needed --noconfirm|yes
-cachyos||arch|pacman -S --needed --noconfirm|yes
-tumbleweed||opensuse|zypper -n install --auto-agree-with-licenses|yes
+ubuntu2404||ubuntu|env DEBIAN_FRONTEND=noninteractive apt-get -y install|plain
+mint22||ubuntu|env DEBIAN_FRONTEND=noninteractive apt-get -y install|plain
+pop2404||ubuntu|env DEBIAN_FRONTEND=noninteractive apt-get -y install|plain
+arch||arch|pacman -S --needed --noconfirm|plain
+manjaro||arch|pacman -S --needed --noconfirm|plain
+cachyos||arch|pacman -S --needed --noconfirm|plain
+tumbleweed||opensuse|zypper -n install --auto-agree-with-licenses|plain
 leap16||opensuse|zypper -n install --auto-agree-with-licenses|no
-solus||solus|eopkg -y it|yes
+solus||solus|eopkg -y it|plain
 alpine||alpine|apk add|no
 void||void|xbps-install -y|no
 gentoo||gentoo|emerge --noreplace --quiet-build|no
@@ -92,12 +96,19 @@ mageia9||mageia|dnf -y install --setopt=strict=0|no
 slackware150||slackware|slackpkg -batch=on -default_answer=y install|no
 slackwarecur||slackware|slackpkg -batch=on -default_answer=y install|no
 FAMILIES
-setup "$WORK/debian13" CARINO_SETUP_PLAN=hyprland
+setup "$WORK/debian13" CARINO_SETUP_PLAN=desktop=hyprland
 check "debian13: Hyprland comes from trixie-backports" 'grep -qE "apt-get -y install -t trixie-backports hyprland" <<<"$OUT"'
-setup "$WORK/ubuntu2404" CARINO_SETUP_PLAN=hyprland
+setup "$WORK/ubuntu2404" CARINO_SETUP_PLAN=desktop=hyprland
 check "ubuntu2404: the cppiber PPA is added" 'grep -q "add-apt-repository -y ppa:cppiber/hyprland" <<<"$OUT"'
 setup "$WORK/fedora44" CARINO_SETUP_PLAN=hyprland
-check "fedora44: the lionheartp COPR is enabled" 'grep -q "copr enable lionheartp/Hyprland" <<<"$OUT"'
+check "fedora44: Atrium is cloned as the user" 'grep -qF "git clone --depth 1 https://github.com/MiguelCarino/Atrium.git $WORK/no-atrium" <<<"$OUT"'
+check "fedora44: Atrium's install.sh gets --replace-desktop, --yes and --dry-run" 'grep -qF "$WORK/no-atrium/install.sh --replace-desktop --yes --dry-run" <<<"$OUT"'
+check "fedora44: nothing of the retired hyprland/ bundle is fetched" '! grep -q "Carino Hyprland packages" <<<"$OUT" && ! grep -q "simplesetup.tar.gz" <<<"$OUT"'
+mkdir -p "$WORK/atrium"; printf '#!/bin/sh\necho "atrium-stub: $*"\n' > "$WORK/atrium/install.sh"; chmod +x "$WORK/atrium/install.sh"
+setup "$WORK/fedora44" CARINO_SETUP_ATRIUM_DIR="$WORK/atrium" CARINO_SETUP_PLAN=hyprland
+check "fedora44: an existing Atrium's install.sh really runs its own dry run" '(( RC == 0 )) && grep -q "^atrium-stub: --replace-desktop --yes --dry-run$" <<<"$OUT" && ! grep -q "git clone" <<<"$OUT"'
+setup "$WORK/fedora43" CARINO_SETUP_PLAN=hyprland
+check "fedora43: Carino Hyprland is declined (Atrium is for 44+)" 'grep -q "Atrium is made for Fedora 44 or newer and this is Fedora 43" <<<"$OUT" && ! grep -q "Atrium, the Carino" <<<"$OUT"'
 setup "$WORK/fedora44" CARINO_SETUP_NVGEN=580 CARINO_SETUP_PLAN=drivers
 check "fedora44 + Pascal: the 580xx akmod is chosen" 'grep -q "akmod-nvidia-580xx" <<<"$OUT"'
 setup "$WORK/debian13" CARINO_SETUP_NVGEN=580 CARINO_SETUP_PLAN=drivers
@@ -156,7 +167,13 @@ check "reboot=yes reboots at the end" 'grep -qE "\\$ sudo reboot$" <<<"$OUT"'
 setup "$WORK/fedora44" CARINO_SETUP_PLAN=purpose=basic
 check "no reboot token: the reboot question defaults to no" 'grep -q "Reboot now? (y/n) -> n" <<<"$OUT" && ! grep -q "sudo reboot" <<<"$OUT"'
 setup "$WORK/fedora44" CARINO_SETUP_PLAN=desktop=carino-hyprland
-check "desktop=carino-hyprland installs Carino Hyprland" 'grep -q "Installing Carino Hyprland packages" <<<"$OUT"'
+check "desktop=carino-hyprland installs Atrium on Fedora" 'grep -q "Atrium, the Carino Hyprland desktop for Fedora" <<<"$OUT"'
+setup "$WORK/debian13" CARINO_SETUP_PLAN=desktop=carino-hyprland
+check "desktop=carino-hyprland is declined elsewhere, pointing to plain hyprland" '(( RC == 0 )) && clean && grep -q "Atrium is made for Fedora 44 or newer only; the plain \"hyprland\" desktop choice" <<<"$OUT" && (( $(commands) == 0 ))'
+setup "$WORK/void" CARINO_SETUP_PLAN=desktop=carino-hyprland
+check "desktop=carino-hyprland on a family without Hyprland says so too" 'grep -q "Atrium is made for Fedora 44 or newer only; stock Hyprland is not offered here either: Void" <<<"$OUT"'
+setup "$WORK/silverblue44" CARINO_SETUP_ATOMIC=1 CARINO_SETUP_PLAN=desktop=carino-hyprland
+check "desktop=carino-hyprland on Fedora Atomic is declined" 'grep -q "not the atomic editions" <<<"$OUT" && ! grep -q "Atrium, the Carino" <<<"$OUT"'
 
 head2 "4. Every purpose maps to its packages and Flatpaks"
 PURPOSES="basic gaming corporate corporate-microsoft corporate-google development astronomy compneuro design music cybersecurity forensics scientific robotics imagenology"
@@ -186,7 +203,7 @@ check "help prints the usage and exits 0" '(( RC == 0 )) && grep -q "^Usage:" <<
 OUT=$(CARINO_SETUP_OSRELEASE="$WORK/fedora44" CARINO_SETUP_NET=0 CARINO_SETUP_GPU=intel timeout 60 bash setup.sh --dry-run simple </dev/null 2>&1); RC=$?
 check "--dry-run as the first argument works" '(( RC == 0 )) && grep -q "(dry-run) \\$" <<<"$OUT"'
 OUT=$(CARINO_SETUP_OSRELEASE="$WORK/fedora44" CARINO_SETUP_NET=0 CARINO_SETUP_GPU=intel timeout 60 bash setup.sh dry-run </dev/null 2>&1); RC=$?
-check "no argument, no terminal: interactive flow takes every default and ends" '(( RC == 0 )) && clean && grep -q "Purpose: basic " <<<"$OUT" && grep -q "Install the Carino Hyprland desktop configuration? (y/n) -> n" <<<"$OUT"'
+check "no argument, no terminal: interactive flow takes every default and ends" '(( RC == 0 )) && clean && grep -q "Purpose: basic " <<<"$OUT" && grep -q "Install the Carino Hyprland desktop (Atrium)? (y/n) -> n" <<<"$OUT"'
 
 head2 "7. Package tables"
 RX='^([a-z0-9_]+)_(fedora|atomic|rhel|debian|ubuntu|arch|opensuse|solus|alpine|void|gentoo|slackware|mageia)=\('
@@ -210,15 +227,10 @@ done
 for d in gnome xfce kde lxqt cinnamon mate i3 openbox budgie sway hyprland niri; do
     check "desktop_$d exists for fedora, debian (not niri), arch and opensuse" 'has desktop_${d}_fedora && { [[ $d == niri ]] || has desktop_${d}_debian; } && has desktop_${d}_arch && has desktop_${d}_opensuse'
 done
-for f in fedora arch opensuse debian solus; do check "hypr_$f exists (Carino Hyprland family)" 'has hypr_$f'; done
+check "the retired hyprland/ bundle's hypr_<family> arrays are gone" '! grep -qE "^hypr_[a-z]+=\\(" <<<"$TABLES"'
 for g in nvidia nvidia580; do for f in fedora debian opensuse; do check "drivers_${g}_$f exists" 'has drivers_${g}_$f'; done; done
 for f in fedora rhel debian arch opensuse alpine; do check "base, codecs or firmware exist for $f" 'has base_$f && has firmware_$f'; done
-if [[ -r hyprland/packages.txt ]]; then
-    missing=$(sed 's/#.*//' hyprland/packages.txt | xargs -n1 2>/dev/null | while read -r p; do grep -E "^hypr_fedora=\\(" <<<"$TABLES" | grep -qw -- "$p" || echo "$p"; done | tr "\n" " ")
-    check "every name in hyprland/packages.txt is in hypr_fedora${missing:+ (missing: $missing)}" '[[ -z $missing ]]'
-    extra=$(grep -E "^hypr_fedora=\\(" <<<"$TABLES" | sed -E "s/^[^(]*\\(//; s/\\).*//" | xargs -n1 | while read -r p; do sed 's/#.*//' hyprland/packages.txt | grep -qw -- "$p" || echo "$p"; done | tr "\n" " ")
-    check "every name in hypr_fedora is in hyprland/packages.txt${extra:+ (extra: $extra)}" '[[ -z $extra ]]'
-fi
+check "the hyprland/ bundle is retired (no folder, no reference in setup.sh)" '[[ ! -e hyprland ]] && ! grep -qE "hyprBundle|hyprCopy|BUNDLE_URL|SimpleSetup/tree/main/hyprland" setup.sh'
 
 if (( NETWORK )); then
     head2 "8. Flathub ids (network)"

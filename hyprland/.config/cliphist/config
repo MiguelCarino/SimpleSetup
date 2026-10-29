@@ -1,5 +1,0 @@
-# Read by every `cliphist store` (the wl-paste --watch recorders started in lua/autostart.lua).
-# Keeps the newest 500 copies for SUPER+V. Passwords copied from KeePassXC
-# never get here: wl-paste marks them CLIPBOARD_STATE=sensitive and
-# cliphist skips those.
-max-items 500

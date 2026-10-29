@@ -560,7 +560,7 @@
                     <li><b data-i18n>Base packages and drivers that match.</b> <span data-i18n>The repositories codecs and drivers need, a full upgrade, codecs, firmware and CPU microcode, then the GPU driver: the open NVIDIA module for Turing and newer, the 580 or 470 branch for older cards, Mesa for AMD and Intel, guest tools in a virtual machine.</span></li>
                     <li><b data-i18n>15 purpose profiles.</b> <span data-i18n>Gaming, Corporate, Development, Design, Cybersecurity, Forensics, Scientific, Robotics, Medical Imaging and more — native packages and the Flatpaks that belong with them.</span></li>
                     <li><b data-i18n>Twelve desktops, only when none is running.</b> <span data-i18n>GNOME through Niri, where the family has a package list for them. The builder names the ones a family lacks and says why.</span></li>
-                    <li><b data-i18n>Carino Hyprland, if you want it.</b> <span data-i18n>A complete Hyprland desktop configuration (bar, lock screen, launcher, notifications, keys) on the distributions that ship Hyprland 0.55 or newer. Your current configuration is moved to a backup folder first.</span></li>
+                    <li><b data-i18n>Carino Hyprland, if you want it.</b> <span data-i18n>On Fedora 44 or newer it installs Atrium, the complete Hyprland desktop (bar, lock screen, launcher, notifications, settings, themes), with its own installer, which backs up your configuration first and offers to remove the desktop that was there (GNOME, KDE Plasma, COSMIC...) for a Hyprland-only machine. Atrium is made for Fedora 44 or newer only: on other distributions the script says so and points to the plain Hyprland desktop choice, which installs stock Hyprland where 0.55 or newer is available.</span></li>
                     <li><b data-i18n>Windows and macOS too.</b> <span data-i18n>setup.ps1 installs with winget and macos.sh with Homebrew: the same system table first, the same 15 purposes, Explorer or Finder tweaks and the system updates. Windows Update and the GPU vendor supply the Windows drivers; macOS ships its own.</span></li>
                     <li><b data-i18n>Rehearses on request.</b> <span data-i18n>A dry run prints every privileged command it would run and installs nothing.</span></li>
                     <li><b data-i18n>One file you can audit.</b> <span data-i18n>About a thousand lines of plain bash in numbered sections, with every package name kept together as data.</span></li>
@@ -570,7 +570,7 @@
                 <h3 data-i18n>What it will not do</h3>
                 <ul>
                     <li><b data-i18n>It is not a configuration manager.</b> <span data-i18n>It installs once. It does not converge a machine to a described state, it does not run again on a schedule, and running it twice does not undo the first run. Ansible and Salt still have a job.</span></li>
-                    <li><b data-i18n>It is not sandboxed.</b> <span data-i18n>It runs privileged commands, upgrades the whole system and adds third-party repositories — RPM Fusion, EPEL, Packman, Flathub, and the Hyprland COPR or PPA when you ask for Carino Hyprland. Read the dry run before you run the real one.</span></li>
+                    <li><b data-i18n>It is not sandboxed.</b> <span data-i18n>It runs privileged commands, upgrades the whole system and adds third-party repositories — RPM Fusion, EPEL, Packman, Flathub, and the Hyprland COPR or PPA when you ask for Hyprland. Read the dry run before you run the real one.</span></li>
                     <li><b data-i18n>It is not universal, and it says so.</b> <span data-i18n>NixOS, Guix System, SteamOS, transactional openSUSE, the BSDs and anything it does not recognise are refused before anything runs, with the reason printed. On Gentoo it installs only the base packages, on Slackware the base packages, codecs and firmware, and it prints the rest as steps for you.</span></li>
                     <li><b data-i18n>It is not a backup.</b> <span data-i18n>Run it on a fresh install, not on a machine carrying work you have not copied off somewhere else.</span></li>
                 </ul>
@@ -589,7 +589,7 @@
         <p class="note"><b>Debian</b> — Debian, LMDE, MX, Kali, Parrot, Devuan, Raspberry Pi OS. <b>Ubuntu</b> — <span data-i18n>Ubuntu and its flavours</span>, Mint, Pop!_OS, elementary, Zorin, KDE neon, TUXEDO.</p>
         <p class="note"><b>Arch</b> — Arch, Manjaro, EndeavourOS, CachyOS, Garuda, ArcoLinux. <b>openSUSE</b> — Tumbleweed, Slowroll, Leap, SLES.</p>
         <p class="note"><span data-i18n>Base packages, plus drivers where they are packaged, with few or no purpose lists:</span> Solus, Alpine, Void, Gentoo, Slackware, Mageia, OpenMandriva.</p>
-        <p class="note"><span data-i18n>Carino Hyprland:</span> <span data-i18n>Fedora, Arch, openSUSE Tumbleweed and Slowroll, Debian 13 and newer (and derivatives built on them, such as LMDE 7), Ubuntu 24.04 and 26.04 bases (derivatives included), Ubuntu 26.10+ itself, Solus.</span></p>
+        <p class="note"><span data-i18n>Carino Hyprland:</span> <span data-i18n>Fedora 44 and newer only (Atrium). The plain Hyprland desktop: Fedora 44 and newer, Arch, openSUSE Tumbleweed and Slowroll, Debian 13 and newer (and derivatives built on them, such as LMDE 7), Ubuntu 24.04 and 26.04 bases (derivatives included), Ubuntu 26.10+ itself, Solus.</span></p>
         <p class="note"><span data-i18n>Refused, with the reason printed:</span> NixOS, Guix System, SteamOS, MicroOS, Aeon, Kalpa <span data-i18n>and anything it does not recognise.</span></p>
         <p class="note"><span data-i18n>setup.sh is for Linux only. On FreeBSD, OpenBSD, NetBSD and DragonFly it stops and names the system's own tool (pkg, pkg_add, pkgin); on macOS it points to macos.sh. The BSDs do not ship bash by default, so install it first to see that message.</span></p>
         <p class="note"><span data-i18n>The Plan Builder shows what each family gets — pick the distribution there to read the one you came for.</span></p>
@@ -617,7 +617,7 @@
                     <tr><td><span class="kbd accent">server</span></td><td data-i18n>Base, server and development packages, then enables SSH and Cockpit.</td></tr>
                     <tr><td><span class="kbd accent">drivers</span> <span class="kbd accent">nvidia/amd/intel</span></td><td data-i18n>GPU drivers only. All four do the same: the GPU is detected.</td></tr>
                     <tr><td><span class="kbd accent">desktop</span></td><td data-i18n>Opens the desktop menu, even when a desktop is already running.</td></tr>
-                    <tr><td><span class="kbd accent">hyprland</span></td><td data-i18n>Installs the Carino Hyprland desktop configuration only.</td></tr>
+                    <tr><td><span class="kbd accent">hyprland</span></td><td data-i18n>Installs the Carino Hyprland desktop only: Atrium, for Fedora 44 and newer (elsewhere it says why not).</td></tr>
                     <tr><td><span class="kbd accent">distrobox</span></td><td data-i18n>Creates Fedora, Ubuntu and Debian distrobox containers.</td></tr>
                     <tr><td><span class="kbd accent">proton</span></td><td data-i18n>Installs the latest GE-Proton for Steam, native or Flatpak.</td></tr>
                     <tr><td><span class="kbd accent">librewolf</span></td><td data-i18n>Installs LibreWolf: from its repository on Fedora, EL, Debian and Ubuntu, as a Flatpak elsewhere.</td></tr>
@@ -766,14 +766,15 @@
 
     const DESKTOPS = [['gnome','GNOME'],['xfce','XFCE'],['kde','KDE Plasma'],['lxqt','LXQt'],['cinnamon','Cinnamon'],['mate','MATE'],['i3','i3'],['openbox','Openbox'],['budgie','Budgie'],['sway','Sway'],['hyprland','Hyprland'],['niri','Niri'],['carino-hyprland','Carino Hyprland']]; /* DESKTOP_NAMES in setup.sh, minus none, which the select adds itself */
     const ALLDESKTOPS = DESKTOPS.map(d => d[0]);
-    const HYPR = ['hyprland','carino-hyprland']; /* both go through hyprSupported in setup.sh: Hyprland 0.55 or newer must be obtainable */
+    const HYPR = ['hyprland','carino-hyprland']; /* hyprland goes through hyprSupported in setup.sh (Hyprland 0.55 or newer must be obtainable); carino-hyprland through carinoSupported: Atrium, Fedora 44 and newer only, declined elsewhere */
 
     const FAMILIES = { /* one entry per family in familyOf/detectFamily of setup.sh. drop[] is every desktop with no desktop_<name>_<family> list (or its fallback), plus both Hyprland choices where hyprSupported says no; hypr is shown when a Hyprland choice is picked on a family where it depends on the release */
         fedora:   { label: 'Fedora and derivatives', pkgm: 'dnf', drop: [],
                     covers: 'Fedora, Nobara, Ultramarine and Risi.',
-                    note: 'Base setup adds RPM Fusion free and nonfree and the Cisco OpenH264 repository, swaps in the full ffmpeg and the freeworld VA-API driver, and builds the NVIDIA module with akmods: the open module for Turing and newer, the 580xx branch for Maxwell and Pascal, 470xx for Kepler. Hyprland and Carino Hyprland come from the lionheartp/Hyprland COPR.' },
+                    note: 'Base setup adds RPM Fusion free and nonfree and the Cisco OpenH264 repository, swaps in the full ffmpeg and the freeworld VA-API driver, and builds the NVIDIA module with akmods: the open module for Turing and newer, the 580xx branch for Maxwell and Pascal, 470xx for Kepler. Hyprland comes from the lionheartp/Hyprland COPR (Fedora 44 and newer). Carino Hyprland is Atrium: setup.sh downloads it to ~/Atrium (git, else the GitHub tarball) and runs its install.sh as you.',
+                    hypr: 'Hyprland and Carino Hyprland need Fedora 44 or newer: the lionheartp/Hyprland COPR builds for 44, 45 and rawhide, and Fedora itself packages no Hyprland. Carino Hyprland is Atrium (github.com/MiguelCarino/Atrium): setup.sh downloads it to ~/Atrium and runs its install.sh as you, which backs up the configuration it replaces and offers (default yes) to remove the desktop that was there, after showing what goes; greetd then replaces its login screen.' },
         atomic:   { label: 'Fedora Atomic (Silverblue, Kinoite, Bazzite, Bluefin, Aurora)', pkgm: 'rpm-ostree', drop: ALLDESKTOPS, native: false,
-                    dropwhy: 'setup.sh has no desktop list for an image-based system, and Carino Hyprland needs a package-based Fedora or a Hyprland image',
+                    dropwhy: 'setup.sh has no desktop list for an image-based system, and Carino Hyprland (Atrium) needs a package-based Fedora 44 or newer',
                     covers: 'Silverblue, Kinoite and any Fedora image booted from ostree, including Bazzite, Bluefin and Aurora.',
                     note: 'A few base tools are layered with rpm-ostree and apply after a reboot. NVIDIA: RPM Fusion is layered first and the driver on a second run; Bazzite, Bluefin and Aurora are told to rebase to their -nvidia image instead. Profiles install their Flatpaks only (use toolbox or distrobox for the rest).' },
         rhel:     { label: 'RHEL, AlmaLinux, Rocky and other EL', pkgm: 'dnf', drop: ['i3','openbox','budgie','sway','hyprland','niri','carino-hyprland'],
@@ -782,23 +783,23 @@
                     note: 'Base setup enables CRB (codeready-builder on RHEL, ol<N>_codeready_builder and oracle-epel-release on Oracle), EPEL and RPM Fusion free; Amazon Linux has no EPEL and is left as it is. The desktops are EL lists only, never the Fedora ones. NVIDIA, Turing and newer: AlmaLinux uses its own NVIDIA repository, the others are shown the NVIDIA repository to add. There are no EL purpose lists, so the Fedora ones are used and the names EL lacks are skipped.' },
         debian:   { label: 'Debian and derivatives', pkgm: 'apt', drop: ['niri'], dropwhy: 'Debian 13 does not package it',
                     covers: 'Debian, LMDE, MX, Kali, Parrot, Devuan, Raspberry Pi OS, PureOS and Deepin.',
-                    hypr: 'Hyprland and Carino Hyprland need Debian 13 (trixie, from trixie-backports) or newer; a derivative counts by its DEBIAN_CODENAME (LMDE 7 is trixie). On Debian 12 the script says why not and installs nothing for them.',
+                    hypr: 'Hyprland needs Debian 13 (trixie, from trixie-backports) or newer; a derivative counts by its DEBIAN_CODENAME (LMDE 7 is trixie). On Debian 12 the script says why not and installs nothing for it.',
                     note: 'Base setup adds contrib and non-free to the existing Debian sources. NVIDIA: the open module for Turing and newer, the 580 driver for Maxwell and Pascal. Kali and Parrot are treated as Debian with a warning that their own tools may conflict.' },
         ubuntu:   { label: 'Ubuntu and derivatives', pkgm: 'apt', drop: ['niri'], dropwhy: 'there is no Ubuntu or Debian list for it',
                     covers: 'Ubuntu and its flavours, Linux Mint, Pop!_OS, elementary OS, Zorin OS, KDE neon and TUXEDO OS.',
-                    hypr: 'Hyprland and Carino Hyprland: Ubuntu 24.04 and 26.04 bases (Mint 22, Pop!_OS 24.04...) from the cppiber/hyprland PPA, Ubuntu 26.10 and newer from universe. Other bases are told why not.',
+                    hypr: 'Hyprland: Ubuntu 24.04 and 26.04 bases (Mint 22, Pop!_OS 24.04...) from the cppiber/hyprland PPA, Ubuntu 26.10 and newer from universe. Other bases are told why not.',
                     note: 'Base setup enables universe, multiverse and restricted. NVIDIA goes through ubuntu-drivers (system76-driver-nvidia on Pop!_OS). The purpose lists, and the i3, Openbox, Sway and Hyprland lists, are the Debian ones.' },
         arch:     { label: 'Arch and derivatives', pkgm: 'pacman', drop: [],
                     covers: 'Arch, Manjaro, EndeavourOS, CachyOS, Garuda, ArcoLinux, RebornOS and Archcraft.',
                     note: 'Base setup asks to enable [multilib] (32-bit libraries) when it is off. NVIDIA: nvidia-open-dkms with the headers for your running kernel, Turing and newer; older cards are AUR only and the script says so.' },
         opensuse: { label: 'openSUSE and SUSE', pkgm: 'zypper', drop: [],
                     covers: 'openSUSE Tumbleweed, Slowroll and Leap, SLES and SLED.',
-                    hypr: 'Hyprland and Carino Hyprland: Tumbleweed and Slowroll only. On Leap the script says why not and installs nothing for them.',
+                    hypr: 'Hyprland: Tumbleweed and Slowroll only. On Leap the script says why not and installs nothing for it.',
                     note: 'Tumbleweed and Slowroll upgrade with zypper dup. Base setup asks to add Packman for full codecs (openSUSE only; on SLES and SLED Packman and the NVIDIA repository are skipped). NVIDIA comes from NVIDIA\'s openSUSE repository: G07 for Turing and newer, G06 for Maxwell and Pascal. Purpose lists exist for Basic, Gaming, Corporate and Development.' },
         solus:    { label: 'Solus', pkgm: 'eopkg', drop: ALLDESKTOPS.filter(d => HYPR.indexOf(d) === -1), dropwhy: 'setup.sh has no Solus list for them',
                     covers: 'Solus, every edition.',
-                    note: 'A short base list; NVIDIA uses nvidia-glx-driver-current; no AMD or Intel list. There are no Solus purpose lists, so profiles install their Flatpaks. Hyprland and Carino Hyprland come from the Solus repository.' },
-        alpine:   { label: 'Alpine', pkgm: 'apk', drop: ALLDESKTOPS, dropwhy: 'setup.sh has no Alpine desktop list, and Alpine ships Hyprland 0.54, older than the 0.55 Carino Hyprland needs',
+                    note: 'A short base list; NVIDIA uses nvidia-glx-driver-current; no AMD or Intel list. There are no Solus purpose lists, so profiles install their Flatpaks. Hyprland comes from the Solus repository.' },
+        alpine:   { label: 'Alpine', pkgm: 'apk', drop: ALLDESKTOPS, dropwhy: 'setup.sh has no Alpine desktop list, and Alpine ships Hyprland 0.54, older than the 0.55 setup.sh asks for',
                     covers: 'Alpine Linux and postmarketOS.',
                     note: 'Base setup enables the community repository. AMD and Intel get Mesa; there is no NVIDIA driver for musl, so nouveau/NVK drives the card. Purpose lists exist for Basic and Development.' },
         void:     { label: 'Void', pkgm: 'xbps', drop: ALLDESKTOPS, dropwhy: 'setup.sh has no Void desktop list, and Void does not package Hyprland',
@@ -950,11 +951,11 @@
         } else if (lost) {
             note.textContent = want + ' is not offered on ' + FAMILIES[fam].label + ' and the selection was reset to none, because ' + dropReason(fam) + '. Available on this family: ' + allowed.map(d => d[0]).join(', ') + '.';
             note.hidden = false;
+        } else if (B.desktop.value === 'carino-hyprland' && fam !== 'fedora') {
+            note.textContent = 'Carino Hyprland is Atrium, which is made for Fedora 44 and newer only: on ' + FAMILIES[fam].label + ' setup.sh declines it with that reason and installs nothing for it. Pick hyprland instead for stock Hyprland.';
+            note.hidden = false;
         } else if (HYPR.indexOf(B.desktop.value) !== -1 && FAMILIES[fam].hypr) {
             note.textContent = FAMILIES[fam].hypr;
-            note.hidden = false;
-        } else if (B.desktop.value === 'carino-hyprland') {
-            note.textContent = 'Carino Hyprland installs Hyprland and its tools, moves any existing ~/.config/hypr, waybar, wofi, mako, kitty and cliphist to ~/.config/carino-backup-<time>/, then copies the configuration into your home folder.';
             note.hidden = false;
         } else if (FAMILIES[fam].drop.length) {
             note.textContent = 'Not offered on ' + FAMILIES[fam].label + ', because ' + dropReason(fam) + ': ' + FAMILIES[fam].drop.join(', ') + '.';
