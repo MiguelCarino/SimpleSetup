@@ -27,6 +27,24 @@
     <script type="application/json" id="carino-head-i18n">{"es": {"title": "Carino Setup — Cualquier computadora, un comando", "desc": "Un solo comando que configura Linux, Windows o macOS: detección de hardware y distribución, controladores y 15 perfiles por uso. Sin instalar nada antes."}, "pt-BR": {"title": "Carino Setup — Qualquer computador, um comando", "desc": "Um único comando que configura Linux, Windows ou macOS: detecção de hardware e distribuição, drivers e 15 perfis por finalidade. Nada para instalar antes."}, "ja": {"title": "Carino Setup — どのPCも、コマンド1つで", "desc": "1つのコマンドでLinux・Windows・macOSを設定。ハードウェアとディストリビューションの検出、ドライバー、15の用途別プロファイル。事前準備不要。"}, "ru": {"title": "Carino Setup — любой компьютер, одна команда", "desc": "Одна команда настраивает Linux, Windows или macOS: определение оборудования и дистрибутива, драйверы и 15 профилей под задачи. Ничего не нужно ставить заранее."}}</script>
     <script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "Carino Setup", "url": "https://setup.carino.systems/", "description": "One command that configures Linux, Windows or macOS: hardware and distribution detection, drivers, and 15 purpose profiles. Nothing to install first.", "operatingSystem": "Linux, Windows, macOS", "isAccessibleForFree": true, "author": {"@type": "Person", "name": "Miguel Cariño", "url": "https://carino.systems/"}}</script>
     <!-- /carino:head -->
+  <!-- Theme before first paint, so neither theme flashes the other:
+       ?theme=gold|color (review links; not stored) > carino-theme cookie
+       (shared across *.carino.systems) > localStorage > Gold & Black. -->
+  <meta name="theme-color" content="#050505" id="carinoThemeColor">
+  <script>
+  (function () {
+    var d = document.documentElement, t = null;
+    function pick(v) { return v === 'gold' ? 'gold' : (v === 'color' || v === 'colour') ? 'color' : null; }
+    try { t = pick(new URLSearchParams(location.search).get('theme')); } catch (e) {}
+    if (!t) { try { var m = document.cookie.match(/(?:^|;\s*)carino-theme=([^;]*)/); if (m) t = pick(decodeURIComponent(m[1])); } catch (e) {} }
+    if (!t) { try { t = pick(localStorage.getItem('carino-theme')); } catch (e) {} }
+    t = t || 'gold';
+    d.setAttribute('data-carino-theme', t);
+    var dark = d.getAttribute('data-theme') !== 'light' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches;
+    var meta = document.getElementById('carinoThemeColor');
+    if (meta) meta.content = t === 'gold' ? '#050505' : (dark ? '#0e1420' : '#eef3fc');
+  })();
+  </script>
     <link rel="stylesheet" href="fonts/carino-fonts.css">
     <!-- Tokens and the shared components (landing hero, terminal, copy button,
          privacy line, footer) come from carino-ui.css; only this page's own
@@ -335,10 +353,29 @@
             .os-float { display: none; }
         }
     </style>
+  <!-- Colourful theme + the switch; nothing applies until data-carino-theme="color". -->
+  <link rel="stylesheet" href="carino-theme.css">
+  <style>
+    /* the hero mark in both colourings; the theme picks one */
+    .mark.mk-color, :root[data-carino-theme="color"] .mark.mk-gold { display: none; }
+    :root[data-carino-theme="color"] .mark.mk-color { display: block; }
+    /* Colourful: carino-theme.css remaps the tokens, so everything that reads
+       one follows; these are the values written for black. */
+    :root[data-carino-theme="color"] body { background-image: var(--stage-grad); }
+    :root[data-carino-theme="color"] .os-btn { background: var(--bg-card); box-shadow: var(--ct-shadow-1); }
+    :root[data-carino-theme="color"] .os-btn.active { background: var(--accent); border-color: var(--accent); color: var(--ct-on-accent); box-shadow: var(--ct-shadow-2); }
+    :root[data-carino-theme="color"] .os-btn.active .fmt { color: var(--ct-on-accent); opacity: .8; }
+    :root[data-carino-theme="color"] .modal { box-shadow: var(--ct-shadow-3); }
+    :root[data-carino-theme="color"] .modal::backdrop { background: var(--ct-scrim); }
+    :root[data-carino-theme="color"] .notbox { border-color: var(--err); }
+    :root[data-carino-theme="color"] .notbox h3, :root[data-carino-theme="color"] .notbox li b { color: var(--err); }
+    :root[data-carino-theme="color"] .isbox li, :root[data-carino-theme="color"] .notbox li { color: var(--text-sec); }
+  </style>
 </head>
 <body>
 <!-- Carino navbar self-injects at the top of <body> (loads carino-clock.js locally) -->
 <script src="carino-navbar.js" data-app="Setup" data-repo="SimpleSetup" defer></script>
+<script src="carino-theme.js" data-mark="logo.svg" data-mark-color="logo-color.svg" defer></script>
 <script src="carino-lang.js" defer></script>
 <script src="i18n.js" defer></script>
 
@@ -359,9 +396,10 @@
                  50×50 raster that exists to be a favicon and goes soft the
                  moment it is drawn larger than that, and an inline path costs
                  no request at all. Same geometry the rest of the fleet uses. -->
-            <svg class="mark" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+            <svg class="mark mk-gold" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
                 <path d="M 81.07 25.82 A 34.81 34.81 0 1 0 81.07 74.18" fill="none" stroke="var(--accent)" stroke-width="16.38" stroke-linecap="butt"/><g transform="translate(36.030 30.000) scale(1.66667)" fill="none" stroke="var(--accent)" stroke-width="3.0" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(2.2 1.6)"><path d="M14.5 3.2a5 5 0 0 0-5.3 6.6L3.6 15.4a2 2 0 0 0 2.8 2.8l5.6-5.6a5 5 0 0 0 6.6-5.3l-2.9 2.9-2.8-.8-.8-2.8z" fill="var(--accent)"/></g></g>
             </svg>
+            <img class="mark mk-color" src="logo-color.svg" alt="" width="100" height="100">
             <svg class="steps lh-motif" viewBox="0 0 200 40" preserveAspectRatio="xMidYMid meet">
                 <rect x="11.1" y="13" width="14" height="14" style="animation-delay:0.00s"/>
                 <rect x="29.3" y="13" width="14" height="14" style="animation-delay:0.16s"/>
