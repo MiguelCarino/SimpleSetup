@@ -409,11 +409,22 @@
       category hues; --accent stays for what is interactive
    ============================================================ */
 /* hero second line: identity, not a link, so it leaves the interactive blue.
-   blue > purple > pink only: --ct-hero-text ends in amber (2.8:1 on --bg) */
+   blue > purple > pink only: --ct-hero-text ends in amber (2.8:1 on --bg).
+   Purple arrives by 40% and pink holds the last fifth, so even a short line
+   shows all three; dark mixes each pastel toward its base hue to keep it vivid
+   (4.8:1 or better on the dark page). */
 :root[data-carino-theme="color"] :is(.landing-hero, .short-hero) h1 .gold {
-  background-image: linear-gradient(90deg, var(--ct-blue), var(--ct-purple) 55%, var(--ct-pink));
+  --hg-1: var(--ct-blue); --hg-2: var(--ct-purple); --hg-3: var(--ct-pink);
+  background-image: linear-gradient(90deg, var(--hg-1) 0%, var(--hg-2) 40%, var(--hg-3) 80%);
   -webkit-background-clip: text; background-clip: text;
   color: transparent; -webkit-text-fill-color: transparent;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-carino-theme="color"]:not([data-theme="light"]) :is(.landing-hero, .short-hero) h1 .gold {
+    --hg-1: color-mix(in srgb, var(--ct-blue) 60%, var(--ct-h0b));
+    --hg-2: color-mix(in srgb, var(--ct-purple) 60%, var(--ct-h4b));
+    --hg-3: color-mix(in srgb, var(--ct-pink) 60%, var(--ct-h6b));
+  }
 }
 /* list markers: one quiet hue so the › glyphs stop reading as link arrows.
    Compass's .how list sits beside its ok/warn/err scale words, so it is left out */
