@@ -372,8 +372,18 @@
   </style>
 </head>
 <body>
+<!-- Key words: the navbar shows them, translated, under its Language tab. -->
+<ul data-carino-words hidden>
+  <li>Plan Builder</li>
+  <li>Your distribution</li>
+  <li>Purpose profile</li>
+  <li>Desktop environment</li>
+  <li>Graphic drivers</li>
+  <li>System update</li>
+</ul>
+
 <!-- Carino navbar self-injects at the top of <body> (loads carino-clock.js locally) -->
-<script src="carino-navbar.js" data-app="Setup" data-repo="SimpleSetup" data-license="AGPL-3.0" defer></script>
+<script src="carino-navbar.js" data-app="Setup" data-repo="SimpleSetup" data-license="AGPL-3.0" data-changelog="https://github.com/MiguelCarino/SimpleSetup/commits/main" defer></script>
 <script src="carino-theme.js" data-mark="logo.svg" data-mark-color="logo-color.svg" defer></script>
 <script src="carino-lang.js" defer></script>
 <script src="i18n.js" defer></script>
@@ -476,19 +486,13 @@
         <!-- The last line before somebody pastes a curl into a root shell. It
              is the one claim on this page a visitor can check for themselves,
              so it links to the file rather than asking to be believed. -->
-        <p class="foot-note privacy-line">
-            <span data-i18n>This page runs entirely in your browser and sends nothing anywhere. The script is one readable file:</span>
-            <a href="https://github.com/MiguelCarino/SimpleSetup/blob/main/setup.sh" target="_blank" rel="noopener">setup.sh</a> ·
-            <a href="https://github.com/MiguelCarino/SimpleSetup/blob/main/setup.ps1" target="_blank" rel="noopener">setup.ps1</a> ·
-            <a href="https://github.com/MiguelCarino/SimpleSetup/blob/main/macos.sh" target="_blank" rel="noopener">macos.sh</a>
-        </p>
     </div>
 </header>
 
 <!-- The Product footer (Branding #footer). The hero grows to fill the screen,
      so this sits at its bottom edge. -->
 <div data-carino-about hidden>
-  <p><a href="https://github.com/MiguelCarino/SimpleSetup/commits/main" target="_blank" rel="noopener" data-i18n>Changelog</a> · <a href="https://github.com/MiguelCarino/SimpleSetup#readme" target="_blank" rel="noopener" data-i18n>Docs</a> · <a href="https://github.com/MiguelCarino/SimpleSetup/blob/main/setup.sh" target="_blank" rel="noopener">setup.sh</a> · <a href="https://github.com/MiguelCarino/SimpleSetup/blob/main/setup.ps1" target="_blank" rel="noopener">setup.ps1</a> · <a href="https://github.com/MiguelCarino/SimpleSetup/blob/main/macos.sh" target="_blank" rel="noopener">macos.sh</a></p>
+  <p><span data-i18n>This page runs entirely in your browser and sends nothing anywhere. The script is one readable file:</span> <a href="https://github.com/MiguelCarino/SimpleSetup/blob/main/setup.sh" target="_blank" rel="noopener">setup.sh</a> · <a href="https://github.com/MiguelCarino/SimpleSetup/blob/main/setup.ps1" target="_blank" rel="noopener">setup.ps1</a> · <a href="https://github.com/MiguelCarino/SimpleSetup/blob/main/macos.sh" target="_blank" rel="noopener">macos.sh</a></p>
 </div>
 
 <!-- ── The sheets ────────────────────────────────────────────────────
